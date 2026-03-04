@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import Sidebar from "@/components/Sidebar"; // Importando o menu lateral
+import Sidebar from "@/components/Sidebar";
+import RouteGuard from "@/components/RouteGuard"; // <-- Importamos o Guarda
 import "./globals.css";
 
 const inter = Inter({
@@ -20,19 +21,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-br">
-      {/* Ajustamos o body para usar flexbox com h-screen e overflow-hidden.
-        Isso faz o menu ficar fixo à esquerda e apenas o conteúdo da direita rolar.
-      */}
       <body
-        className={`${inter.variable} font-sans antialiased text-slate-900 flex h-screen bg-gray-50 overflow-hidden`}
+        className={`${inter.variable} font-sans antialiased text-slate-900 flex h-screen bg-slate-50 overflow-hidden`}
       >
-        {/* Renderiza o Menu Lateral (ele mesmo decide se esconde na tela de Login) */}
-        <Sidebar />
-        
-        {/* Onde suas páginas serão carregadas */}
-        <main className="flex-1 overflow-y-auto">
-          {children}
-        </main>
+        {/* O RouteGuard envolve tudo! Se não tiver login, ele nem deixa renderizar o resto */}
+        <RouteGuard>
+          <Sidebar />
+          <main className="flex-1 overflow-y-auto">
+            {children}
+          </main>
+        </RouteGuard>
       </body>
     </html>
   );
