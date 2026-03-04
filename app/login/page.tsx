@@ -49,7 +49,7 @@ export default function LoginPage() {
 
         <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Controladoria OS</h1>
         <p className="text-slate-500 font-medium text-sm mt-2 text-center mb-8">
-          {isLoginMode ? 'Aceda ao seu painel de gestão.' : 'Crie uma conta para aceder ao sistema.'}
+          {isLoginMode ? 'Acesse ao seu painel de gestão.' : 'Crie uma conta para aceder ao sistema.'}
         </p>
 
         {msg && (
