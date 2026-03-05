@@ -22,7 +22,7 @@ type Row = {
 type PlannerRow = { planner_name: string }
 type StatusRow = { status_name: string; status_order: number }
 type TimeBucket = 'Atrasadas' | 'Hoje' | 'Amanhã' | 'Próx 7 dias' | 'Sem data' | 'Oculto'
-type Lookup = { id: string; nome: string }
+type Lookup = { id: string; nome: string; email?: string }
 
 // ==========================================
 // FUNÇÕES PURAS (Movidas para fora para não pesar o React)
@@ -155,7 +155,6 @@ const BoardColumn = ({ status, tasks, statuses, statusOrderMap, setStatus, exclu
 
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
-    // Só remove o highlight se o rato sair efetivamente da coluna (evita piscar)
     if (!e.currentTarget.contains(e.relatedTarget as Node)) {
       setIsOver(false)
     }
@@ -272,7 +271,7 @@ export default function TarefasPage() {
   const carregarLookups = async () => {
     const [{ data: s }, { data: r }] = await Promise.all([
       supabase.from('setores').select('id,nome').order('nome', { ascending: true }),
-      supabase.from('responsaveis').select('id,nome').order('nome', { ascending: true }),
+      supabase.from('responsaveis').select('id,nome,email').order('nome', { ascending: true }),
     ])
     setSetoresDb((s || []) as any)
     setRespsDb((r || []) as any)
@@ -311,8 +310,8 @@ export default function TarefasPage() {
       const { data, error } = await supabase.from('tarefas_diarias').select(`
           id, data_vencimento, status, data_conclusao, observacoes,
           atividades!tarefas_diarias_atividade_id_fkey (
-            task_id, nome_atividade, planner_name, frequencia, prioridade_descricao,
-            setores!atividades_setor_id_fkey (nome), responsaveis!atividades_responsavel_id_fkey (nome)
+            task_id, nome_atividade, planner_name, frequencia, prioridade_descricao, responsavel_id,
+            setores!atividades_setor_id_fkey (nome), responsaveis!atividades_responsavel_id_fkey (nome, email)
           )
         `).gte('data_vencimento', iso(inicio)).lt('data_vencimento', iso(fim)).order('data_vencimento', { ascending: true })
 
@@ -323,6 +322,38 @@ export default function TarefasPage() {
       setMensagem('❌ Erro ao carregar tarefas.')
     } finally {
       setCarregando(false)
+    }
+  }
+
+  // ✅ FUNÇÃO MÁGICA: Disparar Email
+  const sendEmailNotification = async (taskId: string, actionText: string, extraObs?: string) => {
+    try {
+      // 1. Pega os dados mais recentes da tarefa (para saber o email de quem recebeu)
+      const task = rows.find(r => r.id === taskId)
+      if (!task) return
+
+      const destinatarioEmail = task.atividades?.responsaveis?.email
+      if (!destinatarioEmail) return // Se não tem email cadastrado, cancela o disparo calado
+
+      // 2. Monta o payload
+      const payload = {
+        to: destinatarioEmail,
+        subject: `[Portal da Controladoria] Atualização de Tarefa: ${task.atividades?.nome_atividade}`,
+        taskName: task.atividades?.nome_atividade,
+        action: actionText,
+        userName: userName,
+        observacoes: extraObs || task.observacoes || ''
+      }
+
+      // 3. Dispara para a nossa nova rota da API
+      await fetch('/api/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      
+    } catch (error) {
+      console.error('Erro silencioso ao enviar email:', error)
     }
   }
 
@@ -346,6 +377,9 @@ export default function TarefasPage() {
 
     setComentarios(prev => [data, ...prev])
     setComentNovo('')
+    
+    // Dispara Email avisando do comentário
+    sendEmailNotification(selected.id, 'comentada', `Novo comentário de ${userName}: "${msg}"`)
   }
 
   const excluirTarefa = async (tarefaId: string) => {
@@ -382,6 +416,9 @@ export default function TarefasPage() {
     if (selected?.id === id) { setSelected({ ...selected, ...patch }); setDrawerStatus(patch.status) }
     setMensagem('✅ Sucesso!')
     setTimeout(() => setMensagem(''), 1000)
+
+    // Dispara Email avisando do novo status (Drag and Drop ou Botão)
+    sendEmailNotification(id, `movida para o status "${status}"`, '')
   }
 
   const abrirDrawer = (r: Row) => {
@@ -401,6 +438,9 @@ export default function TarefasPage() {
       setSelected(prev => (prev ? { ...prev, ...patch } : prev))
     }
     setSavingDrawer(false); fecharDrawer()
+
+    // Dispara Email avisando das alterações nos Detalhes
+    sendEmailNotification(selected.id, `atualizada com novas observações e/ou status`, drawerObs || '')
   }
 
   const concluirNoDrawer = async () => {
@@ -423,6 +463,28 @@ export default function TarefasPage() {
       if (errExec) throw errExec
 
       setAdhocOpen(false); setAdhocNome(''); setAdhocSetorId(''); setAdhocRespId(''); setAdhocVenc(new Date().toISOString().slice(0, 10))
+      
+      // Como criamos uma tarefa nova, precisamos buscar a linha completa para o Email funcionar
+      const { data: novaTask } = await supabase.from('tarefas_diarias').select('*, atividades!inner(responsaveis(email))').eq('atividade_id', atv.task_id).single()
+      if (novaTask) {
+        // Dispara e-mail de nova atribuição
+        const userResp = respsDb.find(r => r.id === adhocRespId)
+        if (userResp?.email) {
+          await fetch('/api/notify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              to: userResp.email,
+              subject: `[Portal da Controladoria] Nova Tarefa Ad Hoc: ${nome}`,
+              taskName: nome,
+              action: `criada e atribuída a você`,
+              userName: userName,
+              observacoes: `Prazo: ${adhocVenc.slice(8,10)}/${adhocVenc.slice(5,7)}/${adhocVenc.slice(0,4)}`
+            })
+          })
+        }
+      }
+
       await carregarPlanners(); await carregar()
     } finally { setSavingAdhoc(false) }
   }

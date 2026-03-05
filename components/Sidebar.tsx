@@ -59,18 +59,17 @@ export default function Sidebar() {
   return (
     <aside className={`relative bg-[#0B1F3A] text-white transition-all duration-300 ease-in-out flex flex-col shadow-2xl ${isExpanded ? 'w-64' : 'w-20'}`}>
       
-      {/* Topo / Logotipo */}
+      {/* Topo / Logotipo Atualizado */}
       <div className="h-24 flex items-center justify-center border-b border-white/10 px-4">
         {isExpanded ? (
           <div className="flex flex-col items-center">
-            <span className="text-xl font-bold tracking-tight text-white">Controladoria OS</span>
+            <span className="text-lg font-bold tracking-tight text-white text-center leading-tight">Portal da<br/>Controladoria</span>
           </div>
         ) : (
-          <span className="text-xl font-black tracking-tighter text-indigo-400">OS</span>
+          <span className="text-xl font-black tracking-tighter text-indigo-400">PC</span>
         )}
       </div>
 
-      {/* Botão de Expandir/Recolher */}
       <button 
         onClick={() => setIsExpanded(!isExpanded)}
         className="absolute -right-3 top-8 bg-indigo-600 text-white rounded-full p-1.5 shadow-lg hover:bg-indigo-500 transition-colors z-50"
@@ -78,7 +77,6 @@ export default function Sidebar() {
         {isExpanded ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
       </button>
 
-      {/* Links do Menu */}
       <nav className="flex-1 pt-8 space-y-2 px-3 overflow-y-auto custom-scrollbar">
         {navItems.map((item) => {
           const isActive = pathname === item.href
@@ -97,10 +95,7 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* Rodapé: Utilizador + Sair */}
       <div className="p-4 border-t border-white/10 bg-white/5">
-        
-        {/* Bloco do Utilizador com Foto */}
         <Link href="/profile" className={`flex items-center gap-3 mb-4 rounded-xl transition-all hover:bg-white/5 p-2 ${!isExpanded && 'justify-center'}`}>
           {avatarUrl ? (
             <img src={avatarUrl} alt="Avatar" className="w-9 h-9 rounded-full object-cover shrink-0 border border-white/20" />
@@ -118,7 +113,6 @@ export default function Sidebar() {
           )}
         </Link>
 
-        {/* Botão de Sair */}
         <Link 
           href="/logout"
           className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-400 hover:bg-red-500/20 hover:text-red-400 transition-all ${!isExpanded && 'justify-center'}`}
@@ -128,7 +122,6 @@ export default function Sidebar() {
           {isExpanded && <span className="text-sm font-medium whitespace-nowrap">Terminar Sessão</span>}
         </Link>
       </div>
-
     </aside>
   )
 }
