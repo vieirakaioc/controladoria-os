@@ -3,6 +3,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { toPng } from 'html-to-image'
+import jsPDF from 'jspdf'
+import { Toaster, toast } from 'react-hot-toast'
+import { FileText } from 'lucide-react'
 
 type Row = {
   id: string
@@ -231,7 +235,6 @@ function DoubleBarList({ items, profilesMap }: { items: { name: string, onTime: 
 }
 
 function TwoBars({ onTime, late }: { onTime: number; late: number }) {
-  // Correção: impede que a barra vermelha fique cheia quando os valores são 0
   const total = onTime + late
   const a = total > 0 ? Math.round((onTime / total) * 100) : 0
   const b = total > 0 ? 100 - a : 0
@@ -262,7 +265,6 @@ function TwoBars({ onTime, late }: { onTime: number; late: number }) {
 }
 
 export default function DashboardPage() {
-  const [msg, setMsg] = useState('')
   const [planners, setPlanners] = useState<string[]>([])
   const [plannerSel, setPlannerSel] = useState<string>('Todos')
 
@@ -270,6 +272,7 @@ export default function DashboardPage() {
   const [end, setEnd] = useState<string>(iso(new Date()))
   const [rows, setRows] = useState<Row[]>([])
   const [loading, setLoading] = useState(true)
+  const [gerandoPdf, setGerandoPdf] = useState(false)
   
   const [profilesMap, setProfilesMap] = useState<Record<string, string>>({})
 
@@ -294,7 +297,6 @@ export default function DashboardPage() {
 
   const carregar = async () => {
     setLoading(true)
-    setMsg('')
     try {
       const { data, error } = await supabase
         .from('tarefas_diarias')
@@ -315,7 +317,7 @@ export default function DashboardPage() {
       const filtered = plannerSel === 'Todos' ? (data || []) : (data || []).filter((r: any) => r?.atividades?.planner_name === plannerSel)
       setRows(filtered as any)
     } catch (e: any) {
-      setMsg('Erro ao carregar dashboard.')
+      toast.error('Erro ao carregar dashboard.')
       setRows([])
     } finally {
       setLoading(false)
@@ -329,6 +331,43 @@ export default function DashboardPage() {
   useEffect(() => {
     carregar()
   }, [plannerSel, start, end])
+
+  // 💡 LÓGICA ATUALIZADA PARA EXPORTAR PARA PDF
+  const exportarPDF = async () => {
+    setGerandoPdf(true)
+    const toastId = toast.loading('A preparar o dossiê executivo...')
+
+    try {
+      const input = document.getElementById('dashboard-content')
+      if (!input) throw new Error('Elemento do dashboard não encontrado.')
+
+      // O novo fotógrafo (html-to-image) tira a foto sem problemas com as cores modernas
+      const imgData = await toPng(input, {
+        quality: 1,
+        pixelRatio: 2, // Retém a qualidade Retina/Alta definição
+        backgroundColor: '#f8fafc',
+      })
+      
+      const pdfWidth = input.offsetWidth
+      const pdfHeight = input.offsetHeight
+
+      const pdf = new jsPDF({
+        orientation: pdfWidth > pdfHeight ? 'l' : 'p',
+        unit: 'px',
+        format: [pdfWidth, pdfHeight]
+      })
+
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight)
+      pdf.save(`Dossie_Controladoria_${start}_ate_${end}.pdf`)
+
+      toast.success('Dossiê gerado com sucesso!', { id: toastId })
+    } catch (err: any) {
+      console.error(err)
+      toast.error('Erro ao gerar o PDF.', { id: toastId })
+    } finally {
+      setGerandoPdf(false)
+    }
+  }
 
   const metrics = useMemo(() => {
     const today = startOfDay(new Date())
@@ -495,6 +534,8 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 p-8 font-sans">
+      <Toaster position="bottom-right" toastOptions={{ style: { background: '#063955', color: '#fff', borderRadius: '12px' } }} />
+
       <header className="flex flex-col xl:flex-row xl:justify-between xl:items-center gap-4 mb-6 bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
         <div>
           <h1 className="text-2xl font-semibold text-[#063955] tracking-tight">Dashboard de Gestão</h1>
@@ -502,8 +543,7 @@ export default function DashboardPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          {msg && <span className="text-sm font-medium text-[#0f88a8] bg-[#0f88a8]/10 px-3 py-1 rounded-lg animate-pulse">{msg}</span>}
-
+          
           <select
             className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm font-medium text-[#063955] outline-none focus:border-[#0f88a8] cursor-pointer"
             value={plannerSel}
@@ -518,68 +558,80 @@ export default function DashboardPage() {
             <span className="text-slate-400 text-sm font-medium">até</span>
             <input type="date" value={end} onChange={(e) => setEnd(e.target.value)} className="bg-transparent py-2 text-sm font-medium text-[#063955] outline-none cursor-pointer" />
           </div>
+
+          {/* 💡 BOTÃO MÁGICO DE EXPORTAR PDF */}
+          <button 
+            onClick={exportarPDF} 
+            disabled={gerandoPdf}
+            className="flex items-center gap-2 bg-[#0f88a8] hover:bg-[#0c708b] text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm disabled:opacity-50"
+          >
+            <FileText size={16} />
+            {gerandoPdf ? 'A processar...' : 'Gerar Dossiê PDF'}
+          </button>
         </div>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
-        <KPI title="Total Volume" value={metrics.total} />
-        <KPI title="Concluídas" value={metrics.done} accent="text-[#2d6943]" />
-        <KPI title="Em Atraso" value={metrics.overdue} accent="text-[#b43a3d]" />
-        <KPI title="Para Hoje" value={metrics.dueToday} accent="text-[#0f88a8]" />
-        <KPI title="Próx. 7 Dias" value={metrics.next7Count} />
-        <KPI title="Eficiência" value={`${metrics.pct}%`} accent="text-[#0f88a8]" />
-      </div>
+      {/* 💡 ENVOLVEMOS TUDO NUM ID PARA O HTML2CANVAS TIRAR A FOTOGRAFIA */}
+      <div id="dashboard-content" className="bg-slate-50 p-2">
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
+          <KPI title="Total Volume" value={metrics.total} />
+          <KPI title="Concluídas" value={metrics.done} accent="text-[#2d6943]" />
+          <KPI title="Em Atraso" value={metrics.overdue} accent="text-[#b43a3d]" />
+          <KPI title="Para Hoje" value={metrics.dueToday} accent="text-[#0f88a8]" />
+          <KPI title="Próx. 7 Dias" value={metrics.next7Count} />
+          <KPI title="Eficiência" value={`${metrics.pct}%`} accent="text-[#0f88a8]" />
+        </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        
-        <Section title="Produtividade Diária" subtitle="Tarefas concluídas no período" right={loading ? <span className="text-xs font-medium text-slate-400 animate-pulse">A carregar…</span> : null}>
-          <LineChart points={donePerDay} />
-        </Section>
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          <Section title="Produtividade Diária" subtitle="Tarefas concluídas no período" right={loading ? <span className="text-xs font-medium text-slate-400 animate-pulse">A carregar…</span> : null}>
+            <LineChart points={donePerDay} />
+          </Section>
 
-        <Section title="Distribuição de Status" subtitle="Visão geral do andamento global">
-          <Doughnut items={statusDist} size={140} />
-        </Section>
+          <Section title="Distribuição de Status" subtitle="Visão geral do andamento global">
+            <Doughnut items={statusDist} size={140} />
+          </Section>
 
-        <Section title="Qualidade de Entrega" subtitle="Entregas globais: no prazo vs atrasadas" right={<span className="text-xs font-medium text-slate-500">Total Entregue: {onTimeLate.onTime + onTimeLate.late}</span>}>
-          <TwoBars onTime={onTimeLate.onTime} late={onTimeLate.late} />
-        </Section>
+          <Section title="Qualidade de Entrega" subtitle="Entregas globais: no prazo vs atrasadas" right={<span className="text-xs font-medium text-slate-500">Total Entregue: {onTimeLate.onTime + onTimeLate.late}</span>}>
+            <TwoBars onTime={onTimeLate.onTime} late={onTimeLate.late} />
+          </Section>
 
-        <Section title="Saúde da Operação" subtitle="Volume de Processos Planejados vs Ad Hoc">
-          <Doughnut items={additionalMetrics.mix} size={140} />
-        </Section>
+          <Section title="Saúde da Operação" subtitle="Volume de Processos Planejados vs Ad Hoc">
+            <Doughnut items={additionalMetrics.mix} size={140} />
+          </Section>
 
-        <Section title="Aging de Pendências" subtitle="Tempo de atraso das tarefas em aberto">
-          {additionalMetrics.aging.some(a => a.value > 0) ? (
-            <BarList items={additionalMetrics.aging} color={COLORS.warnAmber} />
-          ) : (
-            <div className="text-sm font-medium text-slate-500 py-4 text-center bg-slate-50 rounded-xl">Nenhum atraso crítico no momento 🎉</div>
-          )}
-        </Section>
+          <Section title="Aging de Pendências" subtitle="Tempo de atraso das tarefas em aberto">
+            {additionalMetrics.aging.some(a => a.value > 0) ? (
+              <BarList items={additionalMetrics.aging} color={COLORS.warnAmber} />
+            ) : (
+              <div className="text-sm font-medium text-slate-500 py-4 text-center bg-slate-50 rounded-xl">Nenhum atraso crítico no momento 🎉</div>
+            )}
+          </Section>
 
-        <Section title="Entregas por Pessoa" subtitle="Análise de pontualidade individual">
-          {deliveriesByPerson.length > 0 ? (
-             <DoubleBarList items={deliveriesByPerson} profilesMap={profilesMap} />
-          ) : (
-             <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-50 rounded-xl p-6">Ainda não há tarefas concluídas neste período.</div>
-          )}
-        </Section>
+          <Section title="Entregas por Pessoa" subtitle="Análise de pontualidade individual">
+            {deliveriesByPerson.length > 0 ? (
+               <DoubleBarList items={deliveriesByPerson} profilesMap={profilesMap} />
+            ) : (
+               <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-50 rounded-xl p-6">Ainda não há tarefas concluídas neste período.</div>
+            )}
+          </Section>
 
-        <Section title="Atrasadas por Responsável" subtitle="Top 8 contas com pendências vencidas">
-          {overdueByPerson.length ? (
-            <BarList items={overdueByPerson} color={COLORS.dangerRed} isPerson={true} profilesMap={profilesMap} />
-          ) : (
-            <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-50 rounded-xl p-6">Nenhuma tarefa atrasada 🎉</div>
-          )}
-        </Section>
+          <Section title="Atrasadas por Responsável" subtitle="Top 8 contas com pendências vencidas">
+            {overdueByPerson.length ? (
+              <BarList items={overdueByPerson} color={COLORS.dangerRed} isPerson={true} profilesMap={profilesMap} />
+            ) : (
+              <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-50 rounded-xl p-6">Nenhuma tarefa atrasada 🎉</div>
+            )}
+          </Section>
 
-        <Section title="Volume por Setor" subtitle="Demandas ativas no período">
-          {bySector.length ? <BarList items={bySector} color={COLORS.darkBlue} /> : <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-50 rounded-xl p-6">Sem dados para exibir.</div>}
-        </Section>
+          <Section title="Volume por Setor" subtitle="Demandas ativas no período">
+            {bySector.length ? <BarList items={bySector} color={COLORS.darkBlue} /> : <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-50 rounded-xl p-6">Sem dados para exibir.</div>}
+          </Section>
 
-        <Section title="Volume por Colaborador" subtitle="Demandas ativas no período">
-          {byPerson.length ? <BarList items={byPerson} color={COLORS.darkBlue} isPerson={true} profilesMap={profilesMap} /> : <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-50 rounded-xl p-6">Sem dados para exibir.</div>}
-        </Section>
+          <Section title="Volume por Colaborador" subtitle="Demandas ativas no período">
+            {byPerson.length ? <BarList items={byPerson} color={COLORS.darkBlue} isPerson={true} profilesMap={profilesMap} /> : <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-50 rounded-xl p-6">Sem dados para exibir.</div>}
+          </Section>
 
+        </div>
       </div>
     </div>
   )

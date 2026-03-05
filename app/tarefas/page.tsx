@@ -1,8 +1,9 @@
 'use client'
 
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { Toaster, toast } from 'react-hot-toast'
 
 const MESES = [
   { v: 0, n: 'Jan' }, { v: 1, n: 'Fev' }, { v: 2, n: 'Mar' }, { v: 3, n: 'Abr' },
@@ -10,12 +11,16 @@ const MESES = [
   { v: 8, n: 'Set' }, { v: 9, n: 'Out' }, { v: 10, n: 'Nov' }, { v: 11, n: 'Dez' },
 ]
 
+type ChecklistItem = { id: string; texto: string; concluido: boolean }
+
 type Row = {
   id: string
   data_vencimento: string | null
   status: string | null
   data_conclusao: string | null
   observacoes: string | null
+  anexo_url?: string | null
+  checklists?: ChecklistItem[] | null 
   atividades?: any
 }
 
@@ -62,7 +67,48 @@ const badge = (s?: string | null) => {
 }
 
 // ==========================================
-// COMPONENTES ISOLADOS
+// COMPONENTES DE SKELETON
+// ==========================================
+const SkeletonCard = () => (
+  <div className="bg-white border border-slate-100 rounded-xl p-4 shadow-sm animate-pulse">
+    <div className="flex justify-between items-center mb-3"><div className="h-2.5 bg-slate-200 rounded w-1/3"></div><div className="h-4 bg-slate-200 rounded-md w-16"></div></div>
+    <div className="h-3.5 bg-slate-300 rounded w-3/4 mb-3"></div>
+    <div className="flex gap-1.5 mb-4"><div className="h-4 bg-slate-100 rounded w-12"></div><div className="h-4 bg-slate-100 rounded w-16"></div><div className="h-4 bg-slate-100 rounded w-14"></div></div>
+    <div className="flex justify-between items-center mt-4"><div className="flex gap-2"><div className="h-6 bg-slate-100 rounded-lg w-6"></div><div className="h-6 bg-slate-100 rounded-lg w-6"></div></div><div className="flex gap-1"><div className="h-6 bg-slate-100 rounded-lg w-6"></div><div className="h-6 bg-slate-200 rounded-lg w-16"></div></div></div>
+  </div>
+)
+
+const SkeletonBoard = ({ columns }: { columns: number }) => (
+  <div className="flex gap-4 overflow-x-auto pb-4" style={{ gridTemplateColumns: `repeat(${columns}, minmax(300px, 1fr))` }}>
+    {Array.from({ length: columns }).map((_, i) => (
+      <div key={i} className="rounded-2xl border flex-1 min-w-[320px] flex flex-col max-h-[75vh] bg-slate-50/50 border-slate-200">
+        <div className="p-4 border-b border-slate-100 flex justify-between items-center rounded-t-2xl bg-white/50"><div className="h-4 bg-slate-200 rounded w-24 animate-pulse"></div><div className="h-5 bg-slate-200 rounded-full w-8 animate-pulse"></div></div>
+        <div className="p-3 space-y-3 overflow-y-auto flex-1"><SkeletonCard /><SkeletonCard /><SkeletonCard /></div>
+      </div>
+    ))}
+  </div>
+)
+
+const SkeletonList = () => (
+  <main className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+    <div className="overflow-x-auto">
+      <table className="w-full text-left">
+        <thead><tr className="bg-slate-50 border-b border-slate-100">{Array.from({ length: 6 }).map((_, i) => (<th key={i} className="p-4"><div className="h-3 bg-slate-200 rounded w-20 animate-pulse"></div></th>))}</tr></thead>
+        <tbody className="divide-y divide-slate-50">{Array.from({ length: 6 }).map((_, i) => (<tr key={i}><td className="p-4"><div className="h-3 bg-slate-100 rounded w-20 animate-pulse"></div></td><td className="p-4"><div className="h-4 bg-slate-200 rounded w-48 animate-pulse"></div></td><td className="p-4"><div className="h-3 bg-slate-100 rounded w-24 animate-pulse"></div></td><td className="p-4"><div className="h-3 bg-slate-100 rounded w-32 animate-pulse"></div></td><td className="p-4"><div className="h-5 bg-slate-200 rounded-full w-16 animate-pulse"></div></td><td className="p-4 flex justify-end gap-2"><div className="h-6 bg-slate-100 rounded w-6 animate-pulse"></div><div className="h-6 bg-slate-200 rounded w-16 animate-pulse"></div></td></tr>))}</tbody>
+      </table>
+    </div>
+  </main>
+)
+
+const SkeletonCalendar = () => (
+  <main className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden animate-pulse">
+    <div className="grid grid-cols-7 border-b border-slate-100 bg-slate-50">{Array.from({ length: 7 }).map((_, i) => (<div key={i} className="p-3 flex justify-center"><div className="h-3 bg-slate-200 rounded w-8"></div></div>))}</div>
+    <div className="grid grid-cols-7 auto-rows-fr">{Array.from({ length: 35 }).map((_, i) => (<div key={i} className="min-h-[120px] p-2 border-b border-r border-slate-100 bg-white"><div className="h-4 bg-slate-100 rounded w-6 mb-2"></div>{i % 3 === 0 && <div className="h-6 bg-slate-50 rounded w-full mb-1"></div>}{i % 5 === 0 && <div className="h-6 bg-slate-100 rounded w-full"></div>}</div>))}</div>
+  </main>
+)
+
+// ==========================================
+// COMPONENTES ISOLADOS DO KANBAN
 // ==========================================
 
 const TaskCard = React.memo(({ r, mode, statuses, statusOrderMap, setStatus, excluirTarefa, abrirDrawer }: any) => {
@@ -70,14 +116,16 @@ const TaskCard = React.memo(({ r, mode, statuses, statusOrderMap, setStatus, exc
   const st = r.status || statuses[0] || 'Pendente'
   const bucket = getBucket(r.data_vencimento)
   const isDone = st.toLowerCase().includes('concl')
+  
+  const chk = r.checklists || []
+  const chkTotal = chk.length
+  const chkDone = chk.filter((c: ChecklistItem) => c.concluido).length
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
     e.dataTransfer.effectAllowed = 'move'
     e.dataTransfer.setData('text/plain', r.id)
     e.dataTransfer.setData('sourceStatus', st)
-    setTimeout(() => {
-      if (e.target instanceof HTMLElement) e.target.classList.add('opacity-40')
-    }, 0)
+    setTimeout(() => { if (e.target instanceof HTMLElement) e.target.classList.add('opacity-40') }, 0)
   }
 
   const handleDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
@@ -98,9 +146,11 @@ const TaskCard = React.memo(({ r, mode, statuses, statusOrderMap, setStatus, exc
         <div className="text-[11px] font-medium text-slate-500">
           {r.data_vencimento ? String(r.data_vencimento).slice(0, 10) : '—'} • {bucket}
         </div>
-        <span className={`px-2 py-0.5 rounded text-[10px] font-semibold tracking-wide uppercase ${badge(st)}`}>
-          {st}
-        </span>
+        <div className="flex gap-2 items-center">
+          {chkTotal > 0 && <span title="Progresso do Checklist" className="text-[10px] font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded flex items-center gap-1">☑ {chkDone}/{chkTotal}</span>}
+          {r.anexo_url && <span title="Tem anexo" className="text-[#0f88a8]">📎</span>}
+          <span className={`px-2 py-0.5 rounded text-[10px] font-semibold tracking-wide uppercase ${badge(st)}`}>{st}</span>
+        </div>
       </div>
 
       <div className="text-sm font-medium text-slate-800 leading-snug pointer-events-none">{atv.nome_atividade || '-'}</div>
@@ -113,31 +163,17 @@ const TaskCard = React.memo(({ r, mode, statuses, statusOrderMap, setStatus, exc
 
       <div className="mt-4 flex gap-2 items-center">
         {mode === 'timeboard' ? (
-          <>
-            {!isDone && (
-              <button onClick={() => setStatus(r.id, statuses[statuses.length - 1] || 'Concluído')} className="bg-[#2d6943]/10 hover:bg-[#2d6943]/20 text-[#2d6943] border border-[#2d6943]/20 font-medium py-1 px-3 rounded-lg transition-colors text-xs cursor-pointer">
-                Concluir
-              </button>
-            )}
-          </>
+          <>{!isDone && <button onClick={() => setStatus(r.id, statuses[statuses.length - 1] || 'Concluído')} className="bg-[#2d6943]/10 hover:bg-[#2d6943]/20 text-[#2d6943] border border-[#2d6943]/20 font-medium py-1 px-3 rounded-lg transition-colors text-xs cursor-pointer">Concluir</button>}</>
         ) : (
           <>
-            <button onClick={() => setStatus(r.id, prevSt)} disabled={st === statuses[0]} className="bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 py-1 px-2 rounded-lg transition-colors disabled:opacity-40 text-xs cursor-pointer">
-              ◀
-            </button>
-            <button onClick={() => setStatus(r.id, nextSt)} disabled={st === statuses[statuses.length - 1]} className="bg-[#0f88a8]/10 hover:bg-[#0f88a8]/20 border border-[#0f88a8]/20 text-[#0f88a8] py-1 px-2 rounded-lg transition-colors disabled:opacity-40 text-xs cursor-pointer">
-              ▶
-            </button>
+            <button onClick={() => setStatus(r.id, prevSt)} disabled={st === statuses[0]} className="bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 py-1 px-2 rounded-lg transition-colors disabled:opacity-40 text-xs cursor-pointer">◀</button>
+            <button onClick={() => setStatus(r.id, nextSt)} disabled={st === statuses[statuses.length - 1]} className="bg-[#0f88a8]/10 hover:bg-[#0f88a8]/20 border border-[#0f88a8]/20 text-[#0f88a8] py-1 px-2 rounded-lg transition-colors disabled:opacity-40 text-xs cursor-pointer">▶</button>
           </>
         )}
         
         <div className="ml-auto flex items-center gap-1">
-          <button onClick={() => excluirTarefa(r.id)} className="text-slate-300 hover:text-[#b43a3d] hover:bg-[#b43a3d]/10 py-1 px-2 rounded-lg transition-colors text-xs cursor-pointer" title="Excluir Tarefa">
-            🗑️
-          </button>
-          <button onClick={() => abrirDrawer(r)} className="bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 font-medium py-1 px-3 rounded-lg transition-colors text-xs cursor-pointer">
-            Detalhes
-          </button>
+          <button onClick={() => excluirTarefa(r.id)} className="text-slate-300 hover:text-[#b43a3d] hover:bg-[#b43a3d]/10 py-1 px-2 rounded-lg transition-colors text-xs cursor-pointer" title="Excluir Tarefa">🗑️</button>
+          <button onClick={() => abrirDrawer(r)} className="bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 font-medium py-1 px-3 rounded-lg transition-colors text-xs cursor-pointer">Detalhes</button>
         </div>
       </div>
     </div>
@@ -147,49 +183,23 @@ const TaskCard = React.memo(({ r, mode, statuses, statusOrderMap, setStatus, exc
 const BoardColumn = ({ status, tasks, statuses, statusOrderMap, setStatus, excluirTarefa, abrirDrawer }: any) => {
   const [isOver, setIsOver] = useState(false)
 
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    e.dataTransfer.dropEffect = 'move'
-    if (!isOver) setIsOver(true)
-  }
-
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    if (!e.currentTarget.contains(e.relatedTarget as Node)) setIsOver(false)
-  }
-
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; if (!isOver) setIsOver(true) }
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => { e.preventDefault(); if (!e.currentTarget.contains(e.relatedTarget as Node)) setIsOver(false) }
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    setIsOver(false)
+    e.preventDefault(); setIsOver(false)
     const taskId = e.dataTransfer.getData('text/plain')
     const sourceStatus = e.dataTransfer.getData('sourceStatus')
-
-    if (taskId && sourceStatus !== status) {
-      setStatus(taskId, status)
-    }
+    if (taskId && sourceStatus !== status) setStatus(taskId, status)
   }
 
   return (
-    <div 
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-      className={`rounded-2xl border flex-1 min-w-[320px] flex flex-col max-h-[75vh] transition-colors ${
-        isOver ? 'bg-[#0f88a8]/10 border-[#0f88a8]/50 border-dashed' : 'bg-slate-100/50 border-slate-200'
-      }`}
-    >
+    <div onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} className={`rounded-2xl border flex-1 min-w-[320px] flex flex-col max-h-[75vh] transition-colors ${isOver ? 'bg-[#0f88a8]/10 border-[#0f88a8]/50 border-dashed' : 'bg-slate-100/50 border-slate-200'}`}>
       <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-100/80 rounded-t-2xl">
         <span className={`font-medium ${isOver ? 'text-[#0f88a8]' : 'text-slate-700'}`}>{status}</span>
         <span className="bg-white text-slate-500 text-xs font-medium px-2 py-0.5 rounded-full border border-slate-200 shadow-sm">{tasks.length}</span>
       </div>
       <div className="p-3 space-y-3 overflow-y-auto flex-1 custom-scrollbar">
-        {tasks.map((r: any) => (
-          <TaskCard 
-            key={r.id} r={r} mode="default" statuses={statuses} 
-            statusOrderMap={statusOrderMap} setStatus={setStatus} 
-            excluirTarefa={excluirTarefa} abrirDrawer={abrirDrawer} 
-          />
-        ))}
+        {tasks.map((r: any) => <TaskCard key={r.id} r={r} mode="default" statuses={statuses} statusOrderMap={statusOrderMap} setStatus={setStatus} excluirTarefa={excluirTarefa} abrirDrawer={abrirDrawer} />)}
       </div>
     </div>
   )
@@ -207,14 +217,13 @@ export default function TarefasPage() {
 
   const [rows, setRows] = useState<Row[]>([])
   const [carregando, setCarregando] = useState(true)
-  const [mensagem, setMensagem] = useState('')
 
   const [filtroTexto, setFiltroTexto] = useState('')
   const [filtroStatus, setFiltroStatus] = useState<string>('Todos')
   const [filtroSetor, setFiltroSetor] = useState<string>('Todos')
   const [filtroResp, setFiltroResp] = useState<string>('Todos')
 
-  const [view, setView] = useState<'list' | 'board' | 'timeboard'>('timeboard')
+  const [view, setView] = useState<'list' | 'board' | 'timeboard' | 'calendar'>('timeboard')
 
   const [planners, setPlanners] = useState<string[]>([])
   const [plannerSel, setPlannerSel] = useState<string>('Todos')
@@ -222,22 +231,33 @@ export default function TarefasPage() {
   const [statuses, setStatuses] = useState<string[]>([])
   const [statusOrderMap, setStatusOrderMap] = useState<Record<string, number>>({})
 
-  // Drawer
+  // Drawer & Upload State
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [selected, setSelected] = useState<Row | null>(null)
   const [drawerStatus, setDrawerStatus] = useState<string>('')
   const [drawerObs, setDrawerObs] = useState<string>('')
   const [drawerVenc, setDrawerVenc] = useState<string>('')
+  const [drawerAnexo, setDrawerAnexo] = useState<string>('')
+  const [drawerChecklists, setDrawerChecklists] = useState<ChecklistItem[]>([])
+  const [novoItemChecklist, setNovoItemChecklist] = useState('')
   const [savingDrawer, setSavingDrawer] = useState(false)
+  const [uploadingAnexo, setUploadingAnexo] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Comments
+  // Comments & Mentions
   const [comentarios, setComentarios] = useState<any[]>([])
   const [comentNovo, setComentNovo] = useState('')
   const [userId, setUserId] = useState<string>('')
   const [userName, setUserName] = useState<string>('')
+  const [userEmail, setUserEmail] = useState<string>('') 
   const [loadingComents, setLoadingComents] = useState(false)
+  
+  // 💡 Estados das Menções (@)
+  const [mentionOpen, setMentionOpen] = useState(false)
+  const [mentionFilter, setMentionFilter] = useState('')
+  const comentInputRef = useRef<HTMLInputElement>(null)
 
-  // Lookups para Ad Hoc
+  // Lookups
   const [setoresDb, setSetoresDb] = useState<Lookup[]>([])
   const [respsDb, setRespsDb] = useState<Lookup[]>([])
 
@@ -264,6 +284,7 @@ export default function TarefasPage() {
       return
     }
     setUserId(u.id)
+    setUserEmail(u.email || '')
     const { data: prof } = await supabase.from('profiles').select('full_name').eq('id', u.id).maybeSingle()
     setUserName(prof?.full_name?.trim() || u.email || 'Usuário')
   }
@@ -305,10 +326,9 @@ export default function TarefasPage() {
   const carregar = async () => {
     if (!plannerSel) return
     setCarregando(true)
-    setMensagem('')
     try {
       const { data, error } = await supabase.from('tarefas_diarias').select(`
-          id, data_vencimento, status, data_conclusao, observacoes,
+          id, data_vencimento, status, data_conclusao, observacoes, anexo_url, checklists,
           atividades!tarefas_diarias_atividade_id_fkey (
             task_id, nome_atividade, planner_name, frequencia, prioridade_descricao, responsavel_id,
             setores!atividades_setor_id_fkey (nome), responsaveis!atividades_responsavel_id_fkey (nome, email)
@@ -319,7 +339,7 @@ export default function TarefasPage() {
       const filtradoPlanner = plannerSel === 'Todos' ? data : (data || []).filter((r: any) => r?.atividades?.planner_name === plannerSel)
       setRows(filtradoPlanner as any)
     } catch (e: any) {
-      setMensagem('❌ Erro ao carregar tarefas.')
+      toast.error('Erro ao carregar tarefas da base de dados.')
     } finally {
       setCarregando(false)
     }
@@ -349,12 +369,62 @@ export default function TarefasPage() {
     } catch (error) {}
   }
 
+  const handleUploadAnexo = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      const file = event.target.files?.[0]
+      if (!file) return
+
+      setUploadingAnexo(true)
+      const toastId = toast.loading('A carregar ficheiro...')
+
+      const fileExt = file.name.split('.').pop()
+      const fileName = `anexo-${Date.now()}-${Math.floor(Math.random() * 1000)}.${fileExt}`
+
+      const { error: uploadError } = await supabase.storage.from('evidencias').upload(fileName, file)
+      if (uploadError) throw uploadError
+
+      const { data: publicUrlData } = supabase.storage.from('evidencias').getPublicUrl(fileName)
+      
+      setDrawerAnexo(publicUrlData.publicUrl)
+      toast.success('Ficheiro anexado com sucesso! Lembre-se de Guardar a tarefa.', { id: toastId })
+
+    } catch (error: any) {
+      toast.error('Erro ao carregar o ficheiro. O bucket "evidencias" foi criado?')
+    } finally {
+      setUploadingAnexo(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
   const carregarComentarios = async (tarefaId: string) => {
     setLoadingComents(true)
     try {
       const { data } = await supabase.from('tarefa_comentarios').select(`id, tarefa_id, autor_id, autor, mensagem, created_at`).eq('tarefa_id', tarefaId).order('created_at', { ascending: false })
       setComentarios(data || [])
     } finally { setLoadingComents(false) }
+  }
+
+  // 💡 LÓGICA DE DIGITAÇÃO DE COMENTÁRIO (DETETOR DE @)
+  const handleComentInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value
+    setComentNovo(val)
+    
+    // Expressão regular que procura um @ seguido de letras/espaços no final do texto
+    const match = val.match(/(?:^|\s)@([a-zA-ZÀ-ÿ\s]*)$/)
+    if (match) {
+      setMentionOpen(true)
+      setMentionFilter(match[1].trim())
+    } else {
+      setMentionOpen(false)
+    }
+  }
+
+  // 💡 AÇÃO DE CLICAR NUM NOME DA LISTA FLUTUANTE
+  const handleSelectMention = (nome: string) => {
+    const replaced = comentNovo.replace(/(?:^|\s)@([a-zA-ZÀ-ÿ\s]*)$/, ` @${nome} `)
+    setComentNovo(replaced)
+    setMentionOpen(false)
+    comentInputRef.current?.focus()
   }
 
   const enviarComentario = async () => {
@@ -365,16 +435,46 @@ export default function TarefasPage() {
 
     const payload = { tarefa_id: selected.id, autor_id: userId, autor: userName || null, mensagem: msg }
     const { data, error } = await supabase.from('tarefa_comentarios').insert([payload]).select().single()
-    if (error) { setMensagem('❌ Erro ao salvar comentário.'); return }
+    if (error) { 
+      toast.error('Erro ao guardar o comentário.')
+      return 
+    }
 
     setComentarios(prev => [data, ...prev])
     setComentNovo('')
+    toast.success('Comentário enviado!')
+
+    const task = rows.find(r => r.id === selected.id)
+
+    // 1. Notifica o dono da tarefa (Se não for ele a comentar)
+    const taskOwnerEmail = task?.atividades?.responsaveis?.email
+    if (taskOwnerEmail && taskOwnerEmail !== userEmail) {
+      await supabase.from('notificacoes').insert({
+        user_email: taskOwnerEmail,
+        titulo: 'Novo Comentário',
+        mensagem: `${userName} comentou na sua tarefa: "${task?.atividades?.nome_atividade}"`
+      })
+    }
+
+    // 💡 2. VERIFICA AS MENÇÕES INTELIGENTES NO TEXTO E NOTIFICA!
+    const usersMentioned = respsDb.filter(r => msg.includes(`@${r.nome}`))
+    for (const u of usersMentioned) {
+      if (u.email !== userEmail && u.email !== taskOwnerEmail) {
+        await supabase.from('notificacoes').insert({
+          user_email: u.email,
+          titulo: 'Mencionaram-no!',
+          mensagem: `${userName} mencionou-o em "${task?.atividades?.nome_atividade}": "${msg}"`
+        })
+      }
+    }
+
     sendEmailNotification(selected.id, 'comentada', `Novo comentário de ${userName}: "${msg}"`)
   }
 
   const excluirTarefa = async (tarefaId: string) => {
     if (!window.confirm('⚠️ Tem certeza que deseja excluir esta tarefa?\n\nEssa ação apagará a tarefa e seus comentários. Não pode ser desfeita.')) return
-    setMensagem('Excluindo tarefa...')
+    
+    const toastId = toast.loading('A excluir tarefa...')
     try {
       const tarefa = rows.find(r => r.id === tarefaId)
       await supabase.from('tarefa_comentarios').delete().eq('tarefa_id', tarefaId)
@@ -387,10 +487,10 @@ export default function TarefasPage() {
 
       setRows(prev => prev.filter(r => r.id !== tarefaId))
       if (selected?.id === tarefaId) fecharDrawer()
-      setMensagem('✅ Tarefa excluída!')
+      toast.success('Tarefa excluída permanentemente!', { id: toastId })
     } catch (err: any) {
-      setMensagem('❌ Erro ao excluir a tarefa.')
-    } finally { setTimeout(() => setMensagem(''), 3000) }
+      toast.error('Erro ao excluir a tarefa.', { id: toastId })
+    }
   }
 
   useEffect(() => { carregarUsuario(); carregarPlanners(); carregarLookups() }, [])
@@ -398,39 +498,107 @@ export default function TarefasPage() {
   useEffect(() => { if (!plannerSel) return; carregar() }, [mesAlvo, anoAlvo])
 
   const setStatus = async (id: string, status: string) => {
+    const toastId = toast.loading('A atualizar status...')
     setRows(prev => prev.map(r => (r.id === id ? { ...r, status } : r)))
-    setMensagem('A atualizar...')
+    
     const patch: any = { status, data_conclusao: status.toLowerCase().includes('concl') ? new Date().toISOString() : null }
     const { error } = await supabase.from('tarefas_diarias').update(patch).eq('id', id)
-    if (error) { setMensagem('❌ Erro ao atualizar.'); carregar(); return }
+    
+    if (error) { 
+      toast.error('Erro ao atualizar o status.', { id: toastId })
+      carregar() 
+      return 
+    }
+    
     if (selected?.id === id) { setSelected({ ...selected, ...patch }); setDrawerStatus(patch.status) }
-    setMensagem('✅ Sucesso!')
-    setTimeout(() => setMensagem(''), 1000)
+    
+    toast.success('Status atualizado!', { id: toastId })
     sendEmailNotification(id, `movida para o status "${status}"`, '')
   }
 
   const abrirDrawer = (r: Row) => {
-    setSelected(r); setDrawerStatus(r.status || statuses[0] || 'Pendente'); setDrawerObs(r.observacoes || ''); setDrawerVenc(r.data_vencimento ? String(r.data_vencimento).slice(0, 10) : '')
-    setDrawerOpen(true); setComentarios([]); setComentNovo(''); carregarComentarios(r.id)
+    setSelected(r)
+    setDrawerStatus(r.status || statuses[0] || 'Pendente')
+    setDrawerObs(r.observacoes || '')
+    setDrawerVenc(r.data_vencimento ? String(r.data_vencimento).slice(0, 10) : '')
+    setDrawerAnexo(r.anexo_url || '') 
+    setDrawerChecklists(r.checklists || []) 
+    
+    setDrawerOpen(true)
+    setComentarios([])
+    setComentNovo('')
+    setMentionOpen(false)
+    setNovoItemChecklist('')
+    carregarComentarios(r.id)
   }
 
-  const fecharDrawer = () => { setDrawerOpen(false); setSelected(null); setDrawerStatus(''); setDrawerObs(''); setDrawerVenc(''); setSavingDrawer(false); setComentarios([]); setComentNovo('') }
+  const fecharDrawer = () => { 
+    setDrawerOpen(false)
+    setSelected(null)
+    setDrawerStatus('')
+    setDrawerObs('')
+    setDrawerVenc('')
+    setDrawerAnexo('')
+    setDrawerChecklists([])
+    setNovoItemChecklist('')
+    setSavingDrawer(false)
+    setComentarios([])
+    setComentNovo('')
+    setMentionOpen(false)
+  }
+
+  const handleAddChecklist = () => {
+    if (!novoItemChecklist.trim()) return
+    const newItem: ChecklistItem = { id: crypto.randomUUID(), texto: novoItemChecklist, concluido: false }
+    setDrawerChecklists([...drawerChecklists, newItem])
+    setNovoItemChecklist('')
+  }
+
+  const handleToggleChecklist = (id: string) => {
+    setDrawerChecklists(drawerChecklists.map(c => c.id === id ? { ...c, concluido: !c.concluido } : c))
+  }
+
+  const handleRemoveChecklist = (id: string) => {
+    setDrawerChecklists(drawerChecklists.filter(c => c.id !== id))
+  }
 
   const salvarDrawer = async () => {
     if (!selected) return
     setSavingDrawer(true)
-    const patch: any = { status: drawerStatus, observacoes: drawerObs || null, data_vencimento: drawerVenc || null, data_conclusao: drawerStatus.toLowerCase().includes('concl') ? (selected.data_conclusao || new Date().toISOString()) : null }
+    const toastId = toast.loading('A guardar alterações...')
+
+    const patch: any = { 
+      status: drawerStatus, 
+      observacoes: drawerObs || null, 
+      data_vencimento: drawerVenc || null, 
+      anexo_url: drawerAnexo || null, 
+      checklists: drawerChecklists, 
+      data_conclusao: drawerStatus.toLowerCase().includes('concl') ? (selected.data_conclusao || new Date().toISOString()) : null 
+    }
+
     const { error } = await supabase.from('tarefas_diarias').update(patch).eq('id', selected.id)
+    
     if (!error) {
       setRows(prev => prev.map(r => (r.id === selected.id ? { ...r, ...patch } : r)))
       setSelected(prev => (prev ? { ...prev, ...patch } : prev))
+      toast.success('Detalhes guardados!', { id: toastId })
+      
+      let emailObs = drawerObs || ''
+      if (drawerAnexo) emailObs += `<br/><br/>📎 <strong>Anexo adicionado:</strong> <a href="${drawerAnexo}">Ver Ficheiro</a>`
+      sendEmailNotification(selected.id, `atualizada com novas observações/anexos`, emailObs)
+
+    } else {
+      toast.error('Erro ao guardar os detalhes.', { id: toastId })
     }
+    
     setSavingDrawer(false); fecharDrawer()
-    sendEmailNotification(selected.id, `atualizada com novas observações e/ou status`, drawerObs || '')
   }
 
   const concluirNoDrawer = async () => {
     if (!selected) return
+    if (drawerChecklists.length > 0 && drawerChecklists.some(c => !c.concluido)) {
+      if(!window.confirm('Existem itens não concluídos no checklist! Tem a certeza que deseja concluir a tarefa matriz assim mesmo?')) return
+    }
     await setStatus(selected.id, statuses[statuses.length - 1] || 'Concluído')
     fecharDrawer()
   }
@@ -438,6 +606,8 @@ export default function TarefasPage() {
   const criarAdHoc = async () => {
     const nome = adhocNome.trim(); if (!nome || !adhocVenc) return
     setSavingAdhoc(true)
+    const toastId = toast.loading('A criar tarefa e a notificar...')
+
     try {
       const taskId = crypto.randomUUID()
       const payloadAtv: any = { 
@@ -448,7 +618,7 @@ export default function TarefasPage() {
         responsavel_id: adhocRespId || null, 
         frequencia: 'Ad Hoc', 
         status: 'Ativo',
-        prioridade_descricao: adhocPrioridade // NOVO CAMPO
+        prioridade_descricao: adhocPrioridade
       }
       const { data: atv, error: errAtv } = await supabase.from('atividades').insert([payloadAtv]).select('task_id').single()
       if (errAtv) throw errAtv
@@ -457,7 +627,7 @@ export default function TarefasPage() {
         atividade_id: atv.task_id, 
         data_vencimento: adhocVenc, 
         status: statuses[0] || 'Pendente',
-        observacoes: adhocObs || null // NOVO CAMPO
+        observacoes: adhocObs || null 
       }
       const { error: errExec } = await supabase.from('tarefas_diarias').insert([payloadExec])
       if (errExec) throw errExec
@@ -468,6 +638,13 @@ export default function TarefasPage() {
       if (novaTask) {
         const userResp = respsDb.find(r => r.id === adhocRespId)
         if (userResp?.email) {
+          
+          await supabase.from('notificacoes').insert({
+            user_email: userResp.email,
+            titulo: 'Nova Tarefa Ad Hoc',
+            mensagem: `${userName} delegou a você: "${nome}" para o dia ${adhocVenc.slice(8,10)}/${adhocVenc.slice(5,7)}`
+          })
+
           await fetch('/api/notify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -484,7 +661,12 @@ export default function TarefasPage() {
       }
 
       await carregarPlanners(); await carregar()
-    } finally { setSavingAdhoc(false) }
+      toast.success('Tarefa Ad Hoc criada!', { id: toastId })
+    } catch (error) {
+      toast.error('Erro ao criar tarefa.', { id: toastId })
+    } finally { 
+      setSavingAdhoc(false) 
+    }
   }
 
   const setorOptions = useMemo(() => Array.from(new Set(rows.map(r => r.atividades?.setores?.nome).filter(Boolean))).sort(), [rows])
@@ -526,9 +708,38 @@ export default function TarefasPage() {
     return buckets
   }, [filtradas])
 
+  const calendarData = useMemo(() => {
+    const dataAlvo = new Date(anoAlvo, mesAlvo, 1)
+    const diasNoMes = new Date(anoAlvo, mesAlvo + 1, 0).getDate()
+    const primeiroDiaSemana = dataAlvo.getDay() 
+    const diasVaziosInicio = Array.from({ length: primeiroDiaSemana }).map((_, i) => `empty-start-${i}`)
+    
+    const diasDoMes = Array.from({ length: diasNoMes }).map((_, i) => {
+      const dia = i + 1
+      const dataString = `${anoAlvo}-${String(mesAlvo + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`
+      const tarefasDoDia = filtradas.filter(t => t.data_vencimento?.startsWith(dataString))
+      return { dia, dataString, tarefas: tarefasDoDia, isHoje: dataString === new Date().toISOString().slice(0, 10) }
+    })
+
+    const ultimoDiaSemana = new Date(anoAlvo, mesAlvo + 1, 0).getDay()
+    const paddingFim = 6 - ultimoDiaSemana
+    const diasVaziosFim = Array.from({ length: paddingFim }).map((_, i) => `empty-end-${i}`)
+
+    return { diasVaziosInicio, diasDoMes, diasVaziosFim }
+  }, [anoAlvo, mesAlvo, filtradas])
+
   return (
-    <div className="min-h-screen bg-slate-50 p-8 font-sans">
+    <div className="min-h-screen bg-slate-50 p-8 font-sans relative">
       
+      <Toaster 
+        position="bottom-right" 
+        toastOptions={{
+          style: { background: '#063955', color: '#fff', fontSize: '14px', borderRadius: '12px', padding: '12px 20px' },
+          success: { iconTheme: { primary: '#2d6943', secondary: '#fff' } },
+          error: { iconTheme: { primary: '#b43a3d', secondary: '#fff' } },
+        }}
+      />
+
       <header className="flex flex-col xl:flex-row xl:justify-between xl:items-center gap-4 mb-6 bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">Painel de Execução</h1>
@@ -536,8 +747,6 @@ export default function TarefasPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          {mensagem && <span className="text-sm font-medium text-[#0f88a8] bg-[#0f88a8]/10 px-3 py-1 rounded-lg animate-pulse">{mensagem}</span>}
-
           <button onClick={() => setAdhocOpen(true)} className="bg-[#0f88a8] hover:bg-[#0c708b] text-white text-sm font-medium py-2 px-4 rounded-xl transition-all shadow-sm">
             + Nova Ad Hoc
           </button>
@@ -546,6 +755,7 @@ export default function TarefasPage() {
             <button onClick={() => setView('list')} className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${view === 'list' ? 'bg-white shadow-sm text-[#063955]' : 'text-slate-500'}`}>Lista</button>
             <button onClick={() => setView('board')} className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${view === 'board' ? 'bg-white shadow-sm text-[#063955]' : 'text-slate-500'}`}>Status</button>
             <button onClick={() => setView('timeboard')} className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${view === 'timeboard' ? 'bg-white shadow-sm text-[#063955]' : 'text-slate-500'}`}>Dias</button>
+            <button onClick={() => setView('calendar')} className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${view === 'calendar' ? 'bg-white shadow-sm text-[#063955]' : 'text-slate-500'}`}>Mês</button>
           </div>
 
           <select className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-[#0f88a8]" value={plannerSel} onChange={(e) => setPlannerSel(e.target.value)}>
@@ -563,13 +773,32 @@ export default function TarefasPage() {
         </div>
       </header>
 
+      {/* KPIS COM SKELETON */}
       <div className="grid grid-cols-1 md:grid-cols-6 gap-3 mb-6">
-        <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm"><div className="text-xs font-medium text-slate-500 uppercase tracking-wide">Total</div><div className="text-2xl font-light text-slate-900 mt-1">{dashboard.total}</div></div>
-        <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm"><div className="text-xs font-medium text-slate-500 uppercase tracking-wide">Atrasadas</div><div className="text-2xl font-light text-[#b43a3d] mt-1">{dashboard.overdue}</div></div>
-        <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm"><div className="text-xs font-medium text-slate-500 uppercase tracking-wide">Hoje</div><div className="text-2xl font-light text-[#0f88a8] mt-1">{dashboard.dueToday}</div></div>
-        <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm"><div className="text-xs font-medium text-slate-500 uppercase tracking-wide">Amanhã</div><div className="text-2xl font-light text-slate-900 mt-1">{dashboard.dueTomorrow}</div></div>
-        <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm"><div className="text-xs font-medium text-slate-500 uppercase tracking-wide">Próx 7 dias</div><div className="text-2xl font-light text-slate-900 mt-1">{dashboard.next7}</div></div>
-        <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm"><div className="text-xs font-medium text-slate-500 uppercase tracking-wide">Concluídas</div><div className="text-2xl font-light text-[#2d6943] mt-1">{dashboard.done} <span className="text-sm font-medium text-slate-400">({dashboard.pct}%)</span></div></div>
+        <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm">
+          <div className="text-xs font-medium text-slate-500 uppercase tracking-wide">Total</div>
+          {carregando ? <div className="h-8 w-16 bg-slate-200 rounded-lg animate-pulse mt-1"></div> : <div className="text-2xl font-light text-slate-900 mt-1">{dashboard.total}</div>}
+        </div>
+        <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm">
+          <div className="text-xs font-medium text-slate-500 uppercase tracking-wide">Atrasadas</div>
+          {carregando ? <div className="h-8 w-16 bg-slate-200 rounded-lg animate-pulse mt-1"></div> : <div className="text-2xl font-light text-[#b43a3d] mt-1">{dashboard.overdue}</div>}
+        </div>
+        <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm">
+          <div className="text-xs font-medium text-slate-500 uppercase tracking-wide">Hoje</div>
+          {carregando ? <div className="h-8 w-16 bg-slate-200 rounded-lg animate-pulse mt-1"></div> : <div className="text-2xl font-light text-[#0f88a8] mt-1">{dashboard.dueToday}</div>}
+        </div>
+        <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm">
+          <div className="text-xs font-medium text-slate-500 uppercase tracking-wide">Amanhã</div>
+          {carregando ? <div className="h-8 w-16 bg-slate-200 rounded-lg animate-pulse mt-1"></div> : <div className="text-2xl font-light text-slate-900 mt-1">{dashboard.dueTomorrow}</div>}
+        </div>
+        <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm">
+          <div className="text-xs font-medium text-slate-500 uppercase tracking-wide">Próx 7 dias</div>
+          {carregando ? <div className="h-8 w-16 bg-slate-200 rounded-lg animate-pulse mt-1"></div> : <div className="text-2xl font-light text-slate-900 mt-1">{dashboard.next7}</div>}
+        </div>
+        <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm">
+          <div className="text-xs font-medium text-slate-500 uppercase tracking-wide">Concluídas</div>
+          {carregando ? <div className="h-8 w-24 bg-slate-200 rounded-lg animate-pulse mt-1"></div> : <div className="text-2xl font-light text-[#2d6943] mt-1">{dashboard.done} <span className="text-sm font-medium text-slate-400">({dashboard.pct}%)</span></div>}
+        </div>
       </div>
 
       <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mb-6 flex flex-wrap gap-3 items-center">
@@ -581,59 +810,115 @@ export default function TarefasPage() {
         <span className="ml-auto text-sm font-medium text-slate-400">{filtradas.length} tarefas</span>
       </div>
 
-      {view === 'list' && (
-        <main className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 uppercase text-xs">
-                  <th className="p-4 font-medium">Vencimento</th><th className="p-4 font-medium">Atividade</th><th className="p-4 font-medium">Setor</th><th className="p-4 font-medium">Responsável</th><th className="p-4 font-medium">Status</th><th className="p-4 font-medium text-right">Ações</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {filtradas.map((r) => (
-                  <tr key={r.id} className="hover:bg-slate-50 transition-colors text-sm">
-                    <td className="p-4 text-slate-600">{r.data_vencimento ? String(r.data_vencimento).slice(0, 10) : '—'}</td>
-                    <td className="p-4 font-medium text-slate-800">{r.atividades?.nome_atividade || '-'}</td>
-                    <td className="p-4 text-slate-500">{r.atividades?.setores?.nome || '-'}</td>
-                    <td className="p-4 text-slate-500">{r.atividades?.responsaveis?.nome || '-'}</td>
-                    <td className="p-4"><span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${badge(r.status)}`}>{r.status}</span></td>
-                    <td className="p-4 text-right flex justify-end items-center gap-3">
-                      <button onClick={() => excluirTarefa(r.id)} className="text-slate-300 hover:text-[#b43a3d] transition-colors" title="Excluir">🗑️</button>
-                      <button onClick={() => abrirDrawer(r)} className="text-[#0f88a8] hover:text-[#063955] font-medium">Detalhes</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </main>
-      )}
-
-      {view === 'board' && (
-        <div className="flex gap-4 overflow-x-auto pb-4" style={{ gridTemplateColumns: `repeat(${statuses.length}, minmax(300px, 1fr))` }}>
-          {statuses.map((s) => (
-            <BoardColumn key={s} status={s} tasks={boardStatus[s] || []} statuses={statuses} statusOrderMap={statusOrderMap} setStatus={setStatus} excluirTarefa={excluirTarefa} abrirDrawer={abrirDrawer} />
-          ))}
-        </div>
-      )}
-
-      {view === 'timeboard' && (
-        <div className="flex gap-4 overflow-x-auto pb-4">
-          {timeOrder.map((b) => (
-            <div key={b} className={`rounded-2xl border flex-1 min-w-[320px] flex flex-col max-h-[75vh] ${b === 'Atrasadas' ? 'bg-[#b43a3d]/10 border-[#b43a3d]/20' : 'bg-slate-100/50 border-slate-200'}`}>
-              <div className={`p-4 border-b flex justify-between items-center rounded-t-2xl ${b === 'Atrasadas' ? 'bg-[#b43a3d]/20 border-[#b43a3d]/30 text-[#b43a3d]' : 'bg-slate-100 border-slate-200 text-slate-700'}`}>
-                <span className="font-medium">{b}</span><span className="bg-white text-xs font-medium px-2 py-0.5 rounded-full shadow-sm">{(timeboard[b] || []).length}</span>
+      {/* RENDERIZAÇÃO DAS VISTAS */}
+      {carregando ? (
+        view === 'list' ? <SkeletonList /> : (view === 'calendar' ? <SkeletonCalendar /> : <SkeletonBoard columns={view === 'board' ? (statuses.length || 4) : 5} />)
+      ) : (
+        <>
+          {view === 'list' && (
+            <main className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 uppercase text-xs">
+                      <th className="p-4 font-medium">Vencimento</th><th className="p-4 font-medium">Atividade</th><th className="p-4 font-medium">Setor</th><th className="p-4 font-medium">Responsável</th><th className="p-4 font-medium">Status</th><th className="p-4 font-medium text-right">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {filtradas.map((r) => (
+                      <tr key={r.id} className="hover:bg-slate-50 transition-colors text-sm">
+                        <td className="p-4 text-slate-600">{r.data_vencimento ? String(r.data_vencimento).slice(0, 10) : '—'}</td>
+                        <td className="p-4 font-medium text-slate-800 flex items-center gap-2">
+                          {r.anexo_url && <span title="Tem anexo" className="text-[#0f88a8]">📎</span>}
+                          {r.atividades?.nome_atividade || '-'}
+                        </td>
+                        <td className="p-4 text-slate-500">{r.atividades?.setores?.nome || '-'}</td>
+                        <td className="p-4 text-slate-500">{r.atividades?.responsaveis?.nome || '-'}</td>
+                        <td className="p-4"><span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${badge(r.status)}`}>{r.status}</span></td>
+                        <td className="p-4 text-right flex justify-end items-center gap-3">
+                          <button onClick={() => excluirTarefa(r.id)} className="text-slate-300 hover:text-[#b43a3d] transition-colors" title="Excluir">🗑️</button>
+                          <button onClick={() => abrirDrawer(r)} className="text-[#0f88a8] hover:text-[#063955] font-medium">Detalhes</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-              <div className="p-3 space-y-3 overflow-y-auto flex-1 custom-scrollbar">
-                {(timeboard[b] || []).map((r) => <TaskCard key={r.id} r={r} mode="timeboard" statuses={statuses} statusOrderMap={statusOrderMap} setStatus={setStatus} excluirTarefa={excluirTarefa} abrirDrawer={abrirDrawer} />)}
-              </div>
+            </main>
+          )}
+
+          {view === 'board' && (
+            <div className="flex gap-4 overflow-x-auto pb-4" style={{ gridTemplateColumns: `repeat(${statuses.length}, minmax(300px, 1fr))` }}>
+              {statuses.map((s) => (
+                <BoardColumn key={s} status={s} tasks={boardStatus[s] || []} statuses={statuses} statusOrderMap={statusOrderMap} setStatus={setStatus} excluirTarefa={excluirTarefa} abrirDrawer={abrirDrawer} />
+              ))}
             </div>
-          ))}
-        </div>
+          )}
+
+          {view === 'timeboard' && (
+            <div className="flex gap-4 overflow-x-auto pb-4">
+              {timeOrder.map((b) => (
+                <div key={b} className={`rounded-2xl border flex-1 min-w-[320px] flex flex-col max-h-[75vh] ${b === 'Atrasadas' ? 'bg-[#b43a3d]/10 border-[#b43a3d]/20' : 'bg-slate-100/50 border-slate-200'}`}>
+                  <div className={`p-4 border-b flex justify-between items-center rounded-t-2xl ${b === 'Atrasadas' ? 'bg-[#b43a3d]/20 border-[#b43a3d]/30 text-[#b43a3d]' : 'bg-slate-100 border-slate-200 text-slate-700'}`}>
+                    <span className="font-medium">{b}</span><span className="bg-white text-xs font-medium px-2 py-0.5 rounded-full shadow-sm">{(timeboard[b] || []).length}</span>
+                  </div>
+                  <div className="p-3 space-y-3 overflow-y-auto flex-1 custom-scrollbar">
+                    {(timeboard[b] || []).map((r) => <TaskCard key={r.id} r={r} mode="timeboard" statuses={statuses} statusOrderMap={statusOrderMap} setStatus={setStatus} excluirTarefa={excluirTarefa} abrirDrawer={abrirDrawer} />)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {view === 'calendar' && (
+            <main className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+              <div className="grid grid-cols-7 border-b border-slate-100 bg-[#063955]">
+                {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(d => (
+                  <div key={d} className="p-3 text-center text-xs font-bold text-white uppercase tracking-wider">{d}</div>
+                ))}
+              </div>
+              <div className="grid grid-cols-7 auto-rows-fr bg-slate-100 gap-[1px]">
+                {calendarData.diasVaziosInicio.map(id => (
+                  <div key={id} className="min-h-[140px] bg-slate-50/50"></div>
+                ))}
+                
+                {calendarData.diasDoMes.map(diaInfo => (
+                  <div key={diaInfo.dia} className={`min-h-[140px] p-2 bg-white flex flex-col transition-colors hover:bg-slate-50 ${diaInfo.isHoje ? 'ring-2 ring-inset ring-[#0f88a8] bg-[#0f88a8]/5' : ''}`}>
+                    <div className="flex justify-between items-start mb-2">
+                      <span className={`text-sm font-semibold w-7 h-7 flex items-center justify-center rounded-full ${diaInfo.isHoje ? 'bg-[#0f88a8] text-white shadow-sm' : 'text-slate-600'}`}>
+                        {diaInfo.dia}
+                      </span>
+                      {diaInfo.tarefas.length > 0 && (
+                        <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-1.5 rounded">{diaInfo.tarefas.length}</span>
+                      )}
+                    </div>
+                    
+                    <div className="flex-1 space-y-1.5 overflow-y-auto max-h-[100px] custom-scrollbar pr-1">
+                      {diaInfo.tarefas.map(t => (
+                        <div 
+                          key={t.id} 
+                          onClick={() => abrirDrawer(t)}
+                          className={`text-[10px] leading-tight p-1.5 rounded cursor-pointer font-medium border border-black/5 hover:shadow-md transition-all truncate ${badge(t.status)}`}
+                          title={`${t.atividades?.nome_atividade} (${t.status})`}
+                        >
+                          {t.anexo_url && '📎 '}
+                          {t.atividades?.nome_atividade || 'Tarefa'}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+
+                {calendarData.diasVaziosFim.map(id => (
+                  <div key={id} className="min-h-[140px] bg-slate-50/50"></div>
+                ))}
+              </div>
+            </main>
+          )}
+        </>
       )}
 
-      {/* MODAL AD HOC ATUALIZADO */}
+      {/* MODAL AD HOC */}
       {adhocOpen && (
         <>
           <div className="fixed inset-0 bg-[#063955]/20 backdrop-blur-sm z-40 transition-all" onClick={() => setAdhocOpen(false)} />
@@ -683,26 +968,20 @@ export default function TarefasPage() {
 
               <div>
                 <label className="text-xs text-slate-500 font-medium block mb-1">Observações / Detalhes</label>
-                <textarea 
-                  value={adhocObs} 
-                  onChange={(e) => setAdhocObs(e.target.value)} 
-                  rows={4} 
-                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#0f88a8] resize-none" 
-                  placeholder="Forneça instruções, links ou contexto adicional para quem vai executar a tarefa..." 
-                />
+                <textarea value={adhocObs} onChange={(e) => setAdhocObs(e.target.value)} rows={4} className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#0f88a8] resize-none" placeholder="Forneça instruções, links ou contexto adicional para quem vai executar a tarefa..." />
               </div>
             </div>
 
             <div className="p-4 border-t border-slate-100 flex gap-2 bg-slate-50">
               <button onClick={criarAdHoc} disabled={savingAdhoc} className="bg-[#0f88a8] text-white px-5 py-3 w-full rounded-xl text-sm font-semibold hover:bg-[#0c708b] transition-colors shadow-sm disabled:opacity-50">
-                {savingAdhoc ? 'Criando e enviando notificação...' : 'Criar Tarefa'}
+                {savingAdhoc ? 'A processar...' : 'Criar Tarefa'}
               </button>
             </div>
           </aside>
         </>
       )}
 
-      {/* DRAWER PADRÃO */}
+      {/* DRAWER COM DETALHES E MENÇÕES */}
       {drawerOpen && selected && (
         <>
           <div className="fixed inset-0 bg-[#063955]/20 backdrop-blur-sm z-40 transition-all" onClick={fecharDrawer} />
@@ -711,21 +990,115 @@ export default function TarefasPage() {
               <div><span className="text-xs text-[#0f88a8] font-semibold tracking-wide uppercase">Detalhes da Tarefa</span><h2 className="text-xl text-[#063955] font-semibold mt-1">{selected.atividades?.nome_atividade}</h2><div className="text-xs text-slate-500 mt-1">{selected.atividades?.setores?.nome || '—'} • {selected.atividades?.responsaveis?.nome || '—'}</div></div>
               <button onClick={fecharDrawer} className="text-slate-400 hover:text-[#063955] p-2">✕</button>
             </div>
-            <div className="p-6 flex-1 overflow-y-auto space-y-5">
-              <div className="grid grid-cols-2 gap-4">
-                <div><label className="text-xs text-slate-500 font-medium block mb-1">Status</label><select value={drawerStatus} onChange={e => setDrawerStatus(e.target.value)} className="w-full border border-slate-200 rounded-xl p-2.5 text-sm outline-none focus:border-[#0f88a8]">{statuses.map(s => <option key={s} value={s}>{s}</option>)}</select></div>
-                <div><label className="text-xs text-slate-500 font-medium block mb-1">Vencimento</label><input type="date" value={drawerVenc} onChange={e => setDrawerVenc(e.target.value)} className="w-full border border-slate-200 rounded-xl p-2.5 text-sm outline-none focus:border-[#0f88a8]"/></div>
-              </div>
-              <div><label className="text-xs text-slate-500 font-medium block mb-1">Observações (Links, Evidências)</label><textarea value={drawerObs} onChange={e => setDrawerObs(e.target.value)} rows={5} className="w-full border border-slate-200 rounded-xl p-3 text-sm outline-none focus:border-[#0f88a8]" /></div>
-              <div className="border-t border-slate-100 pt-5">
-                <label className="text-xs text-slate-500 font-medium block mb-2">Comentários</label>
-                <div className="flex gap-2"><input value={comentNovo} onChange={e => setComentNovo(e.target.value)} onKeyDown={e => e.key === 'Enter' && enviarComentario()} placeholder="Escreva um comentário..." className="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-[#0f88a8]"/><button onClick={enviarComentario} className="bg-[#0f88a8] text-white px-4 rounded-xl text-sm font-medium hover:bg-[#0c708b] transition-colors">Enviar</button></div>
-                <div className="mt-4 space-y-2">{comentarios.map(c => (<div key={c.id} className="bg-slate-50 rounded-xl p-3 border border-slate-100"><div className="flex justify-between text-xs text-slate-500 mb-1"><span className="font-medium text-[#063955]">{c.autor || 'Usuário'}</span><span>{String(c.created_at).slice(0,16).replace('T',' ')}</span></div><p className="text-sm text-slate-800">{c.mensagem}</p></div>))}</div>
+            
+            <div className="p-6 flex-1 overflow-y-auto custom-scrollbar">
+              <div className="space-y-5">
+                <div className="grid grid-cols-2 gap-4">
+                  <div><label className="text-xs text-slate-500 font-medium block mb-1">Status</label><select value={drawerStatus} onChange={e => setDrawerStatus(e.target.value)} className="w-full border border-slate-200 rounded-xl p-2.5 text-sm outline-none focus:border-[#0f88a8]">{statuses.map(s => <option key={s} value={s}>{s}</option>)}</select></div>
+                  <div><label className="text-xs text-slate-500 font-medium block mb-1">Vencimento</label><input type="date" value={drawerVenc} onChange={e => setDrawerVenc(e.target.value)} className="w-full border border-slate-200 rounded-xl p-2.5 text-sm outline-none focus:border-[#0f88a8]"/></div>
+                </div>
+
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                  <div className="flex justify-between items-center mb-3">
+                    <label className="text-xs text-[#063955] font-bold tracking-wide uppercase">Subtarefas / Checklist</label>
+                    {drawerChecklists.length > 0 && (
+                      <span className="text-[10px] font-bold text-[#0f88a8] bg-[#0f88a8]/10 px-2 py-0.5 rounded-full">
+                        {drawerChecklists.filter(c => c.concluido).length} de {drawerChecklists.length} concluídas
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2 mb-3">
+                    {drawerChecklists.map(c => (
+                      <div key={c.id} className="flex items-center gap-2 bg-white p-2 rounded-lg border border-slate-200 shadow-sm group">
+                        <input type="checkbox" checked={c.concluido} onChange={() => handleToggleChecklist(c.id)} className="w-4 h-4 text-[#0f88a8] rounded border-slate-300 focus:ring-[#0f88a8] cursor-pointer" />
+                        <span className={`flex-1 text-sm transition-all ${c.concluido ? 'line-through text-slate-400' : 'text-slate-700'}`}>{c.texto}</span>
+                        <button onClick={() => handleRemoveChecklist(c.id)} className="text-slate-300 hover:text-[#b43a3d] opacity-0 group-hover:opacity-100 transition-opacity px-1">✕</button>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex gap-2">
+                    <input value={novoItemChecklist} onChange={e => setNovoItemChecklist(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAddChecklist()} placeholder="Adicionar novo passo..." className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#0f88a8]" />
+                    <button onClick={handleAddChecklist} className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 rounded-lg text-sm font-medium transition-colors">Adicionar</button>
+                  </div>
+                </div>
+                
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                  <label className="text-xs text-[#063955] font-bold tracking-wide uppercase block mb-3">Evidência / Anexo</label>
+                  <div className="flex items-center gap-3">
+                    {drawerAnexo ? (
+                      <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg text-sm font-medium w-full justify-between border border-slate-200 shadow-sm">
+                        <a href={drawerAnexo} target="_blank" rel="noreferrer" className="text-[#0f88a8] hover:underline truncate w-full">📎 Ver Documento Anexado</a>
+                        <button onClick={() => setDrawerAnexo('')} className="text-slate-400 hover:text-[#b43a3d] p-1 ml-2 transition-colors">✕</button>
+                      </div>
+                    ) : (
+                      <button onClick={() => fileInputRef.current?.click()} disabled={uploadingAnexo} className="flex items-center justify-center gap-2 w-full bg-white border border-dashed border-slate-300 rounded-lg px-4 py-3 text-sm text-slate-500 hover:border-[#0f88a8] hover:text-[#0f88a8] transition-colors disabled:opacity-50">
+                        {uploadingAnexo ? 'A carregar ficheiro...' : '📎 Clique para anexar uma evidência'}
+                      </button>
+                    )}
+                    <input type="file" ref={fileInputRef} className="hidden" onChange={handleUploadAnexo} />
+                  </div>
+                </div>
+
+                <div><label className="text-xs text-slate-500 font-medium block mb-1">Observações Gerais</label><textarea value={drawerObs} onChange={e => setDrawerObs(e.target.value)} rows={4} className="w-full border border-slate-200 rounded-xl p-3 text-sm outline-none focus:border-[#0f88a8]" placeholder="Informações adicionais..." /></div>
+                
+                {/* 💡 CAIXA DE COMENTÁRIOS COM O DETETOR DE @ */}
+                <div className="border-t border-slate-100 pt-5 relative">
+                  <label className="text-xs text-slate-500 font-medium block mb-2">Comentários e Histórico (Use @ para mencionar)</label>
+                  
+                  {/* CAIXA DE LISTAGEM FLUTUANTE DOS NOMES */}
+                  {mentionOpen && (
+                    <div className="absolute bottom-full mb-2 left-0 w-64 bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden z-50">
+                       <div className="bg-[#063955] text-white text-xs font-bold px-4 py-2">Mencionar Colaborador</div>
+                       <div className="max-h-40 overflow-y-auto custom-scrollbar">
+                         {respsDb.filter(r => r.nome.toLowerCase().includes(mentionFilter.toLowerCase())).map(r => (
+                           <div 
+                             key={r.id} 
+                             onClick={() => handleSelectMention(r.nome)}
+                             className="px-4 py-2 hover:bg-slate-50 cursor-pointer text-slate-700 border-b border-slate-100 last:border-0 transition-colors"
+                           >
+                             <span className="font-semibold text-sm text-[#0f88a8] block">{r.nome}</span>
+                             <span className="text-[10px] text-slate-400 block">{r.email}</span>
+                           </div>
+                         ))}
+                         {respsDb.filter(r => r.nome.toLowerCase().includes(mentionFilter.toLowerCase())).length === 0 && (
+                           <div className="px-4 py-3 text-xs text-slate-500 text-center bg-slate-50">Ninguém encontrado...</div>
+                         )}
+                       </div>
+                    </div>
+                  )}
+
+                  <div className="flex gap-2 relative">
+                    <input 
+                      ref={comentInputRef}
+                      value={comentNovo} 
+                      onChange={handleComentInput} 
+                      onKeyDown={e => e.key === 'Enter' && !mentionOpen && enviarComentario()} 
+                      placeholder="Escreva algo... (ex: @Patricia valida isto?)" 
+                      className="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-[#0f88a8] transition-colors"
+                    />
+                    <button onClick={enviarComentario} className="bg-[#0f88a8] text-white px-4 rounded-xl text-sm font-medium hover:bg-[#0c708b] transition-colors">Enviar</button>
+                  </div>
+                  
+                  <div className="mt-4 space-y-2">
+                    {comentarios.map(c => (
+                      <div key={c.id} className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                        <div className="flex justify-between text-xs text-slate-500 mb-1">
+                          <span className="font-bold text-[#063955]">{c.autor || 'Usuário'}</span>
+                          <span>{String(c.created_at).slice(0,16).replace('T',' ')}</span>
+                        </div>
+                        {/* Se o comentário contiver um @Nome, pinta de azul para dar destaque */}
+                        <p className="text-sm text-slate-800 leading-relaxed" dangerouslySetInnerHTML={{ __html: c.mensagem.replace(/@([a-zA-ZÀ-ÿ\s]+)/g, '<strong style="color: #0f88a8;">@$1</strong>') }}></p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
             <div className="p-4 border-t border-slate-100 flex justify-between bg-slate-50">
               <button onClick={() => excluirTarefa(selected.id)} className="text-[#b43a3d] hover:bg-[#b43a3d]/10 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors">Excluir Tarefa</button>
-              <div className="flex gap-2"><button onClick={salvarDrawer} className="bg-[#0f88a8] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#0c708b] transition-colors shadow-sm">{savingDrawer ? 'Salvando...' : 'Salvar'}</button><button onClick={concluirNoDrawer} className="bg-[#2d6943] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#204e31] transition-colors shadow-sm">✓ Concluir</button></div>
+              <div className="flex gap-2"><button onClick={salvarDrawer} className="bg-[#0f88a8] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#0c708b] transition-colors shadow-sm">{savingDrawer ? 'A guardar...' : 'Salvar'}</button><button onClick={concluirNoDrawer} className="bg-[#2d6943] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#204e31] transition-colors shadow-sm">✓ Concluir</button></div>
             </div>
           </aside>
         </>
