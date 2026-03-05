@@ -8,7 +8,6 @@ import jsPDF from 'jspdf'
 import { Toaster, toast } from 'react-hot-toast'
 import { FileText } from 'lucide-react'
 
-// 💡 Array de meses padronizado
 const MESES = [
   { v: 0, n: 'Jan' }, { v: 1, n: 'Fev' }, { v: 2, n: 'Mar' }, { v: 3, n: 'Abr' },
   { v: 4, n: 'Mai' }, { v: 5, n: 'Jun' }, { v: 6, n: 'Jul' }, { v: 7, n: 'Ago' },
@@ -281,9 +280,10 @@ export default function DashboardPage() {
   const [planners, setPlanners] = useState<string[]>([])
   const [plannerSel, setPlannerSel] = useState<string>('Todos')
 
-  // 💡 NOVOS ESTADOS DE MÊS/ANO EM VEZ DE DATAS ABERTAS
+  // 💡 INTERVALO DE MESES
   const hoje = new Date()
-  const [mesAlvo, setMesAlvo] = useState<number>(hoje.getMonth())
+  const [mesInicio, setMesInicio] = useState<number>(hoje.getMonth())
+  const [mesFim, setMesFim] = useState<number>(hoje.getMonth())
   const [anoAlvo, setAnoAlvo] = useState<number>(hoje.getFullYear())
 
   const [rows, setRows] = useState<Row[]>([])
@@ -292,9 +292,10 @@ export default function DashboardPage() {
   
   const [profilesMap, setProfilesMap] = useState<Record<string, string>>({})
 
-  // 💡 CÁLCULO INTELIGENTE DO INÍCIO E FIM BASEADO NO MÊS SELECIONADO
-  const start = useMemo(() => new Date(anoAlvo, mesAlvo, 1).toISOString().slice(0, 10), [anoAlvo, mesAlvo])
-  const end = useMemo(() => new Date(anoAlvo, mesAlvo + 1, 0).toISOString().slice(0, 10), [anoAlvo, mesAlvo])
+  // 💡 CÁLCULO INTELIGENTE DO INÍCIO E FIM BASEADO NOS MESES
+  // Ex: Se escolher Jan a Março de 2026 -> 2026-01-01 até 2026-03-31
+  const start = useMemo(() => new Date(anoAlvo, Math.min(mesInicio, mesFim), 1).toISOString().slice(0, 10), [anoAlvo, mesInicio, mesFim])
+  const end = useMemo(() => new Date(anoAlvo, Math.max(mesInicio, mesFim) + 1, 0).toISOString().slice(0, 10), [anoAlvo, mesInicio, mesFim])
 
   useEffect(() => {
     const initAuth = async () => {
@@ -400,7 +401,10 @@ export default function DashboardPage() {
       })
 
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight)
-      pdf.save(`Dossie_Controladoria_${MESES[mesAlvo].n}_${anoAlvo}.pdf`) // 💡 Nome adaptado para o novo formato
+      
+      const mesStrInicio = MESES.find(m => m.v === mesInicio)?.n
+      const mesStrFim = MESES.find(m => m.v === mesFim)?.n
+      pdf.save(`Dossie_Controladoria_${mesStrInicio}_a_${mesStrFim}_${anoAlvo}.pdf`)
 
       toast.success('Dossiê gerado com sucesso!', { id: toastId })
     } catch (err: any) {
@@ -576,6 +580,12 @@ export default function DashboardPage() {
 
   if (!authLoaded) return <div className="min-h-screen bg-slate-50 flex items-center justify-center text-[#0f88a8] font-medium animate-pulse">A preparar o seu painel...</div>
 
+  // Mês de apresentação pro título
+  const isMesmoMes = mesInicio === mesFim
+  const tituloPeriodo = isMesmoMes 
+    ? `${MESES.find(m => m.v === mesInicio)?.n}/${anoAlvo}` 
+    : `de ${MESES.find(m => m.v === mesInicio)?.n} a ${MESES.find(m => m.v === mesFim)?.n}/${anoAlvo}`
+
   return (
     <div className="min-h-screen bg-slate-50 p-8 font-sans">
       <Toaster position="bottom-right" toastOptions={{ style: { background: '#063955', color: '#fff', borderRadius: '12px' } }} />
@@ -585,13 +595,13 @@ export default function DashboardPage() {
           <h1 className="text-2xl font-semibold text-[#063955] tracking-tight">
             {userRole === 'admin' ? 'Dashboard de Gestão' : 'O Meu Desempenho'}
           </h1>
-          <p className="text-slate-500 text-sm mt-1">Visão estatística de {MESES.find(m => m.v === mesAlvo)?.n}/{anoAlvo}</p>
+          <p className="text-slate-500 text-sm mt-1">Visão estatística {tituloPeriodo}</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
           
           <select
-            className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm font-medium text-[#063955] outline-none focus:border-[#0f88a8] cursor-pointer"
+            className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-medium text-[#063955] outline-none focus:border-[#0f88a8] cursor-pointer shadow-sm"
             value={plannerSel}
             onChange={(e) => setPlannerSel(e.target.value)}
           >
@@ -599,18 +609,30 @@ export default function DashboardPage() {
             {planners.map((p) => <option key={p} value={p}>{p}</option>)}
           </select>
 
-          {/* 💡 SUBSTITUIÇÃO PELO SELETOR DE MÊS E ANO */}
-          <div className="flex items-center gap-2">
+          {/* 💡 NOVO FILTRO ESTILIZADO DE INTERVALO */}
+          <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl shadow-sm overflow-hidden focus-within:border-[#0f88a8] transition-colors">
             <select
-              className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm font-medium text-slate-700 outline-none focus:border-[#0f88a8] cursor-pointer"
-              value={mesAlvo}
-              onChange={(e) => setMesAlvo(Number(e.target.value))}
+              className="bg-transparent py-2.5 pl-4 pr-2 text-sm font-medium text-slate-700 outline-none cursor-pointer"
+              value={mesInicio}
+              onChange={(e) => setMesInicio(Number(e.target.value))}
             >
               {MESES.map((m) => <option key={m.v} value={m.v}>{m.n}</option>)}
             </select>
-
+            
+            <span className="text-slate-400 text-xs font-medium px-1">até</span>
+            
+            <select
+              className="bg-transparent py-2.5 px-2 text-sm font-medium text-slate-700 outline-none cursor-pointer"
+              value={mesFim}
+              onChange={(e) => setMesFim(Number(e.target.value))}
+            >
+              {MESES.map((m) => <option key={m.v} value={m.v}>{m.n}</option>)}
+            </select>
+            
+            <div className="w-px h-6 bg-slate-200 mx-1"></div>
+            
             <input
-              className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 w-24 outline-none focus:border-[#0f88a8]"
+              className="bg-transparent py-2.5 px-3 text-sm font-medium text-slate-700 w-20 outline-none text-center"
               type="number"
               value={anoAlvo}
               onChange={(e) => setAnoAlvo(Number(e.target.value))}
