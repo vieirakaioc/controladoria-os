@@ -8,6 +8,13 @@ import jsPDF from 'jspdf'
 import { Toaster, toast } from 'react-hot-toast'
 import { FileText } from 'lucide-react'
 
+// 💡 Array de meses padronizado
+const MESES = [
+  { v: 0, n: 'Jan' }, { v: 1, n: 'Fev' }, { v: 2, n: 'Mar' }, { v: 3, n: 'Abr' },
+  { v: 4, n: 'Mai' }, { v: 5, n: 'Jun' }, { v: 6, n: 'Jul' }, { v: 7, n: 'Ago' },
+  { v: 8, n: 'Set' }, { v: 9, n: 'Out' }, { v: 10, n: 'Nov' }, { v: 11, n: 'Dez' },
+]
+
 type Row = {
   id: string
   data_vencimento: string | null
@@ -17,7 +24,7 @@ type Row = {
     planner_name?: string | null
     frequencia?: string | null
     setores?: { nome?: string | null } | null
-    responsaveis?: { nome?: string | null; email?: string | null } | null // 💡 E-mail adicionado aqui
+    responsaveis?: { nome?: string | null; email?: string | null } | null
   } | null
 }
 
@@ -267,7 +274,6 @@ function TwoBars({ onTime, late }: { onTime: number; late: number }) {
 export default function DashboardPage() {
   const router = useRouter()
   
-  // 💡 Lógica de Segurança e Identificação do Utilizador
   const [userRole, setUserRole] = useState<string>('membro')
   const [userEmail, setUserEmail] = useState<string>('')
   const [authLoaded, setAuthLoaded] = useState(false)
@@ -275,15 +281,21 @@ export default function DashboardPage() {
   const [planners, setPlanners] = useState<string[]>([])
   const [plannerSel, setPlannerSel] = useState<string>('Todos')
 
-  const [start, setStart] = useState<string>(iso(addDays(new Date(), -30)))
-  const [end, setEnd] = useState<string>(iso(new Date()))
+  // 💡 NOVOS ESTADOS DE MÊS/ANO EM VEZ DE DATAS ABERTAS
+  const hoje = new Date()
+  const [mesAlvo, setMesAlvo] = useState<number>(hoje.getMonth())
+  const [anoAlvo, setAnoAlvo] = useState<number>(hoje.getFullYear())
+
   const [rows, setRows] = useState<Row[]>([])
   const [loading, setLoading] = useState(true)
   const [gerandoPdf, setGerandoPdf] = useState(false)
   
   const [profilesMap, setProfilesMap] = useState<Record<string, string>>({})
 
-  // 1. Verifica quem está a aceder
+  // 💡 CÁLCULO INTELIGENTE DO INÍCIO E FIM BASEADO NO MÊS SELECIONADO
+  const start = useMemo(() => new Date(anoAlvo, mesAlvo, 1).toISOString().slice(0, 10), [anoAlvo, mesAlvo])
+  const end = useMemo(() => new Date(anoAlvo, mesAlvo + 1, 0).toISOString().slice(0, 10), [anoAlvo, mesAlvo])
+
   useEffect(() => {
     const initAuth = async () => {
       const { data: { user } } = await supabase.auth.getUser()
@@ -341,7 +353,6 @@ export default function DashboardPage() {
 
       let baseData = data || []
 
-      // 💡 O GRANDE FILTRO: Se não for admin, vê só o que lhe pertence!
       if (userRole !== 'admin') {
         baseData = baseData.filter((r: any) => r?.atividades?.responsaveis?.email === userEmail)
       }
@@ -389,7 +400,7 @@ export default function DashboardPage() {
       })
 
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight)
-      pdf.save(`Dossie_Controladoria_${start}_ate_${end}.pdf`)
+      pdf.save(`Dossie_Controladoria_${MESES[mesAlvo].n}_${anoAlvo}.pdf`) // 💡 Nome adaptado para o novo formato
 
       toast.success('Dossiê gerado com sucesso!', { id: toastId })
     } catch (err: any) {
@@ -571,11 +582,10 @@ export default function DashboardPage() {
 
       <header className="flex flex-col xl:flex-row xl:justify-between xl:items-center gap-4 mb-6 bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
         <div>
-          {/* O Título muda se a pessoa não for admin */}
           <h1 className="text-2xl font-semibold text-[#063955] tracking-tight">
             {userRole === 'admin' ? 'Dashboard de Gestão' : 'O Meu Desempenho'}
           </h1>
-          <p className="text-slate-500 text-sm mt-1">Visão estatística do período selecionado</p>
+          <p className="text-slate-500 text-sm mt-1">Visão estatística de {MESES.find(m => m.v === mesAlvo)?.n}/{anoAlvo}</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
@@ -589,10 +599,22 @@ export default function DashboardPage() {
             {planners.map((p) => <option key={p} value={p}>{p}</option>)}
           </select>
 
-          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 hover:border-[#0f88a8]/50 transition-colors">
-            <input type="date" value={start} onChange={(e) => setStart(e.target.value)} className="bg-transparent py-2 text-sm font-medium text-[#063955] outline-none cursor-pointer" />
-            <span className="text-slate-400 text-sm font-medium">até</span>
-            <input type="date" value={end} onChange={(e) => setEnd(e.target.value)} className="bg-transparent py-2 text-sm font-medium text-[#063955] outline-none cursor-pointer" />
+          {/* 💡 SUBSTITUIÇÃO PELO SELETOR DE MÊS E ANO */}
+          <div className="flex items-center gap-2">
+            <select
+              className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm font-medium text-slate-700 outline-none focus:border-[#0f88a8] cursor-pointer"
+              value={mesAlvo}
+              onChange={(e) => setMesAlvo(Number(e.target.value))}
+            >
+              {MESES.map((m) => <option key={m.v} value={m.v}>{m.n}</option>)}
+            </select>
+
+            <input
+              className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 w-24 outline-none focus:border-[#0f88a8]"
+              type="number"
+              value={anoAlvo}
+              onChange={(e) => setAnoAlvo(Number(e.target.value))}
+            />
           </div>
 
           <button 
