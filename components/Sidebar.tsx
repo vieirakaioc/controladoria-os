@@ -21,10 +21,10 @@ import {
 
 const allNavItems = [
   { name: 'Início (Sincronizar)', href: '/', icon: Home, adminOnly: true },
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, adminOnly: true },
+  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, adminOnly: false }, 
   { name: 'Controle de Tarefas', href: '/tarefas', icon: CheckSquare, adminOnly: false },
   { name: 'Workflows', href: '/workflows', icon: GitMerge, adminOnly: true },
-  { name: 'Gestão de Acessos', href: '/acessos', icon: Key, adminOnly: true }, // 💡 NOVA LINHA AQUI!
+  { name: 'Gestão de Acessos', href: '/acessos', icon: Key, adminOnly: true },
   { name: 'Auditoria', href: '/auditoria', icon: Shield, adminOnly: true },
   { name: 'Meu Perfil', href: '/profile', icon: User, adminOnly: false },
 ]

@@ -17,7 +17,7 @@ type Row = {
     planner_name?: string | null
     frequencia?: string | null
     setores?: { nome?: string | null } | null
-    responsaveis?: { nome?: string | null } | null
+    responsaveis?: { nome?: string | null; email?: string | null } | null // 💡 E-mail adicionado aqui
   } | null
 }
 
@@ -36,14 +36,14 @@ const niceLabel = (d: string) => `${d.slice(8, 10)}/${d.slice(5, 7)}`
 
 // PALETA OFICIAL
 const COLORS = {
-  darkBlue: '#063955', // Fundo/Textos Fortes
-  cyan: '#0f88a8',     // Destaques/Gráficos
+  darkBlue: '#063955', 
+  cyan: '#0f88a8',     
   lightCyan: '#c4e3eb',
   grayTrack: '#F1F5F9',
-  muted: '#818284',    // Cinza
-  okGreen: '#2d6943',  // Verde Escuro
-  warnAmber: '#efc486',// Areia (Amarelo)
-  dangerRed: '#b43a3d',// Vermelho Escuro
+  muted: '#818284',    
+  okGreen: '#2d6943',  
+  warnAmber: '#efc486',
+  dangerRed: '#b43a3d',
 }
 
 function Section({ title, subtitle, right, children }: { title: string; subtitle?: string; right?: React.ReactNode; children: React.ReactNode }) {
@@ -265,6 +265,13 @@ function TwoBars({ onTime, late }: { onTime: number; late: number }) {
 }
 
 export default function DashboardPage() {
+  const router = useRouter()
+  
+  // 💡 Lógica de Segurança e Identificação do Utilizador
+  const [userRole, setUserRole] = useState<string>('membro')
+  const [userEmail, setUserEmail] = useState<string>('')
+  const [authLoaded, setAuthLoaded] = useState(false)
+
   const [planners, setPlanners] = useState<string[]>([])
   const [plannerSel, setPlannerSel] = useState<string>('Todos')
 
@@ -275,6 +282,22 @@ export default function DashboardPage() {
   const [gerandoPdf, setGerandoPdf] = useState(false)
   
   const [profilesMap, setProfilesMap] = useState<Record<string, string>>({})
+
+  // 1. Verifica quem está a aceder
+  useEffect(() => {
+    const initAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        setUserEmail(user.email || '')
+        const { data: prof } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+        setUserRole(prof?.role || 'membro')
+      } else {
+        router.push('/login')
+      }
+      setAuthLoaded(true)
+    }
+    initAuth()
+  }, [router])
 
   const carregarProfilesEPlanners = async () => {
     const { data: atvData } = await supabase.from('atividades').select('planner_name')
@@ -296,7 +319,9 @@ export default function DashboardPage() {
   }
 
   const carregar = async () => {
+    if (!authLoaded) return
     setLoading(true)
+    
     try {
       const { data, error } = await supabase
         .from('tarefas_diarias')
@@ -305,7 +330,7 @@ export default function DashboardPage() {
           atividades!tarefas_diarias_atividade_id_fkey (
             planner_name, frequencia,
             setores!atividades_setor_id_fkey (nome),
-            responsaveis!atividades_responsavel_id_fkey (nome)
+            responsaveis!atividades_responsavel_id_fkey (nome, email)
           )
         `)
         .gte('data_vencimento', start)
@@ -314,8 +339,16 @@ export default function DashboardPage() {
 
       if (error) throw error
 
-      const filtered = plannerSel === 'Todos' ? (data || []) : (data || []).filter((r: any) => r?.atividades?.planner_name === plannerSel)
+      let baseData = data || []
+
+      // 💡 O GRANDE FILTRO: Se não for admin, vê só o que lhe pertence!
+      if (userRole !== 'admin') {
+        baseData = baseData.filter((r: any) => r?.atividades?.responsaveis?.email === userEmail)
+      }
+
+      const filtered = plannerSel === 'Todos' ? baseData : baseData.filter((r: any) => r?.atividades?.planner_name === plannerSel)
       setRows(filtered as any)
+      
     } catch (e: any) {
       toast.error('Erro ao carregar dashboard.')
       setRows([])
@@ -330,9 +363,8 @@ export default function DashboardPage() {
 
   useEffect(() => {
     carregar()
-  }, [plannerSel, start, end])
+  }, [plannerSel, start, end, authLoaded, userRole, userEmail])
 
-  // 💡 LÓGICA ATUALIZADA PARA EXPORTAR PARA PDF
   const exportarPDF = async () => {
     setGerandoPdf(true)
     const toastId = toast.loading('A preparar o dossiê executivo...')
@@ -341,10 +373,9 @@ export default function DashboardPage() {
       const input = document.getElementById('dashboard-content')
       if (!input) throw new Error('Elemento do dashboard não encontrado.')
 
-      // O novo fotógrafo (html-to-image) tira a foto sem problemas com as cores modernas
       const imgData = await toPng(input, {
         quality: 1,
-        pixelRatio: 2, // Retém a qualidade Retina/Alta definição
+        pixelRatio: 2, 
         backgroundColor: '#f8fafc',
       })
       
@@ -532,14 +563,19 @@ export default function DashboardPage() {
     return { onTime, late }
   }, [rows])
 
+  if (!authLoaded) return <div className="min-h-screen bg-slate-50 flex items-center justify-center text-[#0f88a8] font-medium animate-pulse">A preparar o seu painel...</div>
+
   return (
     <div className="min-h-screen bg-slate-50 p-8 font-sans">
       <Toaster position="bottom-right" toastOptions={{ style: { background: '#063955', color: '#fff', borderRadius: '12px' } }} />
 
       <header className="flex flex-col xl:flex-row xl:justify-between xl:items-center gap-4 mb-6 bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
         <div>
-          <h1 className="text-2xl font-semibold text-[#063955] tracking-tight">Dashboard de Gestão</h1>
-          <p className="text-slate-500 text-sm mt-1">Visão gerencial do período selecionado</p>
+          {/* O Título muda se a pessoa não for admin */}
+          <h1 className="text-2xl font-semibold text-[#063955] tracking-tight">
+            {userRole === 'admin' ? 'Dashboard de Gestão' : 'O Meu Desempenho'}
+          </h1>
+          <p className="text-slate-500 text-sm mt-1">Visão estatística do período selecionado</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
@@ -559,7 +595,6 @@ export default function DashboardPage() {
             <input type="date" value={end} onChange={(e) => setEnd(e.target.value)} className="bg-transparent py-2 text-sm font-medium text-[#063955] outline-none cursor-pointer" />
           </div>
 
-          {/* 💡 BOTÃO MÁGICO DE EXPORTAR PDF */}
           <button 
             onClick={exportarPDF} 
             disabled={gerandoPdf}
@@ -571,7 +606,6 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      {/* 💡 ENVOLVEMOS TUDO NUM ID PARA O HTML2CANVAS TIRAR A FOTOGRAFIA */}
       <div id="dashboard-content" className="bg-slate-50 p-2">
         <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
           <KPI title="Total Volume" value={metrics.total} />
@@ -587,15 +621,15 @@ export default function DashboardPage() {
             <LineChart points={donePerDay} />
           </Section>
 
-          <Section title="Distribuição de Status" subtitle="Visão geral do andamento global">
+          <Section title="Distribuição de Status" subtitle="Visão geral do andamento">
             <Doughnut items={statusDist} size={140} />
           </Section>
 
-          <Section title="Qualidade de Entrega" subtitle="Entregas globais: no prazo vs atrasadas" right={<span className="text-xs font-medium text-slate-500">Total Entregue: {onTimeLate.onTime + onTimeLate.late}</span>}>
+          <Section title="Qualidade de Entrega" subtitle="Entregas no prazo vs atrasadas" right={<span className="text-xs font-medium text-slate-500">Total Entregue: {onTimeLate.onTime + onTimeLate.late}</span>}>
             <TwoBars onTime={onTimeLate.onTime} late={onTimeLate.late} />
           </Section>
 
-          <Section title="Saúde da Operação" subtitle="Volume de Processos Planejados vs Ad Hoc">
+          <Section title="Saúde da Operação" subtitle="Volume Planejado vs Ad Hoc">
             <Doughnut items={additionalMetrics.mix} size={140} />
           </Section>
 
@@ -603,7 +637,7 @@ export default function DashboardPage() {
             {additionalMetrics.aging.some(a => a.value > 0) ? (
               <BarList items={additionalMetrics.aging} color={COLORS.warnAmber} />
             ) : (
-              <div className="text-sm font-medium text-slate-500 py-4 text-center bg-slate-50 rounded-xl">Nenhum atraso crítico no momento 🎉</div>
+              <div className="text-sm font-medium text-slate-500 py-4 text-center bg-slate-50 rounded-xl">Nenhum atraso no momento 🎉</div>
             )}
           </Section>
 
@@ -615,22 +649,26 @@ export default function DashboardPage() {
             )}
           </Section>
 
-          <Section title="Atrasadas por Responsável" subtitle="Top 8 contas com pendências vencidas">
-            {overdueByPerson.length ? (
-              <BarList items={overdueByPerson} color={COLORS.dangerRed} isPerson={true} profilesMap={profilesMap} />
-            ) : (
-              <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-50 rounded-xl p-6">Nenhuma tarefa atrasada 🎉</div>
-            )}
-          </Section>
+          {/* SÓ MOSTRA GRÁFICOS DA EQUIPE SE FOR ADMIN */}
+          {userRole === 'admin' && (
+            <>
+              <Section title="Atrasadas por Responsável" subtitle="Top 8 contas com pendências vencidas">
+                {overdueByPerson.length ? (
+                  <BarList items={overdueByPerson} color={COLORS.dangerRed} isPerson={true} profilesMap={profilesMap} />
+                ) : (
+                  <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-50 rounded-xl p-6">Nenhuma tarefa atrasada 🎉</div>
+                )}
+              </Section>
 
-          <Section title="Volume por Setor" subtitle="Demandas ativas no período">
-            {bySector.length ? <BarList items={bySector} color={COLORS.darkBlue} /> : <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-50 rounded-xl p-6">Sem dados para exibir.</div>}
-          </Section>
+              <Section title="Volume por Setor" subtitle="Demandas ativas no período">
+                {bySector.length ? <BarList items={bySector} color={COLORS.darkBlue} /> : <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-50 rounded-xl p-6">Sem dados para exibir.</div>}
+              </Section>
 
-          <Section title="Volume por Colaborador" subtitle="Demandas ativas no período">
-            {byPerson.length ? <BarList items={byPerson} color={COLORS.darkBlue} isPerson={true} profilesMap={profilesMap} /> : <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-50 rounded-xl p-6">Sem dados para exibir.</div>}
-          </Section>
-
+              <Section title="Volume por Colaborador" subtitle="Demandas ativas no período">
+                {byPerson.length ? <BarList items={byPerson} color={COLORS.darkBlue} isPerson={true} profilesMap={profilesMap} /> : <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-50 rounded-xl p-6">Sem dados para exibir.</div>}
+              </Section>
+            </>
+          )}
         </div>
       </div>
     </div>
