@@ -25,7 +25,7 @@ type TimeBucket = 'Atrasadas' | 'Hoje' | 'Amanhã' | 'Próx 7 dias' | 'Sem data'
 type Lookup = { id: string; nome: string; email?: string }
 
 // ==========================================
-// FUNÇÕES PURAS (Movidas para fora para não pesar o React)
+// FUNÇÕES PURAS
 // ==========================================
 const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate())
 const addDays = (d: Date, n: number) => {
@@ -54,15 +54,15 @@ const getBucket = (data_vencimento: string | null): TimeBucket => {
 
 const badge = (s?: string | null) => {
   const st = (s || 'Pendente').toLowerCase()
-  if (st.includes('concl')) return 'bg-emerald-100 text-emerald-800'
-  if (st.includes('and')) return 'bg-indigo-100 text-indigo-800'
-  if (st.includes('aguard')) return 'bg-purple-100 text-purple-800'
+  if (st.includes('concl')) return 'bg-[#2d6943]/10 text-[#2d6943]' 
+  if (st.includes('and')) return 'bg-[#0f88a8]/10 text-[#0f88a8]'   
+  if (st.includes('aguard')) return 'bg-[#efc486]/20 text-[#063955]' 
   if (st.includes('pend')) return 'bg-amber-100 text-amber-800'
   return 'bg-slate-100 text-slate-700'
 }
 
 // ==========================================
-// COMPONENTES ISOLADOS (Elimina lentidão do Drag & Drop)
+// COMPONENTES ISOLADOS
 // ==========================================
 
 const TaskCard = React.memo(({ r, mode, statuses, statusOrderMap, setStatus, excluirTarefa, abrirDrawer }: any) => {
@@ -115,7 +115,7 @@ const TaskCard = React.memo(({ r, mode, statuses, statusOrderMap, setStatus, exc
         {mode === 'timeboard' ? (
           <>
             {!isDone && (
-              <button onClick={() => setStatus(r.id, statuses[statuses.length - 1] || 'Concluído')} className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-100 font-medium py-1 px-3 rounded-lg transition-colors text-xs cursor-pointer">
+              <button onClick={() => setStatus(r.id, statuses[statuses.length - 1] || 'Concluído')} className="bg-[#2d6943]/10 hover:bg-[#2d6943]/20 text-[#2d6943] border border-[#2d6943]/20 font-medium py-1 px-3 rounded-lg transition-colors text-xs cursor-pointer">
                 Concluir
               </button>
             )}
@@ -125,14 +125,14 @@ const TaskCard = React.memo(({ r, mode, statuses, statusOrderMap, setStatus, exc
             <button onClick={() => setStatus(r.id, prevSt)} disabled={st === statuses[0]} className="bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 py-1 px-2 rounded-lg transition-colors disabled:opacity-40 text-xs cursor-pointer">
               ◀
             </button>
-            <button onClick={() => setStatus(r.id, nextSt)} disabled={st === statuses[statuses.length - 1]} className="bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 text-indigo-700 py-1 px-2 rounded-lg transition-colors disabled:opacity-40 text-xs cursor-pointer">
+            <button onClick={() => setStatus(r.id, nextSt)} disabled={st === statuses[statuses.length - 1]} className="bg-[#0f88a8]/10 hover:bg-[#0f88a8]/20 border border-[#0f88a8]/20 text-[#0f88a8] py-1 px-2 rounded-lg transition-colors disabled:opacity-40 text-xs cursor-pointer">
               ▶
             </button>
           </>
         )}
         
         <div className="ml-auto flex items-center gap-1">
-          <button onClick={() => excluirTarefa(r.id)} className="text-slate-300 hover:text-red-500 hover:bg-red-50 py-1 px-2 rounded-lg transition-colors text-xs cursor-pointer" title="Excluir Tarefa">
+          <button onClick={() => excluirTarefa(r.id)} className="text-slate-300 hover:text-[#b43a3d] hover:bg-[#b43a3d]/10 py-1 px-2 rounded-lg transition-colors text-xs cursor-pointer" title="Excluir Tarefa">
             🗑️
           </button>
           <button onClick={() => abrirDrawer(r)} className="bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 font-medium py-1 px-3 rounded-lg transition-colors text-xs cursor-pointer">
@@ -155,9 +155,7 @@ const BoardColumn = ({ status, tasks, statuses, statusOrderMap, setStatus, exclu
 
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
-    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-      setIsOver(false)
-    }
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) setIsOver(false)
   }
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -177,11 +175,11 @@ const BoardColumn = ({ status, tasks, statuses, statusOrderMap, setStatus, exclu
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       className={`rounded-2xl border flex-1 min-w-[320px] flex flex-col max-h-[75vh] transition-colors ${
-        isOver ? 'bg-indigo-50/80 border-indigo-300 border-dashed' : 'bg-slate-100/50 border-slate-200'
+        isOver ? 'bg-[#0f88a8]/10 border-[#0f88a8]/50 border-dashed' : 'bg-slate-100/50 border-slate-200'
       }`}
     >
       <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-100/80 rounded-t-2xl">
-        <span className={`font-medium ${isOver ? 'text-indigo-700' : 'text-slate-700'}`}>{status}</span>
+        <span className={`font-medium ${isOver ? 'text-[#0f88a8]' : 'text-slate-700'}`}>{status}</span>
         <span className="bg-white text-slate-500 text-xs font-medium px-2 py-0.5 rounded-full border border-slate-200 shadow-sm">{tasks.length}</span>
       </div>
       <div className="p-3 space-y-3 overflow-y-auto flex-1 custom-scrollbar">
@@ -249,6 +247,8 @@ export default function TarefasPage() {
   const [adhocSetorId, setAdhocSetorId] = useState<string>('')
   const [adhocRespId, setAdhocRespId] = useState<string>('')
   const [adhocVenc, setAdhocVenc] = useState<string>(new Date().toISOString().slice(0, 10))
+  const [adhocPrioridade, setAdhocPrioridade] = useState<string>('Média')
+  const [adhocObs, setAdhocObs] = useState<string>('')
   const [savingAdhoc, setSavingAdhoc] = useState(false)
 
   const inicio = useMemo(() => new Date(anoAlvo, mesAlvo, 1), [anoAlvo, mesAlvo])
@@ -325,17 +325,13 @@ export default function TarefasPage() {
     }
   }
 
-  // ✅ FUNÇÃO MÁGICA: Disparar Email
   const sendEmailNotification = async (taskId: string, actionText: string, extraObs?: string) => {
     try {
-      // 1. Pega os dados mais recentes da tarefa (para saber o email de quem recebeu)
       const task = rows.find(r => r.id === taskId)
       if (!task) return
-
       const destinatarioEmail = task.atividades?.responsaveis?.email
-      if (!destinatarioEmail) return // Se não tem email cadastrado, cancela o disparo calado
+      if (!destinatarioEmail) return 
 
-      // 2. Monta o payload
       const payload = {
         to: destinatarioEmail,
         subject: `[Portal da Controladoria] Atualização de Tarefa: ${task.atividades?.nome_atividade}`,
@@ -345,16 +341,12 @@ export default function TarefasPage() {
         observacoes: extraObs || task.observacoes || ''
       }
 
-      // 3. Dispara para a nossa nova rota da API
       await fetch('/api/notify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       })
-      
-    } catch (error) {
-      console.error('Erro silencioso ao enviar email:', error)
-    }
+    } catch (error) {}
   }
 
   const carregarComentarios = async (tarefaId: string) => {
@@ -377,8 +369,6 @@ export default function TarefasPage() {
 
     setComentarios(prev => [data, ...prev])
     setComentNovo('')
-    
-    // Dispara Email avisando do comentário
     sendEmailNotification(selected.id, 'comentada', `Novo comentário de ${userName}: "${msg}"`)
   }
 
@@ -416,8 +406,6 @@ export default function TarefasPage() {
     if (selected?.id === id) { setSelected({ ...selected, ...patch }); setDrawerStatus(patch.status) }
     setMensagem('✅ Sucesso!')
     setTimeout(() => setMensagem(''), 1000)
-
-    // Dispara Email avisando do novo status (Drag and Drop ou Botão)
     sendEmailNotification(id, `movida para o status "${status}"`, '')
   }
 
@@ -438,8 +426,6 @@ export default function TarefasPage() {
       setSelected(prev => (prev ? { ...prev, ...patch } : prev))
     }
     setSavingDrawer(false); fecharDrawer()
-
-    // Dispara Email avisando das alterações nos Detalhes
     sendEmailNotification(selected.id, `atualizada com novas observações e/ou status`, drawerObs || '')
   }
 
@@ -454,20 +440,32 @@ export default function TarefasPage() {
     setSavingAdhoc(true)
     try {
       const taskId = crypto.randomUUID()
-      const payloadAtv: any = { task_id: taskId, planner_name: 'Ad Hoc', nome_atividade: nome, setor_id: adhocSetorId || null, responsavel_id: adhocRespId || null, frequencia: 'Ad Hoc', status: 'Ativo' }
+      const payloadAtv: any = { 
+        task_id: taskId, 
+        planner_name: 'Ad Hoc', 
+        nome_atividade: nome, 
+        setor_id: adhocSetorId || null, 
+        responsavel_id: adhocRespId || null, 
+        frequencia: 'Ad Hoc', 
+        status: 'Ativo',
+        prioridade_descricao: adhocPrioridade // NOVO CAMPO
+      }
       const { data: atv, error: errAtv } = await supabase.from('atividades').insert([payloadAtv]).select('task_id').single()
       if (errAtv) throw errAtv
 
-      const payloadExec: any = { atividade_id: atv.task_id, data_vencimento: adhocVenc, status: statuses[0] || 'Pendente' }
+      const payloadExec: any = { 
+        atividade_id: atv.task_id, 
+        data_vencimento: adhocVenc, 
+        status: statuses[0] || 'Pendente',
+        observacoes: adhocObs || null // NOVO CAMPO
+      }
       const { error: errExec } = await supabase.from('tarefas_diarias').insert([payloadExec])
       if (errExec) throw errExec
 
-      setAdhocOpen(false); setAdhocNome(''); setAdhocSetorId(''); setAdhocRespId(''); setAdhocVenc(new Date().toISOString().slice(0, 10))
+      setAdhocOpen(false); setAdhocNome(''); setAdhocSetorId(''); setAdhocRespId(''); setAdhocVenc(new Date().toISOString().slice(0, 10)); setAdhocPrioridade('Média'); setAdhocObs('');
       
-      // Como criamos uma tarefa nova, precisamos buscar a linha completa para o Email funcionar
       const { data: novaTask } = await supabase.from('tarefas_diarias').select('*, atividades!inner(responsaveis(email))').eq('atividade_id', atv.task_id).single()
       if (novaTask) {
-        // Dispara e-mail de nova atribuição
         const userResp = respsDb.find(r => r.id === adhocRespId)
         if (userResp?.email) {
           await fetch('/api/notify', {
@@ -479,7 +477,7 @@ export default function TarefasPage() {
               taskName: nome,
               action: `criada e atribuída a você`,
               userName: userName,
-              observacoes: `Prazo: ${adhocVenc.slice(8,10)}/${adhocVenc.slice(5,7)}/${adhocVenc.slice(0,4)}`
+              observacoes: `Prazo: ${adhocVenc.slice(8,10)}/${adhocVenc.slice(5,7)}/${adhocVenc.slice(0,4)}<br/>Prioridade: <strong>${adhocPrioridade}</strong><br/><br/>Detalhes Adicionais:<br/>${adhocObs || 'Nenhum detalhe fornecido.'}`
             })
           })
         }
@@ -538,28 +536,28 @@ export default function TarefasPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          {mensagem && <span className="text-sm font-medium text-indigo-600 bg-indigo-50 px-3 py-1 rounded-lg animate-pulse">{mensagem}</span>}
+          {mensagem && <span className="text-sm font-medium text-[#0f88a8] bg-[#0f88a8]/10 px-3 py-1 rounded-lg animate-pulse">{mensagem}</span>}
 
-          <button onClick={() => setAdhocOpen(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-2 px-4 rounded-xl transition-all shadow-sm">
+          <button onClick={() => setAdhocOpen(true)} className="bg-[#0f88a8] hover:bg-[#0c708b] text-white text-sm font-medium py-2 px-4 rounded-xl transition-all shadow-sm">
             + Nova Ad Hoc
           </button>
 
           <div className="flex bg-slate-100 rounded-xl p-1 border border-slate-200">
-            <button onClick={() => setView('list')} className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${view === 'list' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500'}`}>Lista</button>
-            <button onClick={() => setView('board')} className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${view === 'board' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500'}`}>Status</button>
-            <button onClick={() => setView('timeboard')} className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${view === 'timeboard' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500'}`}>Dias</button>
+            <button onClick={() => setView('list')} className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${view === 'list' ? 'bg-white shadow-sm text-[#063955]' : 'text-slate-500'}`}>Lista</button>
+            <button onClick={() => setView('board')} className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${view === 'board' ? 'bg-white shadow-sm text-[#063955]' : 'text-slate-500'}`}>Status</button>
+            <button onClick={() => setView('timeboard')} className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${view === 'timeboard' ? 'bg-white shadow-sm text-[#063955]' : 'text-slate-500'}`}>Dias</button>
           </div>
 
-          <select className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400" value={plannerSel} onChange={(e) => setPlannerSel(e.target.value)}>
+          <select className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-[#0f88a8]" value={plannerSel} onChange={(e) => setPlannerSel(e.target.value)}>
             <option value="Todos">Todos os Planners</option>
             {planners.map((p) => <option key={p} value={p}>{p}</option>)}
           </select>
 
-          <select className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400" value={mesAlvo} onChange={(e) => setMesAlvo(Number(e.target.value))}>
+          <select className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-[#0f88a8]" value={mesAlvo} onChange={(e) => setMesAlvo(Number(e.target.value))}>
             {MESES.map((m) => <option key={m.v} value={m.v}>{m.n}</option>)}
           </select>
 
-          <input className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 w-24 outline-none focus:border-indigo-400" type="number" value={anoAlvo} onChange={(e) => setAnoAlvo(Number(e.target.value))} />
+          <input className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 w-24 outline-none focus:border-[#0f88a8]" type="number" value={anoAlvo} onChange={(e) => setAnoAlvo(Number(e.target.value))} />
 
           <button onClick={carregar} className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-medium py-2 px-4 rounded-xl transition-all shadow-sm">↻ Atualizar</button>
         </div>
@@ -567,15 +565,15 @@ export default function TarefasPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-6 gap-3 mb-6">
         <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm"><div className="text-xs font-medium text-slate-500 uppercase tracking-wide">Total</div><div className="text-2xl font-light text-slate-900 mt-1">{dashboard.total}</div></div>
-        <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm"><div className="text-xs font-medium text-slate-500 uppercase tracking-wide">Atrasadas</div><div className="text-2xl font-light text-red-600 mt-1">{dashboard.overdue}</div></div>
-        <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm"><div className="text-xs font-medium text-slate-500 uppercase tracking-wide">Hoje</div><div className="text-2xl font-light text-slate-900 mt-1">{dashboard.dueToday}</div></div>
+        <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm"><div className="text-xs font-medium text-slate-500 uppercase tracking-wide">Atrasadas</div><div className="text-2xl font-light text-[#b43a3d] mt-1">{dashboard.overdue}</div></div>
+        <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm"><div className="text-xs font-medium text-slate-500 uppercase tracking-wide">Hoje</div><div className="text-2xl font-light text-[#0f88a8] mt-1">{dashboard.dueToday}</div></div>
         <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm"><div className="text-xs font-medium text-slate-500 uppercase tracking-wide">Amanhã</div><div className="text-2xl font-light text-slate-900 mt-1">{dashboard.dueTomorrow}</div></div>
         <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm"><div className="text-xs font-medium text-slate-500 uppercase tracking-wide">Próx 7 dias</div><div className="text-2xl font-light text-slate-900 mt-1">{dashboard.next7}</div></div>
-        <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm"><div className="text-xs font-medium text-slate-500 uppercase tracking-wide">Concluídas</div><div className="text-2xl font-light text-emerald-600 mt-1">{dashboard.done} <span className="text-sm font-medium text-slate-400">({dashboard.pct}%)</span></div></div>
+        <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm"><div className="text-xs font-medium text-slate-500 uppercase tracking-wide">Concluídas</div><div className="text-2xl font-light text-[#2d6943] mt-1">{dashboard.done} <span className="text-sm font-medium text-slate-400">({dashboard.pct}%)</span></div></div>
       </div>
 
       <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mb-6 flex flex-wrap gap-3 items-center">
-        <input value={filtroTexto} onChange={(e) => setFiltroTexto(e.target.value)} placeholder="Buscar atividade..." className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm w-full md:w-64 outline-none focus:border-indigo-400" />
+        <input value={filtroTexto} onChange={(e) => setFiltroTexto(e.target.value)} placeholder="Buscar atividade..." className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm w-full md:w-64 outline-none focus:border-[#0f88a8]" />
         <select value={filtroSetor} onChange={(e) => setFiltroSetor(e.target.value)} className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm text-slate-700 outline-none"><option value="Todos">Setor: Todos</option>{setorOptions.map(s => <option key={s} value={s}>{s}</option>)}</select>
         <select value={filtroResp} onChange={(e) => setFiltroResp(e.target.value)} className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm text-slate-700 outline-none"><option value="Todos">Resp: Todos</option>{respOptions.map(r => <option key={r} value={r}>{r}</option>)}</select>
         <select value={filtroStatus} onChange={(e) => setFiltroStatus(e.target.value)} className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm text-slate-700 outline-none"><option value="Todos">Status: Todos</option>{statuses.map(s => <option key={s} value={s}>{s}</option>)}</select>
@@ -601,8 +599,8 @@ export default function TarefasPage() {
                     <td className="p-4 text-slate-500">{r.atividades?.responsaveis?.nome || '-'}</td>
                     <td className="p-4"><span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${badge(r.status)}`}>{r.status}</span></td>
                     <td className="p-4 text-right flex justify-end items-center gap-3">
-                      <button onClick={() => excluirTarefa(r.id)} className="text-slate-300 hover:text-red-500 transition-colors" title="Excluir">🗑️</button>
-                      <button onClick={() => abrirDrawer(r)} className="text-indigo-600 hover:text-indigo-800 font-medium">Detalhes</button>
+                      <button onClick={() => excluirTarefa(r.id)} className="text-slate-300 hover:text-[#b43a3d] transition-colors" title="Excluir">🗑️</button>
+                      <button onClick={() => abrirDrawer(r)} className="text-[#0f88a8] hover:text-[#063955] font-medium">Detalhes</button>
                     </td>
                   </tr>
                 ))}
@@ -623,8 +621,8 @@ export default function TarefasPage() {
       {view === 'timeboard' && (
         <div className="flex gap-4 overflow-x-auto pb-4">
           {timeOrder.map((b) => (
-            <div key={b} className={`rounded-2xl border flex-1 min-w-[320px] flex flex-col max-h-[75vh] ${b === 'Atrasadas' ? 'bg-red-50/30 border-red-100' : 'bg-slate-100/50 border-slate-200'}`}>
-              <div className={`p-4 border-b flex justify-between items-center rounded-t-2xl ${b === 'Atrasadas' ? 'bg-red-50/80 border-red-100 text-red-800' : 'bg-slate-100 border-slate-200 text-slate-700'}`}>
+            <div key={b} className={`rounded-2xl border flex-1 min-w-[320px] flex flex-col max-h-[75vh] ${b === 'Atrasadas' ? 'bg-[#b43a3d]/10 border-[#b43a3d]/20' : 'bg-slate-100/50 border-slate-200'}`}>
+              <div className={`p-4 border-b flex justify-between items-center rounded-t-2xl ${b === 'Atrasadas' ? 'bg-[#b43a3d]/20 border-[#b43a3d]/30 text-[#b43a3d]' : 'bg-slate-100 border-slate-200 text-slate-700'}`}>
                 <span className="font-medium">{b}</span><span className="bg-white text-xs font-medium px-2 py-0.5 rounded-full shadow-sm">{(timeboard[b] || []).length}</span>
               </div>
               <div className="p-3 space-y-3 overflow-y-auto flex-1 custom-scrollbar">
@@ -635,51 +633,99 @@ export default function TarefasPage() {
         </div>
       )}
 
-      {/* MODAL AD HOC E DRAWER MANTIDOS IGUAIS */}
+      {/* MODAL AD HOC ATUALIZADO */}
       {adhocOpen && (
         <>
-          <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-40 transition-all" onClick={() => setAdhocOpen(false)} />
+          <div className="fixed inset-0 bg-[#063955]/20 backdrop-blur-sm z-40 transition-all" onClick={() => setAdhocOpen(false)} />
           <aside className="fixed top-0 right-0 h-full w-full sm:w-[480px] bg-white z-50 shadow-2xl border-l border-slate-200 flex flex-col">
             <div className="p-6 border-b border-slate-100 flex justify-between items-start">
-              <div><span className="text-xs text-indigo-600 font-semibold tracking-wide uppercase">Nova Tarefa Pontual</span><h2 className="text-xl text-slate-900 font-semibold mt-1">Planner: Ad Hoc</h2></div>
+              <div><span className="text-xs text-[#0f88a8] font-semibold tracking-wide uppercase">Nova Tarefa Pontual</span><h2 className="text-xl text-slate-900 font-semibold mt-1">Planner: Ad Hoc</h2></div>
               <button onClick={() => setAdhocOpen(false)} className="text-slate-400 hover:text-slate-600 p-2">✕</button>
             </div>
-            <div className="p-6 space-y-5 flex-1 overflow-y-auto">
-              <div><label className="text-xs text-slate-500 font-medium block mb-1">Nome da atividade</label><input value={adhocNome} onChange={(e) => setAdhocNome(e.target.value)} className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400" placeholder="Ex: Ajustar lançamento X..." /></div>
-              <div className="grid grid-cols-2 gap-4">
-                <div><label className="text-xs text-slate-500 font-medium block mb-1">Setor</label><select value={adhocSetorId} onChange={(e) => setAdhocSetorId(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-sm outline-none focus:border-indigo-400"><option value="">(sem setor)</option>{setoresDb.map(s => <option key={s.id} value={s.id}>{s.nome}</option>)}</select></div>
-                <div><label className="text-xs text-slate-500 font-medium block mb-1">Responsável</label><select value={adhocRespId} onChange={(e) => setAdhocRespId(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-sm outline-none focus:border-indigo-400"><option value="">(sem responsável)</option>{respsDb.map(r => <option key={r.id} value={r.id}>{r.nome}</option>)}</select></div>
+            
+            <div className="p-6 space-y-5 flex-1 overflow-y-auto custom-scrollbar">
+              <div>
+                <label className="text-xs text-slate-500 font-medium block mb-1">Nome da atividade</label>
+                <input value={adhocNome} onChange={(e) => setAdhocNome(e.target.value)} className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#0f88a8]" placeholder="Ex: Ajustar lançamento X..." />
               </div>
-              <div><label className="text-xs text-slate-500 font-medium block mb-1">Vencimento</label><input type="date" value={adhocVenc} onChange={(e) => setAdhocVenc(e.target.value)} className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400" /></div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs text-slate-500 font-medium block mb-1">Setor</label>
+                  <select value={adhocSetorId} onChange={(e) => setAdhocSetorId(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-sm outline-none focus:border-[#0f88a8]">
+                    <option value="">(sem setor)</option>
+                    {setoresDb.map(s => <option key={s.id} value={s.id}>{s.nome}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs text-slate-500 font-medium block mb-1">Responsável</label>
+                  <select value={adhocRespId} onChange={(e) => setAdhocRespId(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-sm outline-none focus:border-[#0f88a8]">
+                    <option value="">(sem responsável)</option>
+                    {respsDb.map(r => <option key={r.id} value={r.id}>{r.nome}</option>)}
+                  </select>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs text-slate-500 font-medium block mb-1">Vencimento</label>
+                  <input type="date" value={adhocVenc} onChange={(e) => setAdhocVenc(e.target.value)} className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#0f88a8]" />
+                </div>
+                <div>
+                  <label className="text-xs text-slate-500 font-medium block mb-1">Prioridade</label>
+                  <select value={adhocPrioridade} onChange={(e) => setAdhocPrioridade(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-sm outline-none focus:border-[#0f88a8]">
+                    <option value="Baixa">Baixa</option>
+                    <option value="Média">Média</option>
+                    <option value="Alta">Alta</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs text-slate-500 font-medium block mb-1">Observações / Detalhes</label>
+                <textarea 
+                  value={adhocObs} 
+                  onChange={(e) => setAdhocObs(e.target.value)} 
+                  rows={4} 
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#0f88a8] resize-none" 
+                  placeholder="Forneça instruções, links ou contexto adicional para quem vai executar a tarefa..." 
+                />
+              </div>
             </div>
-            <div className="p-4 border-t border-slate-100 flex gap-2 bg-slate-50"><button onClick={criarAdHoc} disabled={savingAdhoc} className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors shadow-sm disabled:opacity-50">{savingAdhoc ? 'Criando...' : 'Criar Tarefa'}</button></div>
+
+            <div className="p-4 border-t border-slate-100 flex gap-2 bg-slate-50">
+              <button onClick={criarAdHoc} disabled={savingAdhoc} className="bg-[#0f88a8] text-white px-5 py-3 w-full rounded-xl text-sm font-semibold hover:bg-[#0c708b] transition-colors shadow-sm disabled:opacity-50">
+                {savingAdhoc ? 'Criando e enviando notificação...' : 'Criar Tarefa'}
+              </button>
+            </div>
           </aside>
         </>
       )}
 
+      {/* DRAWER PADRÃO */}
       {drawerOpen && selected && (
         <>
-          <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-40 transition-all" onClick={fecharDrawer} />
+          <div className="fixed inset-0 bg-[#063955]/20 backdrop-blur-sm z-40 transition-all" onClick={fecharDrawer} />
           <aside className="fixed top-0 right-0 h-full w-full sm:w-[520px] bg-white z-50 shadow-2xl border-l border-slate-200 flex flex-col">
             <div className="p-6 border-b border-slate-100 flex justify-between items-start">
-              <div><span className="text-xs text-indigo-600 font-semibold tracking-wide uppercase">Detalhes da Tarefa</span><h2 className="text-xl text-slate-900 font-semibold mt-1">{selected.atividades?.nome_atividade}</h2><div className="text-xs text-slate-500 mt-1">{selected.atividades?.setores?.nome || '—'} • {selected.atividades?.responsaveis?.nome || '—'}</div></div>
-              <button onClick={fecharDrawer} className="text-slate-400 hover:text-slate-600 p-2">✕</button>
+              <div><span className="text-xs text-[#0f88a8] font-semibold tracking-wide uppercase">Detalhes da Tarefa</span><h2 className="text-xl text-[#063955] font-semibold mt-1">{selected.atividades?.nome_atividade}</h2><div className="text-xs text-slate-500 mt-1">{selected.atividades?.setores?.nome || '—'} • {selected.atividades?.responsaveis?.nome || '—'}</div></div>
+              <button onClick={fecharDrawer} className="text-slate-400 hover:text-[#063955] p-2">✕</button>
             </div>
             <div className="p-6 flex-1 overflow-y-auto space-y-5">
               <div className="grid grid-cols-2 gap-4">
-                <div><label className="text-xs text-slate-500 font-medium block mb-1">Status</label><select value={drawerStatus} onChange={e => setDrawerStatus(e.target.value)} className="w-full border border-slate-200 rounded-xl p-2.5 text-sm outline-none focus:border-indigo-400">{statuses.map(s => <option key={s} value={s}>{s}</option>)}</select></div>
-                <div><label className="text-xs text-slate-500 font-medium block mb-1">Vencimento</label><input type="date" value={drawerVenc} onChange={e => setDrawerVenc(e.target.value)} className="w-full border border-slate-200 rounded-xl p-2.5 text-sm outline-none focus:border-indigo-400"/></div>
+                <div><label className="text-xs text-slate-500 font-medium block mb-1">Status</label><select value={drawerStatus} onChange={e => setDrawerStatus(e.target.value)} className="w-full border border-slate-200 rounded-xl p-2.5 text-sm outline-none focus:border-[#0f88a8]">{statuses.map(s => <option key={s} value={s}>{s}</option>)}</select></div>
+                <div><label className="text-xs text-slate-500 font-medium block mb-1">Vencimento</label><input type="date" value={drawerVenc} onChange={e => setDrawerVenc(e.target.value)} className="w-full border border-slate-200 rounded-xl p-2.5 text-sm outline-none focus:border-[#0f88a8]"/></div>
               </div>
-              <div><label className="text-xs text-slate-500 font-medium block mb-1">Observações (Links, Evidências)</label><textarea value={drawerObs} onChange={e => setDrawerObs(e.target.value)} rows={5} className="w-full border border-slate-200 rounded-xl p-3 text-sm outline-none focus:border-indigo-400" /></div>
+              <div><label className="text-xs text-slate-500 font-medium block mb-1">Observações (Links, Evidências)</label><textarea value={drawerObs} onChange={e => setDrawerObs(e.target.value)} rows={5} className="w-full border border-slate-200 rounded-xl p-3 text-sm outline-none focus:border-[#0f88a8]" /></div>
               <div className="border-t border-slate-100 pt-5">
                 <label className="text-xs text-slate-500 font-medium block mb-2">Comentários</label>
-                <div className="flex gap-2"><input value={comentNovo} onChange={e => setComentNovo(e.target.value)} onKeyDown={e => e.key === 'Enter' && enviarComentario()} placeholder="Escreva um comentário..." className="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-indigo-400"/><button onClick={enviarComentario} className="bg-indigo-600 text-white px-4 rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors">Enviar</button></div>
-                <div className="mt-4 space-y-2">{comentarios.map(c => (<div key={c.id} className="bg-slate-50 rounded-xl p-3 border border-slate-100"><div className="flex justify-between text-xs text-slate-500 mb-1"><span className="font-medium text-slate-700">{c.autor || 'Usuário'}</span><span>{String(c.created_at).slice(0,16).replace('T',' ')}</span></div><p className="text-sm text-slate-800">{c.mensagem}</p></div>))}</div>
+                <div className="flex gap-2"><input value={comentNovo} onChange={e => setComentNovo(e.target.value)} onKeyDown={e => e.key === 'Enter' && enviarComentario()} placeholder="Escreva um comentário..." className="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-[#0f88a8]"/><button onClick={enviarComentario} className="bg-[#0f88a8] text-white px-4 rounded-xl text-sm font-medium hover:bg-[#0c708b] transition-colors">Enviar</button></div>
+                <div className="mt-4 space-y-2">{comentarios.map(c => (<div key={c.id} className="bg-slate-50 rounded-xl p-3 border border-slate-100"><div className="flex justify-between text-xs text-slate-500 mb-1"><span className="font-medium text-[#063955]">{c.autor || 'Usuário'}</span><span>{String(c.created_at).slice(0,16).replace('T',' ')}</span></div><p className="text-sm text-slate-800">{c.mensagem}</p></div>))}</div>
               </div>
             </div>
             <div className="p-4 border-t border-slate-100 flex justify-between bg-slate-50">
-              <button onClick={() => excluirTarefa(selected.id)} className="text-red-500 hover:bg-red-50 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors">Excluir Tarefa</button>
-              <div className="flex gap-2"><button onClick={salvarDrawer} className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors shadow-sm">{savingDrawer ? 'Salvando...' : 'Salvar'}</button><button onClick={concluirNoDrawer} className="bg-emerald-600 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-emerald-700 transition-colors shadow-sm">✓ Concluir</button></div>
+              <button onClick={() => excluirTarefa(selected.id)} className="text-[#b43a3d] hover:bg-[#b43a3d]/10 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors">Excluir Tarefa</button>
+              <div className="flex gap-2"><button onClick={salvarDrawer} className="bg-[#0f88a8] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#0c708b] transition-colors shadow-sm">{savingDrawer ? 'Salvando...' : 'Salvar'}</button><button onClick={concluirNoDrawer} className="bg-[#2d6943] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#204e31] transition-colors shadow-sm">✓ Concluir</button></div>
             </div>
           </aside>
         </>

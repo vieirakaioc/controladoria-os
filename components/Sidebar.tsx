@@ -16,6 +16,14 @@ import {
   Shield
 } from 'lucide-react'
 
+// PALETA OFICIAL EXTRAÍDA DA IMAGEM:
+// Ciano: #0f88a8
+// Verde Escuro: #2d6943
+// Areia/Amarelo: #efc486
+// Cinza: #818284
+// Vermelho: #b43a3d
+// Azul Escuro (Fundo): #063955
+
 const allNavItems = [
   { name: 'Início (Sincronizar)', href: '/', icon: Home, adminOnly: true },
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, adminOnly: true },
@@ -57,22 +65,24 @@ export default function Sidebar() {
   const navItems = allNavItems.filter(item => !item.adminOnly || userRole === 'admin')
 
   return (
-    <aside className={`relative bg-[#0B1F3A] text-white transition-all duration-300 ease-in-out flex flex-col shadow-2xl ${isExpanded ? 'w-64' : 'w-20'}`}>
+    // Fundo Azul Escuro Oficial (#063955)
+    <aside className={`relative bg-[#063955] text-white transition-all duration-300 ease-in-out flex flex-col shadow-2xl ${isExpanded ? 'w-64' : 'w-20'}`}>
       
       {/* Topo / Logotipo Atualizado */}
       <div className="h-24 flex items-center justify-center border-b border-white/10 px-4">
         {isExpanded ? (
           <div className="flex flex-col items-center">
-            <span className="text-lg font-bold tracking-tight text-white text-center leading-tight">Portal da<br/>Controladoria</span>
+            <span className="text-lg font-bold tracking-tight text-white text-center leading-tight">Portal da<br/><span className="text-[#efc486]">Controladoria</span></span>
           </div>
         ) : (
-          <span className="text-xl font-black tracking-tighter text-indigo-400">PC</span>
+          <span className="text-xl font-black tracking-tighter text-[#efc486]">PC</span>
         )}
       </div>
 
+      {/* Botão de Expandir/Recolher usando a Cor Ciano (#0f88a8) */}
       <button 
         onClick={() => setIsExpanded(!isExpanded)}
-        className="absolute -right-3 top-8 bg-indigo-600 text-white rounded-full p-1.5 shadow-lg hover:bg-indigo-500 transition-colors z-50"
+        className="absolute -right-3 top-8 bg-[#0f88a8] text-white rounded-full p-1.5 shadow-lg hover:brightness-110 transition-all z-50"
       >
         {isExpanded ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
       </button>
@@ -85,7 +95,12 @@ export default function Sidebar() {
             <Link 
               key={item.href} 
               href={item.href}
-              className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${isActive ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-400 hover:bg-white/10 hover:text-white'} ${!isExpanded && 'justify-center'}`}
+              // Item Ativo usa o Ciano (#0f88a8). Item inativo usa Cinza (#818284) com hover para Ciano.
+              className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${
+                isActive 
+                  ? 'bg-[#0f88a8] text-white shadow-md' 
+                  : 'text-[#818284] hover:bg-white/5 hover:text-white'
+              } ${!isExpanded && 'justify-center'}`}
               title={!isExpanded ? item.name : ''}
             >
               <Icon size={20} className="shrink-0" />
@@ -96,11 +111,14 @@ export default function Sidebar() {
       </nav>
 
       <div className="p-4 border-t border-white/10 bg-white/5">
+        
+        {/* Bloco do Utilizador com Foto */}
         <Link href="/profile" className={`flex items-center gap-3 mb-4 rounded-xl transition-all hover:bg-white/5 p-2 ${!isExpanded && 'justify-center'}`}>
           {avatarUrl ? (
-            <img src={avatarUrl} alt="Avatar" className="w-9 h-9 rounded-full object-cover shrink-0 border border-white/20" />
+            <img src={avatarUrl} alt="Avatar" className="w-9 h-9 rounded-full object-cover shrink-0 border-2 border-[#efc486]" />
           ) : (
-            <div className="w-9 h-9 bg-indigo-500 rounded-full flex items-center justify-center shrink-0 border border-white/20">
+            // Fundo Verde (#2d6943) para o avatar placeholder
+            <div className="w-9 h-9 bg-[#2d6943] rounded-full flex items-center justify-center shrink-0 border-2 border-transparent">
               <span className="text-white font-bold text-sm">{userName.charAt(0).toUpperCase()}</span>
             </div>
           )}
@@ -108,20 +126,22 @@ export default function Sidebar() {
           {isExpanded && (
             <div className="flex flex-col truncate">
               <span className="text-sm font-semibold text-white truncate">{userName}</span>
-              <span className="text-[10px] uppercase tracking-wider text-indigo-300 font-bold">{userRole}</span>
+              <span className="text-[10px] uppercase tracking-wider text-[#efc486] font-bold">{userRole}</span>
             </div>
           )}
         </Link>
 
+        {/* Botão de Sair usando a cor Vermelha (#b43a3d) no hover */}
         <Link 
           href="/logout"
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-400 hover:bg-red-500/20 hover:text-red-400 transition-all ${!isExpanded && 'justify-center'}`}
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-[#818284] hover:bg-[#b43a3d]/20 hover:text-[#b43a3d] transition-all ${!isExpanded && 'justify-center'}`}
           title={!isExpanded ? 'Sair' : ''}
         >
           <LogOut size={18} className="shrink-0" />
           {isExpanded && <span className="text-sm font-medium whitespace-nowrap">Terminar Sessão</span>}
         </Link>
       </div>
+
     </aside>
   )
 }
