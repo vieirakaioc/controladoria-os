@@ -53,22 +53,39 @@ export default function Sidebar() {
     if (data) setNotificacoes(data)
   }
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        setUserEmail(user.email || '')
-        fetchNotificacoes(user.email || '')
-        
-        const { data } = await supabase.from('profiles').select('role, full_name, avatar_url').eq('id', user.id).single()
-        if (data) {
-          setUserRole(data.role || 'membro')
-          setUserName(data.full_name || user.email?.split('@')[0] || 'Usuário')
-          setAvatarUrl(data.avatar_url || '')
-        }
+useEffect(() => {
+    const fetchUserData = async (userId: string, email: string) => {
+      setUserEmail(email)
+      fetchNotificacoes(email)
+      
+      const { data } = await supabase.from('profiles').select('role, full_name, avatar_url').eq('id', userId).single()
+      if (data) {
+        setUserRole(data.role || 'membro')
+        setUserName(data.full_name || email.split('@')[0] || 'Usuário')
+        setAvatarUrl(data.avatar_url || '')
       }
     }
-    if (pathname !== '/login') fetchUserData()
+
+    // Pega a sessão atual
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) fetchUserData(session.user.id, session.user.email || '')
+    })
+
+    // OUVINTE EM TEMPO REAL: Muda a interface assim que houver login/logout
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        fetchUserData(session.user.id, session.user.email || '')
+      } else {
+        // Se a sessão cair, limpa a interface
+        setUserName('')
+        setUserEmail('')
+        setUserRole('membro')
+        setAvatarUrl('')
+        setNotificacoes([])
+      }
+    })
+
+    return () => subscription.unsubscribe()
   }, [pathname])
 
   // Atualiza as notificações silenciosamente a cada 30 segundos
