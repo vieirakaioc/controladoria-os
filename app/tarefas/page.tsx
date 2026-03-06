@@ -244,15 +244,17 @@ export default function TarefasPage() {
   const [uploadingAnexo, setUploadingAnexo] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Comments & Mentions
+  // Comments & Mentions & Roles
   const [comentarios, setComentarios] = useState<any[]>([])
   const [comentNovo, setComentNovo] = useState('')
   const [userId, setUserId] = useState<string>('')
   const [userName, setUserName] = useState<string>('')
   const [userEmail, setUserEmail] = useState<string>('') 
+  const [userRole, setUserRole] = useState<string>('membro')
+  const [authLoaded, setAuthLoaded] = useState(false)
+
   const [loadingComents, setLoadingComents] = useState(false)
   
-  // 💡 Estados das Menções (@)
   const [mentionOpen, setMentionOpen] = useState(false)
   const [mentionFilter, setMentionFilter] = useState('')
   const comentInputRef = useRef<HTMLInputElement>(null)
@@ -285,8 +287,10 @@ export default function TarefasPage() {
     }
     setUserId(u.id)
     setUserEmail(u.email || '')
-    const { data: prof } = await supabase.from('profiles').select('full_name').eq('id', u.id).maybeSingle()
+    const { data: prof } = await supabase.from('profiles').select('full_name, role').eq('id', u.id).maybeSingle()
     setUserName(prof?.full_name?.trim() || u.email || 'Usuário')
+    setUserRole(prof?.role || 'membro')
+    setAuthLoaded(true) 
   }
 
   const carregarLookups = async () => {
@@ -324,7 +328,7 @@ export default function TarefasPage() {
   }
 
   const carregar = async () => {
-    if (!plannerSel) return
+    if (!plannerSel || !authLoaded) return
     setCarregando(true)
     try {
       const { data, error } = await supabase.from('tarefas_diarias').select(`
@@ -336,7 +340,15 @@ export default function TarefasPage() {
         `).gte('data_vencimento', iso(inicio)).lt('data_vencimento', iso(fim)).order('data_vencimento', { ascending: true })
 
       if (error) throw error
-      const filtradoPlanner = plannerSel === 'Todos' ? data : (data || []).filter((r: any) => r?.atividades?.planner_name === plannerSel)
+
+      let baseData = data || []
+
+      // Filtro de segurança: Membro só vê as suas tarefas
+      if (userRole !== 'admin') {
+        baseData = baseData.filter((r: any) => r?.atividades?.responsaveis?.email === userEmail)
+      }
+
+      const filtradoPlanner = plannerSel === 'Todos' ? baseData : baseData.filter((r: any) => r?.atividades?.planner_name === plannerSel)
       setRows(filtradoPlanner as any)
     } catch (e: any) {
       toast.error('Erro ao carregar tarefas da base de dados.')
@@ -404,12 +416,10 @@ export default function TarefasPage() {
     } finally { setLoadingComents(false) }
   }
 
-  // 💡 LÓGICA DE DIGITAÇÃO DE COMENTÁRIO (DETETOR DE @)
   const handleComentInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value
     setComentNovo(val)
     
-    // Expressão regular que procura um @ seguido de letras/espaços no final do texto
     const match = val.match(/(?:^|\s)@([a-zA-ZÀ-ÿ\s]*)$/)
     if (match) {
       setMentionOpen(true)
@@ -419,7 +429,6 @@ export default function TarefasPage() {
     }
   }
 
-  // 💡 AÇÃO DE CLICAR NUM NOME DA LISTA FLUTUANTE
   const handleSelectMention = (nome: string) => {
     const replaced = comentNovo.replace(/(?:^|\s)@([a-zA-ZÀ-ÿ\s]*)$/, ` @${nome} `)
     setComentNovo(replaced)
@@ -446,7 +455,6 @@ export default function TarefasPage() {
 
     const task = rows.find(r => r.id === selected.id)
 
-    // 1. Notifica o dono da tarefa (Se não for ele a comentar)
     const taskOwnerEmail = task?.atividades?.responsaveis?.email
     if (taskOwnerEmail && taskOwnerEmail !== userEmail) {
       await supabase.from('notificacoes').insert({
@@ -456,7 +464,6 @@ export default function TarefasPage() {
       })
     }
 
-    // 💡 2. VERIFICA AS MENÇÕES INTELIGENTES NO TEXTO E NOTIFICA!
     const usersMentioned = respsDb.filter(r => msg.includes(`@${r.nome}`))
     for (const u of usersMentioned) {
       if (u.email !== userEmail && u.email !== taskOwnerEmail) {
@@ -494,8 +501,11 @@ export default function TarefasPage() {
   }
 
   useEffect(() => { carregarUsuario(); carregarPlanners(); carregarLookups() }, [])
-  useEffect(() => { if (!plannerSel) return; ;(async () => { await carregarWorkflow(plannerSel); await carregar() })() }, [plannerSel])
-  useEffect(() => { if (!plannerSel) return; carregar() }, [mesAlvo, anoAlvo])
+  
+  useEffect(() => { 
+    if (!plannerSel || !authLoaded) return; 
+    ;(async () => { await carregarWorkflow(plannerSel); await carregar() })() 
+  }, [plannerSel, mesAlvo, anoAlvo, authLoaded, userRole, userEmail])
 
   const setStatus = async (id: string, status: string) => {
     const toastId = toast.loading('A atualizar status...')
