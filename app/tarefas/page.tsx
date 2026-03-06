@@ -288,19 +288,21 @@ export default function TarefasPage() {
   const fim = useMemo(() => new Date(anoAlvo, mesAlvo + 1, 1), [anoAlvo, mesAlvo])
   const iso = (d: Date) => d.toISOString().split('T')[0]
 
+  // 💡 LÓGICA DE USUÁRIO REFORÇADA
   const carregarUsuario = async () => {
     const { data, error } = await supabase.auth.getUser()
-    if (error) console.warn('auth.getUser error:', error)
-    const u = data?.user
-    if (!u) {
+    if (error || !data?.user) {
       router.push('/login')
       return
     }
+    const u = data.user
     setUserId(u.id)
     setUserEmail(u.email || '')
+    
     const { data: prof } = await supabase.from('profiles').select('full_name, role').eq('id', u.id).maybeSingle()
+    
     setUserName(prof?.full_name?.trim() || u.email || 'Usuário')
-    setUserRole(prof?.role || 'membro')
+    setUserRole(prof?.role?.toLowerCase().trim() || 'membro')
     setAuthLoaded(true) 
   }
 
@@ -340,8 +342,9 @@ export default function TarefasPage() {
     if (filtroStatus !== 'Todos' && !final.includes(filtroStatus)) setFiltroStatus('Todos')
   }
 
+  // 💡 MURALHA DE SEGURANÇA 100% BLINDADA PARA MEMBROS
   const carregar = async () => {
-    if (!plannerSel || !authLoaded) return
+    if (!plannerSel || !authLoaded || !userEmail) return
     setCarregando(true)
     try {
       const { data, error } = await supabase.from('tarefas_diarias').select(`
@@ -356,8 +359,14 @@ export default function TarefasPage() {
 
       let baseData = data || []
 
+      // Filtro rigoroso: Só deixa passar se o email do login for EXATAMENTE igual ao da tabela responsaveis.
       if (userRole !== 'admin') {
-        baseData = baseData.filter((r: any) => r?.atividades?.responsaveis?.email === userEmail)
+        const emailSeguroLogado = userEmail.trim().toLowerCase()
+        
+        baseData = baseData.filter((r: any) => {
+          const emailDoCartao = (r?.atividades?.responsaveis?.email || '').trim().toLowerCase()
+          return emailDoCartao !== '' && emailDoCartao === emailSeguroLogado
+        })
       }
 
       const filtradoPlanner = plannerSel === 'Todos' ? baseData : baseData.filter((r: any) => r?.atividades?.planner_name === plannerSel)
@@ -515,7 +524,7 @@ export default function TarefasPage() {
   useEffect(() => { carregarUsuario(); carregarPlanners(); carregarLookups() }, [])
   
   useEffect(() => { 
-    if (!plannerSel || !authLoaded) return; 
+    if (!plannerSel || !authLoaded || !userEmail) return; 
     ;(async () => { await carregarWorkflow(plannerSel); await carregar() })() 
   }, [plannerSel, mesAlvo, anoAlvo, authLoaded, userRole, userEmail])
 
@@ -759,7 +768,6 @@ export default function TarefasPage() {
     })
   }, [rows, filtroTexto, filtroStatus, filtroSetor, filtroResp, filtroClassificacao, statuses])
 
-  // 💡 LÓGICA ATUALIZADA: Contadores de Atraso e Hoje só contam o que não está concluído!
   const dashboard = useMemo(() => {
     const done = filtradas.filter(r => (r.status || '').toLowerCase().includes('concl')).length
     const pendentes = filtradas.filter(r => !(r.status || '').toLowerCase().includes('concl'))
@@ -781,12 +789,11 @@ export default function TarefasPage() {
     return buckets
   }, [filtradas, statuses])
 
-  // 💡 LÓGICA ATUALIZADA: Oculte as tarefas concluídas do Timeboard!
   const timeOrder: TimeBucket[] = useMemo(() => ['Atrasadas', 'Hoje', 'Amanhã', 'Próx 7 dias', 'Sem data'], [])
   const timeboard = useMemo(() => {
     const buckets: Record<string, Row[]> = { 'Atrasadas': [], 'Hoje': [], 'Amanhã': [], 'Próx 7 dias': [], 'Sem data': [] }
     filtradas.forEach(r => { 
-      if ((r.status || '').toLowerCase().includes('concl')) return; // IGNORA AS CONCLUÍDAS
+      if ((r.status || '').toLowerCase().includes('concl')) return;
       const b = getBucket(r.data_vencimento); 
       if (buckets[b]) buckets[b].push(r) 
     })
@@ -827,7 +834,13 @@ export default function TarefasPage() {
 
       <header className="flex flex-col xl:flex-row xl:justify-between xl:items-center gap-4 mb-6 bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 transition-colors">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900 dark:text-white tracking-tight">Painel de Execução</h1>
+          {/* 💡 A ETIQUETA VISUAL DE ACESSO */}
+          <h1 className="text-2xl font-semibold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+            Painel de Execução 
+            <span className="text-[10px] uppercase font-bold tracking-widest bg-[#0f88a8]/10 text-[#0f88a8] dark:bg-[#38bdf8]/10 dark:text-[#38bdf8] px-2 py-1 rounded-md mt-1">
+              {userRole === 'admin' ? 'Visão Admin' : 'Minhas Tarefas'}
+            </span>
+          </h1>
           <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Mês: {MESES.find(m => m.v === mesAlvo)?.n}/{anoAlvo}</p>
         </div>
 
