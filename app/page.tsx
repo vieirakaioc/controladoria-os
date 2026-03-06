@@ -13,6 +13,14 @@ const MESES = [
   { v: 8, n: 'Setembro' }, { v: 9, n: 'Outubro' }, { v: 10, n: 'Novembro' }, { v: 11, n: 'Dezembro' },
 ]
 
+// 💡 NOVA FUNÇÃO: Garante que a data não sofre com o Fuso Horário do Brasil
+const formataDataLocal = (dt: Date) => {
+  const y = dt.getFullYear()
+  const m = String(dt.getMonth() + 1).padStart(2, '0')
+  const d = String(dt.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
 export default function Home() {
   const router = useRouter()
 
@@ -51,8 +59,8 @@ export default function Home() {
 
   const carregarEstatisticas = async () => {
     const rotinasAtivas = atividades.filter(a => a.frequencia !== 'Ad Hoc' && a.status === 'Ativo').length
-    const inicioMes = new Date(anoAlvo, mesAlvo, 1).toISOString().slice(0, 10)
-    const fimMes = new Date(anoAlvo, mesAlvo + 1, 0).toISOString().slice(0, 10)
+    const inicioMes = formataDataLocal(new Date(anoAlvo, mesAlvo, 1))
+    const fimMes = formataDataLocal(new Date(anoAlvo, mesAlvo + 1, 0))
 
     const { count: geradasCount } = await supabase
       .from('tarefas_diarias')
@@ -89,30 +97,25 @@ export default function Home() {
     }
   }
 
-  // 💡 O NOVO MOTOR INTELIGENTE QUE GERA MÚLTIPLAS DATAS POR ROTINA
   const calcularDatasVencimento = (regra: any, mes: number, ano: number) => {
     const datas: string[] = []
     const freq = (regra.frequencia || '').toLowerCase()
     const classif = (regra.classificacao || '').toLowerCase()
 
-    // 💡 REGRA DE OURO 1: Fechamento + Semanal = Dias 01, 11 e 21
     if (freq === 'semanal' && classif === 'fechamento') {
       const diasAlvo = [1, 11, 21]
       diasAlvo.forEach(d => {
         const dt = new Date(ano, mes, d)
-        // Valida se o dia existe no mês (ex: dia 31 em fevereiro não rodaria)
         if (dt.getMonth() === mes) {
-          // Proteção de dia útil: Se o dia 1, 11 ou 21 cair em Fim de Semana ou Feriado, avança para o dia útil seguinte
-          while (dt.getDay() === 0 || dt.getDay() === 6 || feriados.includes(dt.toISOString().split('T')[0])) {
+          while (dt.getDay() === 0 || dt.getDay() === 6 || feriados.includes(formataDataLocal(dt))) {
             dt.setDate(dt.getDate() + 1)
           }
-          datas.push(dt.toISOString().split('T')[0])
+          datas.push(formataDataLocal(dt))
         }
       })
       return datas
     }
 
-    // 💡 REGRA 2: Tarefas Semanais Padrão (Gera todas as Segundas/Terças do Mês)
     if (freq === 'semanal' && regra.dia_da_semana) {
       const mapaDias: { [key: string]: number } = { dom: 0, seg: 1, ter: 2, qua: 3, qui: 4, sex: 5, sab: 6 }
       const chave = String(regra.dia_da_semana).toLowerCase().substring(0, 3)
@@ -121,21 +124,19 @@ export default function Home() {
       if (diaAlvoSemana !== undefined) {
         for (let d = 1; d <= 31; d++) {
           const dt = new Date(ano, mes, d)
-          if (dt.getMonth() !== mes) break // Sai se virar o mês
+          if (dt.getMonth() !== mes) break 
           if (dt.getDay() === diaAlvoSemana) {
-            // Se o dia da semana pedido for um feriado, avança para o dia seguinte
             let dtReal = new Date(dt)
-            while (dtReal.getDay() === 0 || dtReal.getDay() === 6 || feriados.includes(dtReal.toISOString().split('T')[0])) {
+            while (dtReal.getDay() === 0 || dtReal.getDay() === 6 || feriados.includes(formataDataLocal(dtReal))) {
               dtReal.setDate(dtReal.getDate() + 1)
             }
-            datas.push(dtReal.toISOString().split('T')[0])
+            datas.push(formataDataLocal(dtReal))
           }
         }
         return datas
       }
     }
 
-    // 💡 REGRA 3: Mensal, Trimestral baseada no Dia da Semana (Cria apenas 1 ocorrência)
     if (regra.dia_da_semana) {
       const mapaDias: { [key: string]: number } = { dom: 0, seg: 1, ter: 2, qua: 3, qui: 4, sex: 5, sab: 6 }
       const chave = String(regra.dia_da_semana).toLowerCase().substring(0, 3)
@@ -144,22 +145,21 @@ export default function Home() {
         let data = new Date(ano, mes, 1)
         while (data.getDay() !== diaAlvoSemana) data.setDate(data.getDate() + 1)
         
-        while (data.getDay() === 0 || data.getDay() === 6 || feriados.includes(data.toISOString().split('T')[0])) {
+        while (data.getDay() === 0 || data.getDay() === 6 || feriados.includes(formataDataLocal(data))) {
           data.setDate(data.getDate() + 1)
         }
-        datas.push(data.toISOString().split('T')[0])
+        datas.push(formataDataLocal(data))
         return datas
       }
     }
 
-    // 💡 REGRA 4: Baseado em Dia Útil (Ex: 5º Dia Útil)
     if (regra.dia_util) {
       let diasUteisContados = 0
       for (let d = 1; d <= 31; d++) {
         const dataTeste = new Date(ano, mes, d)
         if (dataTeste.getMonth() !== mes) break
         const fds = dataTeste.getDay() === 0 || dataTeste.getDay() === 6
-        const fmt = dataTeste.toISOString().split('T')[0]
+        const fmt = formataDataLocal(dataTeste)
         const feriado = feriados.includes(fmt)
 
         if (!fds && !feriado) {
@@ -196,10 +196,13 @@ export default function Home() {
   }
 
   const gerarCicloDoMes = async () => {
-    if (!window.confirm(`Tem a certeza que deseja gerar o lote de tarefas para ${MESES.find(m => m.v === mesAlvo)?.n} de ${anoAlvo}?`)) return
+    if (!window.confirm(`Tem a certeza que deseja gerar o lote de tarefas para ${MESES.find(m => m.v === mesAlvo)?.n} de ${anoAlvo}?\n\nℹ️ NOTA: Tarefas com datas de vencimento anteriores ao dia de HOJE não serão criadas para evitar a geração de tarefas em atraso.`)) return
     
     setGerandoCiclo(true)
-    const toastId = toast.loading(`A gerar tarefas do ciclo...`)
+    const toastId = toast.loading(`A gerar tarefas ativas do ciclo...`)
+
+    // 💡 A LINHA QUE TRAVA O PASSADO
+    const hojeISO = formataDataLocal(new Date())
 
     try {
       const cardsParaUpsert: any[] = []
@@ -214,29 +217,33 @@ export default function Home() {
             if (dt.getMonth() !== mesAlvo) break
 
             const fds = dt.getDay() === 0 || dt.getDay() === 6
-            const fmt = dt.toISOString().split('T')[0]
-            if (!fds && !feriados.includes(fmt)) {
+            const fmt = formataDataLocal(dt)
+            
+            // 💡 Só empurra para o Kanban se a data for HOJE ou FUTURO
+            if (fmt >= hojeISO && !fds && !feriados.includes(fmt)) {
               cardsParaUpsert.push({ atividade_id: regra.task_id, data_vencimento: fmt, status: 'Pendente' })
             }
           }
         } else {
-          // 💡 O LAÇO DE REPETIÇÃO QUE INJETA MÚLTIPLAS TAREFAS POR MÊS
           const datasVencimento = calcularDatasVencimento(regra, mesAlvo, anoAlvo)
           datasVencimento.forEach(dataVenc => {
-            cardsParaUpsert.push({ atividade_id: regra.task_id, data_vencimento: dataVenc, status: 'Pendente' })
+            // 💡 Só empurra para o Kanban se a data for HOJE ou FUTURO
+            if (dataVenc >= hojeISO) {
+              cardsParaUpsert.push({ atividade_id: regra.task_id, data_vencimento: dataVenc, status: 'Pendente' })
+            }
           })
         }
       })
 
       if (cardsParaUpsert.length === 0) {
-        toast.error('Nenhuma tarefa atende aos critérios para este mês.', { id: toastId })
+        toast.error('Nenhuma tarefa pendente atende aos critérios para os dias restantes deste mês.', { id: toastId })
         return
       }
 
       const { error } = await supabase.from('tarefas_diarias').upsert(cardsParaUpsert, { onConflict: 'atividade_id,data_vencimento' })
       if (error) throw error
       
-      toast.success(`${cardsParaUpsert.length} tarefas geradas com sucesso!`, { id: toastId })
+      toast.success(`${cardsParaUpsert.length} tarefas ativas geradas com sucesso!`, { id: toastId })
       carregarEstatisticas()
     } catch (err: any) {
       toast.error('Erro ao gerar ciclo: ' + err.message, { id: toastId })
@@ -518,8 +525,8 @@ export default function Home() {
               <ShieldAlert size={16} className="text-[#efc486] dark:text-amber-400" /> Motor Inteligente
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-              O sistema utiliza as suas regras de <strong>Dia Útil</strong> e <strong>Dia da Semana</strong> cruzadas com a tabela de feriados do banco para gerar os cartões no Kanban.<br/><br/>
-              <strong>Nova Regra:</strong> As tarefas "Semanais" com classificação "Fechamento" geram os cartões exatos nos dias 01, 11 e 21 automaticamente!
+              O sistema utiliza as suas regras cruzadas com a tabela de feriados do banco para gerar os cartões no Kanban.<br/><br/>
+              <strong>Proteção Anti-Atraso Ativa:</strong> As tarefas agendadas para dias anteriores ao dia de hoje não são geradas para não entrarem em atraso imediato.
             </p>
           </div>
 
