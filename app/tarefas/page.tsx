@@ -156,6 +156,12 @@ const TaskCard = React.memo(({ r, mode, statuses, statusOrderMap, setStatus, exc
       <div className="text-sm font-medium text-slate-800 leading-snug pointer-events-none">{atv.nome_atividade || '-'}</div>
 
       <div className="mt-3 flex flex-wrap gap-1.5 pointer-events-none">
+        {/* 💡 CLASSIFICAÇÃO EM DESTAQUE AQUI NO CARD */}
+        {atv.classificacao && (
+          <span className="bg-purple-100 text-purple-700 border border-purple-200 px-2 py-0.5 rounded text-[10px] font-bold tracking-wide uppercase">
+            {atv.classificacao}
+          </span>
+        )}
         <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px] font-medium">{atv.setores?.nome || '—'}</span>
         <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px] font-medium">{atv.responsaveis?.nome || '—'}</span>
         <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px] font-medium">{atv.planner_name || '—'}</span>
@@ -222,6 +228,8 @@ export default function TarefasPage() {
   const [filtroStatus, setFiltroStatus] = useState<string>('Todos')
   const [filtroSetor, setFiltroSetor] = useState<string>('Todos')
   const [filtroResp, setFiltroResp] = useState<string>('Todos')
+  // 💡 ESTADO PARA FILTRO DE CLASSIFICAÇÃO
+  const [filtroClassificacao, setFiltroClassificacao] = useState<string>('Todos')
 
   const [view, setView] = useState<'list' | 'board' | 'timeboard' | 'calendar'>('timeboard')
 
@@ -262,6 +270,8 @@ export default function TarefasPage() {
   // Lookups
   const [setoresDb, setSetoresDb] = useState<Lookup[]>([])
   const [respsDb, setRespsDb] = useState<Lookup[]>([])
+  // 💡 NOVO ESTADO DA TABELA DE CLASSIFICAÇÕES DO SUPABASE
+  const [classificacoesDb, setClassificacoesDb] = useState<Lookup[]>([])
 
   // Modal Ad Hoc
   const [adhocOpen, setAdhocOpen] = useState(false)
@@ -270,6 +280,8 @@ export default function TarefasPage() {
   const [adhocRespId, setAdhocRespId] = useState<string>('')
   const [adhocVenc, setAdhocVenc] = useState<string>(new Date().toISOString().slice(0, 10))
   const [adhocPrioridade, setAdhocPrioridade] = useState<string>('Média')
+  // 💡 NOVO ESTADO DE CRIAÇÃO PARA A CLASSIFICAÇÃO
+  const [adhocClassificacao, setAdhocClassificacao] = useState<string>('')
   const [adhocObs, setAdhocObs] = useState<string>('')
   const [savingAdhoc, setSavingAdhoc] = useState(false)
 
@@ -293,13 +305,16 @@ export default function TarefasPage() {
     setAuthLoaded(true) 
   }
 
+  // 💡 ATUALIZADO PARA BUSCAR A TABELA DE CLASSIFICAÇÕES
   const carregarLookups = async () => {
-    const [{ data: s }, { data: r }] = await Promise.all([
+    const [{ data: s }, { data: r }, { data: c }] = await Promise.all([
       supabase.from('setores').select('id,nome').order('nome', { ascending: true }),
       supabase.from('responsaveis').select('id,nome,email').order('nome', { ascending: true }),
+      supabase.from('classificacoes').select('id,nome').order('nome', { ascending: true }),
     ])
     setSetoresDb((s || []) as any)
     setRespsDb((r || []) as any)
+    setClassificacoesDb((c || []) as any)
   }
 
   const carregarPlanners = async () => {
@@ -327,6 +342,7 @@ export default function TarefasPage() {
     if (filtroStatus !== 'Todos' && !final.includes(filtroStatus)) setFiltroStatus('Todos')
   }
 
+  // 💡 A QUERY AGORA TRAZ A CLASSIFICACAO DA BASE DE DADOS
   const carregar = async () => {
     if (!plannerSel || !authLoaded) return
     setCarregando(true)
@@ -334,7 +350,7 @@ export default function TarefasPage() {
       const { data, error } = await supabase.from('tarefas_diarias').select(`
           id, data_vencimento, status, data_conclusao, observacoes, anexo_url, checklists,
           atividades!tarefas_diarias_atividade_id_fkey (
-            task_id, nome_atividade, planner_name, frequencia, prioridade_descricao, responsavel_id,
+            task_id, nome_atividade, planner_name, frequencia, prioridade_descricao, responsavel_id, classificacao,
             setores!atividades_setor_id_fkey (nome), responsaveis!atividades_responsavel_id_fkey (nome, email)
           )
         `).gte('data_vencimento', iso(inicio)).lt('data_vencimento', iso(fim)).order('data_vencimento', { ascending: true })
@@ -343,7 +359,6 @@ export default function TarefasPage() {
 
       let baseData = data || []
 
-      // Filtro de segurança: Membro só vê as suas tarefas
       if (userRole !== 'admin') {
         baseData = baseData.filter((r: any) => r?.atividades?.responsaveis?.email === userEmail)
       }
@@ -613,6 +628,7 @@ export default function TarefasPage() {
     fecharDrawer()
   }
 
+  // 💡 CRIAR AD HOC COM O NOVO CAMPO CLASSIFICAÇÃO
   const criarAdHoc = async () => {
     const nome = adhocNome.trim(); if (!nome || !adhocVenc) return
     setSavingAdhoc(true)
@@ -628,7 +644,8 @@ export default function TarefasPage() {
         responsavel_id: adhocRespId || null, 
         frequencia: 'Ad Hoc', 
         status: 'Ativo',
-        prioridade_descricao: adhocPrioridade
+        prioridade_descricao: adhocPrioridade,
+        classificacao: adhocClassificacao || null // GUARDA A CLASSIFICAÇÃO AQUI
       }
       const { data: atv, error: errAtv } = await supabase.from('atividades').insert([payloadAtv]).select('task_id').single()
       if (errAtv) throw errAtv
@@ -642,7 +659,8 @@ export default function TarefasPage() {
       const { error: errExec } = await supabase.from('tarefas_diarias').insert([payloadExec])
       if (errExec) throw errExec
 
-      setAdhocOpen(false); setAdhocNome(''); setAdhocSetorId(''); setAdhocRespId(''); setAdhocVenc(new Date().toISOString().slice(0, 10)); setAdhocPrioridade('Média'); setAdhocObs('');
+      // Reset aos campos do modal
+      setAdhocOpen(false); setAdhocNome(''); setAdhocSetorId(''); setAdhocRespId(''); setAdhocVenc(new Date().toISOString().slice(0, 10)); setAdhocPrioridade('Média'); setAdhocObs(''); setAdhocClassificacao('');
       
       const { data: novaTask } = await supabase.from('tarefas_diarias').select('*, atividades!inner(responsaveis(email))').eq('atividade_id', atv.task_id).single()
       if (novaTask) {
@@ -664,7 +682,7 @@ export default function TarefasPage() {
               taskName: nome,
               action: `criada e atribuída a você`,
               userName: userName,
-              observacoes: `Prazo: ${adhocVenc.slice(8,10)}/${adhocVenc.slice(5,7)}/${adhocVenc.slice(0,4)}<br/>Prioridade: <strong>${adhocPrioridade}</strong><br/><br/>Detalhes Adicionais:<br/>${adhocObs || 'Nenhum detalhe fornecido.'}`
+              observacoes: `Prazo: ${adhocVenc.slice(8,10)}/${adhocVenc.slice(5,7)}/${adhocVenc.slice(0,4)}<br/>Prioridade: <strong>${adhocPrioridade}</strong><br/>Classificação: <strong>${adhocClassificacao || 'Nenhuma'}</strong><br/><br/>Detalhes Adicionais:<br/>${adhocObs || 'Nenhum detalhe fornecido.'}`
             })
           })
         }
@@ -679,8 +697,10 @@ export default function TarefasPage() {
     }
   }
 
+  // 💡 LÓGICA DE FILTRAGEM ATUALIZADA (OPÇÕES + FUNCIONAMENTO)
   const setorOptions = useMemo(() => Array.from(new Set(rows.map(r => r.atividades?.setores?.nome).filter(Boolean))).sort(), [rows])
   const respOptions = useMemo(() => Array.from(new Set(rows.map(r => r.atividades?.responsaveis?.nome).filter(Boolean))).sort(), [rows])
+  const classifOptions = useMemo(() => Array.from(new Set(rows.map(r => r.atividades?.classificacao).filter(Boolean))).sort(), [rows])
 
   const filtradas = useMemo(() => {
     const q = filtroTexto.trim().toLowerCase()
@@ -692,9 +712,12 @@ export default function TarefasPage() {
       const okStatus = filtroStatus === 'Todos' ? true : st === filtroStatus
       const okSetor = filtroSetor === 'Todos' ? true : (atv.setores?.nome === filtroSetor)
       const okResp = filtroResp === 'Todos' ? true : (atv.responsaveis?.nome === filtroResp)
-      return okTexto && okStatus && okSetor && okResp
+      // FILTRO DE CLASSIFICAÇÃO APLICADO AQUI
+      const okClassificacao = filtroClassificacao === 'Todos' ? true : (atv.classificacao === filtroClassificacao)
+      
+      return okTexto && okStatus && okSetor && okResp && okClassificacao
     })
-  }, [rows, filtroTexto, filtroStatus, filtroSetor, filtroResp, statuses])
+  }, [rows, filtroTexto, filtroStatus, filtroSetor, filtroResp, filtroClassificacao, statuses])
 
   const dashboard = useMemo(() => {
     const done = filtradas.filter(r => (r.status || '').toLowerCase().includes('concl')).length
@@ -783,7 +806,7 @@ export default function TarefasPage() {
         </div>
       </header>
 
-      {/* KPIS COM SKELETON */}
+      {/* KPIS */}
       <div className="grid grid-cols-1 md:grid-cols-6 gap-3 mb-6">
         <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm">
           <div className="text-xs font-medium text-slate-500 uppercase tracking-wide">Total</div>
@@ -811,12 +834,22 @@ export default function TarefasPage() {
         </div>
       </div>
 
+      {/* 💡 BARRA DE FILTROS COM A NOVA OPÇÃO DE CLASSIFICAÇÃO */}
       <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mb-6 flex flex-wrap gap-3 items-center">
         <input value={filtroTexto} onChange={(e) => setFiltroTexto(e.target.value)} placeholder="Buscar atividade..." className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm w-full md:w-64 outline-none focus:border-[#0f88a8]" />
-        <select value={filtroSetor} onChange={(e) => setFiltroSetor(e.target.value)} className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm text-slate-700 outline-none"><option value="Todos">Setor: Todos</option>{setorOptions.map(s => <option key={s} value={s}>{s}</option>)}</select>
-        <select value={filtroResp} onChange={(e) => setFiltroResp(e.target.value)} className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm text-slate-700 outline-none"><option value="Todos">Resp: Todos</option>{respOptions.map(r => <option key={r} value={r}>{r}</option>)}</select>
+        
+        <select value={filtroClassificacao} onChange={(e) => setFiltroClassificacao(e.target.value)} className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm text-slate-700 outline-none">
+          <option value="Todos">Classificação: Todas</option>
+          {classifOptions.map(c => <option key={c as string} value={c as string}>{c as string}</option>)}
+        </select>
+        
+        <select value={filtroSetor} onChange={(e) => setFiltroSetor(e.target.value)} className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm text-slate-700 outline-none"><option value="Todos">Setor: Todos</option>{setorOptions.map(s => <option key={s as string} value={s as string}>{s as string}</option>)}</select>
+        
+        <select value={filtroResp} onChange={(e) => setFiltroResp(e.target.value)} className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm text-slate-700 outline-none"><option value="Todos">Resp: Todos</option>{respOptions.map(r => <option key={r as string} value={r as string}>{r as string}</option>)}</select>
+        
         <select value={filtroStatus} onChange={(e) => setFiltroStatus(e.target.value)} className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm text-slate-700 outline-none"><option value="Todos">Status: Todos</option>{statuses.map(s => <option key={s} value={s}>{s}</option>)}</select>
-        <button onClick={() => { setFiltroTexto(''); setFiltroSetor('Todos'); setFiltroResp('Todos'); setFiltroStatus('Todos') }} className="text-sm font-medium text-slate-500 hover:text-slate-800 px-2 transition-colors">Limpar Filtros</button>
+        
+        <button onClick={() => { setFiltroTexto(''); setFiltroSetor('Todos'); setFiltroResp('Todos'); setFiltroStatus('Todos'); setFiltroClassificacao('Todos') }} className="text-sm font-medium text-slate-500 hover:text-slate-800 px-2 transition-colors">Limpar Filtros</button>
         <span className="ml-auto text-sm font-medium text-slate-400">{filtradas.length} tarefas</span>
       </div>
 
@@ -840,7 +873,11 @@ export default function TarefasPage() {
                         <td className="p-4 text-slate-600">{r.data_vencimento ? String(r.data_vencimento).slice(0, 10) : '—'}</td>
                         <td className="p-4 font-medium text-slate-800 flex items-center gap-2">
                           {r.anexo_url && <span title="Tem anexo" className="text-[#0f88a8]">📎</span>}
-                          {r.atividades?.nome_atividade || '-'}
+                          <div className="flex flex-col">
+                            <span>{r.atividades?.nome_atividade || '-'}</span>
+                            {/* 💡 Exibe a classificação por baixo do nome na visão de lista */}
+                            {r.atividades?.classificacao && <span className="text-[10px] text-purple-600 font-bold uppercase mt-0.5">{r.atividades.classificacao}</span>}
+                          </div>
                         </td>
                         <td className="p-4 text-slate-500">{r.atividades?.setores?.nome || '-'}</td>
                         <td className="p-4 text-slate-500">{r.atividades?.responsaveis?.nome || '-'}</td>
@@ -908,11 +945,12 @@ export default function TarefasPage() {
                         <div 
                           key={t.id} 
                           onClick={() => abrirDrawer(t)}
-                          className={`text-[10px] leading-tight p-1.5 rounded cursor-pointer font-medium border border-black/5 hover:shadow-md transition-all truncate ${badge(t.status)}`}
+                          className={`text-[10px] leading-tight p-1.5 rounded cursor-pointer font-medium border border-black/5 hover:shadow-md transition-all truncate flex items-center justify-between gap-1 ${badge(t.status)}`}
                           title={`${t.atividades?.nome_atividade} (${t.status})`}
                         >
-                          {t.anexo_url && '📎 '}
-                          {t.atividades?.nome_atividade || 'Tarefa'}
+                          <span className="truncate">{t.anexo_url && '📎 '} {t.atividades?.nome_atividade || 'Tarefa'}</span>
+                          {/* 💡 Exibe a classificação super discreta no calendário */}
+                          {t.atividades?.classificacao && <div className="w-1.5 h-1.5 rounded-full bg-purple-500 shrink-0" title={t.atividades.classificacao} />}
                         </div>
                       ))}
                     </div>
@@ -928,7 +966,7 @@ export default function TarefasPage() {
         </>
       )}
 
-      {/* MODAL AD HOC */}
+      {/* 💡 MODAL AD HOC - AGORA COM O CAMPO CLASSIFICAÇÃO! */}
       {adhocOpen && (
         <>
           <div className="fixed inset-0 bg-[#063955]/20 backdrop-blur-sm z-40 transition-all" onClick={() => setAdhocOpen(false)} />
@@ -976,6 +1014,15 @@ export default function TarefasPage() {
                 </div>
               </div>
 
+              {/* 💡 NOVO CAMPO: CLASSIFICAÇÃO */}
+              <div>
+                <label className="text-xs text-slate-500 font-medium block mb-1">Classificação</label>
+                <select value={adhocClassificacao} onChange={(e) => setAdhocClassificacao(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-sm outline-none focus:border-[#0f88a8]">
+                  <option value="">(Nenhuma)</option>
+                  {classificacoesDb.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)}
+                </select>
+              </div>
+
               <div>
                 <label className="text-xs text-slate-500 font-medium block mb-1">Observações / Detalhes</label>
                 <textarea value={adhocObs} onChange={(e) => setAdhocObs(e.target.value)} rows={4} className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#0f88a8] resize-none" placeholder="Forneça instruções, links ou contexto adicional para quem vai executar a tarefa..." />
@@ -997,7 +1044,21 @@ export default function TarefasPage() {
           <div className="fixed inset-0 bg-[#063955]/20 backdrop-blur-sm z-40 transition-all" onClick={fecharDrawer} />
           <aside className="fixed top-0 right-0 h-full w-full sm:w-[520px] bg-white z-50 shadow-2xl border-l border-slate-200 flex flex-col">
             <div className="p-6 border-b border-slate-100 flex justify-between items-start">
-              <div><span className="text-xs text-[#0f88a8] font-semibold tracking-wide uppercase">Detalhes da Tarefa</span><h2 className="text-xl text-[#063955] font-semibold mt-1">{selected.atividades?.nome_atividade}</h2><div className="text-xs text-slate-500 mt-1">{selected.atividades?.setores?.nome || '—'} • {selected.atividades?.responsaveis?.nome || '—'}</div></div>
+              <div>
+                <span className="text-xs text-[#0f88a8] font-semibold tracking-wide uppercase">Detalhes da Tarefa</span>
+                <h2 className="text-xl text-[#063955] font-semibold mt-1">{selected.atividades?.nome_atividade}</h2>
+                <div className="text-xs text-slate-500 mt-1 flex items-center gap-2">
+                  <span>{selected.atividades?.setores?.nome || '—'}</span>
+                  <span>•</span>
+                  <span>{selected.atividades?.responsaveis?.nome || '—'}</span>
+                  {selected.atividades?.classificacao && (
+                    <>
+                      <span>•</span>
+                      <span className="text-purple-600 font-semibold">{selected.atividades.classificacao}</span>
+                    </>
+                  )}
+                </div>
+              </div>
               <button onClick={fecharDrawer} className="text-slate-400 hover:text-[#063955] p-2">✕</button>
             </div>
             
@@ -1053,11 +1114,10 @@ export default function TarefasPage() {
 
                 <div><label className="text-xs text-slate-500 font-medium block mb-1">Observações Gerais</label><textarea value={drawerObs} onChange={e => setDrawerObs(e.target.value)} rows={4} className="w-full border border-slate-200 rounded-xl p-3 text-sm outline-none focus:border-[#0f88a8]" placeholder="Informações adicionais..." /></div>
                 
-                {/* 💡 CAIXA DE COMENTÁRIOS COM O DETETOR DE @ */}
+                {/* CAIXA DE COMENTÁRIOS COM O DETETOR DE @ */}
                 <div className="border-t border-slate-100 pt-5 relative">
                   <label className="text-xs text-slate-500 font-medium block mb-2">Comentários e Histórico (Use @ para mencionar)</label>
                   
-                  {/* CAIXA DE LISTAGEM FLUTUANTE DOS NOMES */}
                   {mentionOpen && (
                     <div className="absolute bottom-full mb-2 left-0 w-64 bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden z-50">
                        <div className="bg-[#063955] text-white text-xs font-bold px-4 py-2">Mencionar Colaborador</div>
@@ -1098,7 +1158,6 @@ export default function TarefasPage() {
                           <span className="font-bold text-[#063955]">{c.autor || 'Usuário'}</span>
                           <span>{String(c.created_at).slice(0,16).replace('T',' ')}</span>
                         </div>
-                        {/* Se o comentário contiver um @Nome, pinta de azul para dar destaque */}
                         <p className="text-sm text-slate-800 leading-relaxed" dangerouslySetInnerHTML={{ __html: c.mensagem.replace(/@([a-zA-ZÀ-ÿ\s]+)/g, '<strong style="color: #0f88a8;">@$1</strong>') }}></p>
                       </div>
                     ))}
