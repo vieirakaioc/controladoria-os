@@ -156,7 +156,6 @@ const TaskCard = React.memo(({ r, mode, statuses, statusOrderMap, setStatus, exc
       <div className="text-sm font-medium text-slate-800 dark:text-white leading-snug pointer-events-none">{atv.nome_atividade || '-'}</div>
 
       <div className="mt-3 flex flex-wrap gap-1.5 pointer-events-none">
-        {/* 💡 CLASSIFICAÇÃO COM O NOVO TOM ESMERALDA (SEM ROXO) */}
         {atv.classificacao && (
           <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20 px-2 py-0.5 rounded text-[10px] font-bold tracking-wide uppercase">
             {atv.classificacao}
@@ -241,6 +240,10 @@ export default function TarefasPage() {
   // Drawer & Upload State
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [selected, setSelected] = useState<Row | null>(null)
+  
+  // 💡 NOVO ESTADO: NOME DA ATIVIDADE EDITÁVEL NO DRAWER
+  const [drawerNome, setDrawerNome] = useState<string>('')
+  
   const [drawerStatus, setDrawerStatus] = useState<string>('')
   const [drawerObs, setDrawerObs] = useState<string>('')
   const [drawerVenc, setDrawerVenc] = useState<string>('')
@@ -539,6 +542,8 @@ export default function TarefasPage() {
 
   const abrirDrawer = (r: Row) => {
     setSelected(r)
+    // 💡 INICIALIZA O NOME DA ATIVIDADE NO DRAWER
+    setDrawerNome(r.atividades?.nome_atividade || '')
     setDrawerStatus(r.status || statuses[0] || 'Pendente')
     setDrawerObs(r.observacoes || '')
     setDrawerVenc(r.data_vencimento ? String(r.data_vencimento).slice(0, 10) : '')
@@ -557,6 +562,7 @@ export default function TarefasPage() {
   const fecharDrawer = () => { 
     setDrawerOpen(false)
     setSelected(null)
+    setDrawerNome('')
     setDrawerStatus('')
     setDrawerObs('')
     setDrawerVenc('')
@@ -587,6 +593,8 @@ export default function TarefasPage() {
 
   const salvarDrawer = async () => {
     if (!selected) return
+    if (!drawerNome.trim()) { toast.error('O título não pode estar vazio.'); return }
+
     setSavingDrawer(true)
     const toastId = toast.loading('A guardar alterações...')
 
@@ -603,11 +611,21 @@ export default function TarefasPage() {
       const { error } = await supabase.from('tarefas_diarias').update(patch).eq('id', selected.id)
       if (error) throw error
 
-      let mudouClassificacao = false
-      if (selected.atividades?.task_id && drawerClassificacao !== (selected.atividades?.classificacao || '')) {
-        const { error: errAtv } = await supabase.from('atividades').update({ classificacao: drawerClassificacao || null }).eq('task_id', selected.atividades.task_id)
+      // 💡 VERIFICA SE O TÍTULO OU A CLASSIFICAÇÃO MUDARAM PARA ATUALIZAR A MATRIZ
+      let mudouMatriz = false
+      const nomeAntigo = selected.atividades?.nome_atividade || ''
+      const classifAntiga = selected.atividades?.classificacao || ''
+
+      if (selected.atividades?.task_id && (drawerNome !== nomeAntigo || drawerClassificacao !== classifAntiga)) {
+        const { error: errAtv } = await supabase.from('atividades')
+          .update({ 
+            nome_atividade: drawerNome,
+            classificacao: drawerClassificacao || null 
+          })
+          .eq('task_id', selected.atividades.task_id)
+        
         if (errAtv) throw errAtv
-        mudouClassificacao = true
+        mudouMatriz = true
       }
 
       setRows(prev => prev.map(r => {
@@ -615,8 +633,12 @@ export default function TarefasPage() {
         if (r.id === selected.id) {
           atualizado = { ...atualizado, ...patch }
         }
-        if (mudouClassificacao && r.atividades?.task_id === selected.atividades?.task_id) {
-          atualizado.atividades = { ...atualizado.atividades, classificacao: drawerClassificacao || null }
+        if (mudouMatriz && r.atividades?.task_id === selected.atividades?.task_id) {
+          atualizado.atividades = { 
+            ...atualizado.atividades, 
+            nome_atividade: drawerNome,
+            classificacao: drawerClassificacao || null 
+          }
         }
         return atualizado
       }))
@@ -624,7 +646,11 @@ export default function TarefasPage() {
       setSelected(prev => prev ? { 
         ...prev, 
         ...patch, 
-        atividades: { ...prev.atividades, classificacao: drawerClassificacao || null } 
+        atividades: { 
+          ...prev.atividades, 
+          nome_atividade: drawerNome,
+          classificacao: drawerClassificacao || null 
+        } 
       } : prev)
 
       toast.success('Detalhes guardados!', { id: toastId })
@@ -641,7 +667,6 @@ export default function TarefasPage() {
     }
   }
 
-  // 💡 A FUNÇÃO DE CONCLUIR NO DRAWER AGORA ESTÁ AQUI
   const concluirNoDrawer = async () => {
     if (!selected) return
     if (drawerChecklists.length > 0 && drawerChecklists.some(c => !c.concluido)) {
@@ -1059,9 +1084,17 @@ export default function TarefasPage() {
           <div className="fixed inset-0 bg-[#063955]/20 dark:bg-black/60 backdrop-blur-sm z-40 transition-all" onClick={fecharDrawer} />
           <aside className="fixed top-0 right-0 h-full w-full sm:w-[520px] bg-white dark:bg-slate-900 z-50 shadow-2xl border-l border-slate-200 dark:border-slate-800 flex flex-col transition-colors">
             <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-start">
-              <div>
+              <div className="w-full mr-4">
                 <span className="text-xs text-[#0f88a8] dark:text-[#38bdf8] font-semibold tracking-wide uppercase">Detalhes da Tarefa</span>
-                <h2 className="text-xl text-[#063955] dark:text-white font-semibold mt-1">{selected.atividades?.nome_atividade}</h2>
+                
+                {/* 💡 TÍTULO AGORA É EDITÁVEL! */}
+                <input 
+                  value={drawerNome} 
+                  onChange={(e) => setDrawerNome(e.target.value)} 
+                  className="w-full text-xl text-[#063955] dark:text-white font-semibold mt-1 bg-transparent border-b-2 border-transparent focus:border-[#0f88a8] outline-none transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50 px-1 -ml-1 rounded"
+                  title="Clique para editar o nome da atividade"
+                />
+
                 <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-2">
                   <span>{selected.atividades?.setores?.nome || '—'}</span>
                   <span>•</span>
