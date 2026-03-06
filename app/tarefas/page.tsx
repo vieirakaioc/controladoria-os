@@ -241,9 +241,7 @@ export default function TarefasPage() {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [selected, setSelected] = useState<Row | null>(null)
   
-  // 💡 NOVO ESTADO: NOME DA ATIVIDADE EDITÁVEL NO DRAWER
   const [drawerNome, setDrawerNome] = useState<string>('')
-  
   const [drawerStatus, setDrawerStatus] = useState<string>('')
   const [drawerObs, setDrawerObs] = useState<string>('')
   const [drawerVenc, setDrawerVenc] = useState<string>('')
@@ -542,7 +540,6 @@ export default function TarefasPage() {
 
   const abrirDrawer = (r: Row) => {
     setSelected(r)
-    // 💡 INICIALIZA O NOME DA ATIVIDADE NO DRAWER
     setDrawerNome(r.atividades?.nome_atividade || '')
     setDrawerStatus(r.status || statuses[0] || 'Pendente')
     setDrawerObs(r.observacoes || '')
@@ -611,7 +608,6 @@ export default function TarefasPage() {
       const { error } = await supabase.from('tarefas_diarias').update(patch).eq('id', selected.id)
       if (error) throw error
 
-      // 💡 VERIFICA SE O TÍTULO OU A CLASSIFICAÇÃO MUDARAM PARA ATUALIZAR A MATRIZ
       let mudouMatriz = false
       const nomeAntigo = selected.atividades?.nome_atividade || ''
       const classifAntiga = selected.atividades?.classificacao || ''
@@ -763,12 +759,19 @@ export default function TarefasPage() {
     })
   }, [rows, filtroTexto, filtroStatus, filtroSetor, filtroResp, filtroClassificacao, statuses])
 
+  // 💡 LÓGICA ATUALIZADA: Contadores de Atraso e Hoje só contam o que não está concluído!
   const dashboard = useMemo(() => {
     const done = filtradas.filter(r => (r.status || '').toLowerCase().includes('concl')).length
+    const pendentes = filtradas.filter(r => !(r.status || '').toLowerCase().includes('concl'))
+    
     return {
-      total: filtradas.length, done, overdue: filtradas.filter(r => getBucket(r.data_vencimento) === 'Atrasadas').length,
-      dueToday: filtradas.filter(r => getBucket(r.data_vencimento) === 'Hoje').length, dueTomorrow: filtradas.filter(r => getBucket(r.data_vencimento) === 'Amanhã').length,
-      next7: filtradas.filter(r => getBucket(r.data_vencimento) === 'Próx 7 dias').length, pct: filtradas.length ? Math.round((done / filtradas.length) * 100) : 0
+      total: filtradas.length, 
+      done, 
+      overdue: pendentes.filter(r => getBucket(r.data_vencimento) === 'Atrasadas').length,
+      dueToday: pendentes.filter(r => getBucket(r.data_vencimento) === 'Hoje').length, 
+      dueTomorrow: pendentes.filter(r => getBucket(r.data_vencimento) === 'Amanhã').length,
+      next7: pendentes.filter(r => getBucket(r.data_vencimento) === 'Próx 7 dias').length, 
+      pct: filtradas.length ? Math.round((done / filtradas.length) * 100) : 0
     }
   }, [filtradas])
 
@@ -778,10 +781,15 @@ export default function TarefasPage() {
     return buckets
   }, [filtradas, statuses])
 
+  // 💡 LÓGICA ATUALIZADA: Oculte as tarefas concluídas do Timeboard!
   const timeOrder: TimeBucket[] = useMemo(() => ['Atrasadas', 'Hoje', 'Amanhã', 'Próx 7 dias', 'Sem data'], [])
   const timeboard = useMemo(() => {
     const buckets: Record<string, Row[]> = { 'Atrasadas': [], 'Hoje': [], 'Amanhã': [], 'Próx 7 dias': [], 'Sem data': [] }
-    filtradas.forEach(r => { const b = getBucket(r.data_vencimento); if (buckets[b]) buckets[b].push(r) })
+    filtradas.forEach(r => { 
+      if ((r.status || '').toLowerCase().includes('concl')) return; // IGNORA AS CONCLUÍDAS
+      const b = getBucket(r.data_vencimento); 
+      if (buckets[b]) buckets[b].push(r) 
+    })
     return buckets
   }, [filtradas])
 
@@ -1087,7 +1095,6 @@ export default function TarefasPage() {
               <div className="w-full mr-4">
                 <span className="text-xs text-[#0f88a8] dark:text-[#38bdf8] font-semibold tracking-wide uppercase">Detalhes da Tarefa</span>
                 
-                {/* 💡 TÍTULO AGORA É EDITÁVEL! */}
                 <input 
                   value={drawerNome} 
                   onChange={(e) => setDrawerNome(e.target.value)} 
