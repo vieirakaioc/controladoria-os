@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { toPng } from 'html-to-image'
 import jsPDF from 'jspdf'
 import { Toaster, toast } from 'react-hot-toast'
-import { FileText } from 'lucide-react'
+import { FileText, Info } from 'lucide-react'
 import { useTheme } from 'next-themes'
 
 const MESES = [
@@ -63,36 +63,57 @@ const getColors = (isDark: boolean) => ({
   dangerRed: isDark ? '#f87171' : '#b43a3d',
 })
 
-function Section({ title, subtitle, right, children }: { title: string; subtitle?: string; right?: React.ReactNode; children: React.ReactNode }) {
+// 💡 TOOLTIP CORRIGIDO: Agora fica sempre em primeiro plano e centralizado
+function InfoTooltip({ text }: { text: string }) {
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm hover:shadow-md dark:hover:shadow-slate-900/50 transition-all duration-300 overflow-hidden flex flex-col h-full">
-      <div className="p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 flex items-start justify-between gap-4 shrink-0">
+    <div className="group relative flex items-center justify-center cursor-help">
+      <Info size={14} className="text-slate-400 hover:text-[#0f88a8] dark:hover:text-[#38bdf8] transition-colors" />
+      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-64 p-3 bg-slate-800 dark:bg-slate-700 text-white text-[11px] leading-relaxed rounded-xl shadow-2xl z-[99999] text-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 font-medium">
+        {text}
+        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800 dark:border-t-slate-700"></div>
+      </div>
+    </div>
+  )
+}
+
+// 💡 SECTION CORRIGIDA: Removido overflow-hidden e adicionado hover:z-20 para o tooltip não ser cortado
+function Section({ title, subtitle, right, info, children }: { title: string; subtitle?: string; right?: React.ReactNode; info?: string; children: React.ReactNode }) {
+  return (
+    <div className="relative hover:z-20 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm hover:shadow-md dark:hover:shadow-slate-900/50 transition-all duration-300 flex flex-col h-full">
+      <div className="p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 flex items-start justify-between gap-4 shrink-0 rounded-t-2xl">
         <div>
-          <div className="text-base font-semibold text-[#063955] dark:text-white">{title}</div>
+          <div className="flex items-center gap-2">
+            <h2 className="text-base font-semibold text-[#063955] dark:text-white">{title}</h2>
+            {info && <InfoTooltip text={info} />}
+          </div>
           {subtitle ? <div className="text-[13px] font-medium text-slate-500 dark:text-slate-400 mt-0.5">{subtitle}</div> : null}
         </div>
         {right}
       </div>
-      <div className="p-5 flex-1 overflow-hidden">
+      <div className="p-5 flex-1 relative">
         {children}
       </div>
     </div>
   )
 }
 
-function KPI({ title, value, accent, isDark }: { title: string; value: any; accent?: string; isDark: boolean }) {
+function KPI({ title, value, accent, isDark, info }: { title: string; value: any; accent?: string; isDark: boolean; info?: string }) {
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 shadow-sm hover:shadow-md dark:hover:shadow-slate-900/50 hover:-translate-y-0.5 transition-all duration-300">
-      <div className="text-xs font-semibold tracking-wider text-slate-400 dark:text-slate-500 uppercase">{title}</div>
+    <div className="relative hover:z-20 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 shadow-sm hover:shadow-md dark:hover:shadow-slate-900/50 hover:-translate-y-0.5 transition-all duration-300">
+      <div className="flex justify-between items-start">
+        <div className="text-xs font-semibold tracking-wider text-slate-400 dark:text-slate-500 uppercase">{title}</div>
+        {info && <InfoTooltip text={info} />}
+      </div>
       <div className={`text-3xl font-semibold ${accent || (isDark ? 'text-white' : 'text-[#063955]')} mt-2`}>{value}</div>
     </div>
   )
 }
 
 function Doughnut({ items, size = 140, colors }: { items: { label: string; value: number; color: string }[]; size?: number; colors: any }) {
-  // 💡 SEPARAÇÃO DO TOTAL REAL E MATEMÁTICO (CORREÇÃO DO BUG DO 1)
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null)
+  
   const realTotal = items.reduce((a, b) => a + b.value, 0)
-  const mathTotal = realTotal || 1 // Previne divisão por zero apenas na matemática dos arcos
+  const mathTotal = realTotal || 1 
   
   const r = size / 2 - 10
   const cx = size / 2; const cy = size / 2; const stroke = 14
@@ -110,32 +131,46 @@ function Doughnut({ items, size = 140, colors }: { items: { label: string; value
 
   return (
     <div className="flex flex-col sm:flex-row items-center gap-6 h-full w-full">
-      <div className="flex justify-center shrink-0">
+      <div className="flex justify-center shrink-0 relative">
         <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-          {/* Aro base cinzento (sempre visível) */}
           <circle cx={cx} cy={cy} r={r} fill="none" stroke={colors.grayTrack} strokeWidth={stroke} />
           
-          {/* Só desenha as cores se houver tarefas reais */}
-          {realTotal > 0 && arcs.map((a, i) => <path key={i} d={a.d} fill="none" stroke={a.color} strokeWidth={stroke} strokeLinecap="round" />)}
+          {realTotal > 0 && arcs.map((a, i) => (
+            <path 
+              key={i} 
+              d={a.d} 
+              fill="none" 
+              stroke={a.color} 
+              strokeWidth={hoverIdx === i ? stroke + 2 : stroke} 
+              strokeLinecap="round" 
+              className="transition-all duration-300 cursor-pointer"
+              opacity={hoverIdx === null || hoverIdx === i ? 1 : 0.3}
+              onMouseEnter={() => setHoverIdx(i)}
+              onMouseLeave={() => setHoverIdx(null)}
+            />
+          ))}
           
-          {/* 💡 MOSTRA O VALOR REAL NO CENTRO DA PIZZA (MOSTRARÁ 0 SE VAZIO) */}
           <text x={cx} y={cy - 2} textAnchor="middle" fill={colors.darkBlue} fontSize="18" fontWeight="600">{realTotal}</text>
           <text x={cx} y={cy + 16} textAnchor="middle" fill={colors.muted} fontSize="10" fontWeight="500">tarefas</text>
         </svg>
       </div>
       
-      <div className="space-y-2.5 flex-1 w-full max-h-[140px] overflow-y-auto pr-2 custom-scrollbar">
-        {items.map((it) => {
-          // 💡 Percentagem baseada no Total Real
+      <div className="space-y-1.5 flex-1 w-full max-h-[140px] overflow-y-auto pr-2 custom-scrollbar">
+        {items.map((it, i) => {
           const pct = realTotal > 0 ? Math.round((it.value / realTotal) * 100) : 0
           return (
-            <div key={it.label} className="flex items-center justify-between gap-3 text-sm">
+            <div 
+              key={it.label} 
+              className={`flex items-center justify-between gap-3 text-sm p-1.5 rounded-lg transition-colors cursor-default ${hoverIdx === i ? 'bg-slate-100 dark:bg-slate-800' : ''}`}
+              onMouseEnter={() => setHoverIdx(i)}
+              onMouseLeave={() => setHoverIdx(null)}
+            >
               <div className="flex items-center gap-2.5">
-                <span className="inline-block w-3 h-3 rounded-md shrink-0" style={{ background: it.color }} />
-                <span className="text-slate-600 dark:text-slate-300 font-medium truncate">{it.label}</span>
+                <span className="inline-block w-3 h-3 rounded-md shrink-0 transition-transform" style={{ background: it.color, transform: hoverIdx === i ? 'scale(1.2)' : 'scale(1)' }} />
+                <span className={`font-medium truncate transition-colors ${hoverIdx === i ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-300'}`}>{it.label}</span>
               </div>
-              <span className="text-[#063955] dark:text-white font-semibold shrink-0">
-                {it.value} <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500 ml-1">({pct}%)</span>
+              <span className={`font-semibold shrink-0 transition-colors ${hoverIdx === i ? 'text-slate-900 dark:text-white' : 'text-[#063955] dark:text-white'}`}>
+                {it.value} <span className="text-[11px] font-medium opacity-60 ml-1">({pct}%)</span>
               </span>
             </div>
           )
@@ -145,27 +180,79 @@ function Doughnut({ items, size = 140, colors }: { items: { label: string; value
   )
 }
 
+// 💡 GRÁFICO DE LINHA ATUALIZADO: Mostra valores e remove as datas do eixo X
 function LineChart({ points, height = 180, colors }: { points: { x: string; y: number }[]; height?: number; colors: any }) {
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null)
+  
   const w = 720; const h = height; const pad = 18
   const maxY = Math.max(1, ...points.map(p => p.y))
   const xStep = points.length > 1 ? (w - pad * 2) / (points.length - 1) : 0
   const toX = (i: number) => pad + i * xStep
   const toY = (y: number) => h - pad - (y / (maxY || 1)) * (h - pad * 2)
+  
   const d = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${toX(i)} ${toY(p.y)}`).join(' ')
+  const dArea = `${d} L ${toX(points.length - 1)} ${h - pad} L ${pad} ${h - pad} Z`
 
   return (
-    <div className="w-full overflow-x-auto custom-scrollbar pb-2">
-      <svg viewBox={`0 0 ${w} ${h}`} className="min-w-[500px] w-full h-full block">
+    <div className="relative w-full overflow-x-auto custom-scrollbar pb-2 group">
+      <svg viewBox={`0 0 ${w} ${h}`} className="min-w-[500px] w-full h-full block" onMouseLeave={() => setHoverIdx(null)}>
+        <defs>
+          <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={colors.cyan} stopOpacity="0.3" />
+            <stop offset="100%" stopColor={colors.cyan} stopOpacity="0.0" />
+          </linearGradient>
+        </defs>
+
+        {/* Linhas de grelha horizontais */}
         {[0, 0.25, 0.5, 0.75, 1].map((t, i) => {
           const y = h - pad - t * (h - pad * 2)
-          return <line key={i} x1={pad} y1={y} x2={w - pad} y2={y} stroke={colors.grayTrack} strokeWidth="1.5" />
+          return <line key={i} x1={pad} y1={y} x2={w - pad} y2={y} stroke={colors.grayTrack} strokeWidth="1.5" strokeDasharray={i === 0 ? "0" : "4 4"} />
         })}
-        <path d={d} fill="none" stroke={colors.cyan} strokeWidth="3" strokeLinecap="round" />
-        {points.map((p, i) => <circle key={i} cx={toX(i)} cy={toY(p.y)} r="4" fill={colors.cyan} />)}
+
+        {/* Preenchimento sob a linha */}
+        {points.length > 1 && <path d={dArea} fill="url(#areaGradient)" className="transition-all duration-300" />}
+        
+        {/* A linha principal */}
+        <path d={d} fill="none" stroke={colors.cyan} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+
+        {/* 💡 VALORES REAIS IMPRESSOS NO GRÁFICO */}
         {points.map((p, i) => {
-          if (points.length > 20 && i % 4 !== 0) return null
-          return <text key={i} x={toX(i)} y={h - 2} textAnchor="middle" fontSize="11" fontWeight="500" fill={colors.muted}>{niceLabel(p.x)}</text>
+          if (p.y === 0) return null; // Esconde zeros para o gráfico não ficar poluído
+          return (
+            <text key={`val-${i}`} x={toX(i)} y={toY(p.y) - 12} textAnchor="middle" fontSize="12" fontWeight="bold" fill={colors.cyan} className="pointer-events-none drop-shadow-sm">
+              {p.y}
+            </text>
+          )
         })}
+
+        {/* Hitboxes Invisíveis para facilitar o hover do rato (O segredo do Power BI) */}
+        {points.map((p, i) => (
+          <circle key={`hit-${i}`} cx={toX(i)} cy={toY(p.y)} r="16" fill="transparent" onMouseEnter={() => setHoverIdx(i)} className="cursor-pointer outline-none" />
+        ))}
+
+        {/* Bolinhas Visíveis */}
+        {points.map((p, i) => (
+          <circle 
+            key={`pt-${i}`} 
+            cx={toX(i)} 
+            cy={toY(p.y)} 
+            r={hoverIdx === i ? "6" : "3"} 
+            fill={hoverIdx === i ? "#fff" : colors.cyan} 
+            stroke={colors.cyan}
+            strokeWidth={hoverIdx === i ? "3" : "0"}
+            className="transition-all duration-200 pointer-events-none" 
+          />
+        ))}
+
+        {/* 💡 O Balão Flutuante (Tooltip) levantado para não tapar o número */}
+        {hoverIdx !== null && (
+          <g transform={`translate(${toX(hoverIdx)}, ${toY(points[hoverIdx].y) - 34})`} className="pointer-events-none transition-transform duration-200">
+            <rect x="-40" y="-40" width="80" height="34" rx="6" fill={colors.darkBlue} className="shadow-2xl" style={{ filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))' }} />
+            <polygon points="-6,-6 6,-6 0,2" fill={colors.darkBlue} />
+            <text x="0" y="-24" textAnchor="middle" fill="#fff" fontSize="13" fontWeight="bold">{points[hoverIdx].y} concl.</text>
+            <text x="0" y="-12" textAnchor="middle" fill="#94a3b8" fontSize="9" fontWeight="500">Dia {niceLabel(points[hoverIdx].x)}</text>
+          </g>
+        )}
       </svg>
     </div>
   )
@@ -175,32 +262,31 @@ function BarList({ items, color, isPerson = false, profilesMap = {}, colors }: {
   const maxV = Math.max(1, ...items.map(i => i.value))
 
   return (
-    <div className="space-y-4 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
+    <div className="space-y-2.5 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
       {items.map((it) => {
         const w = maxV > 0 ? Math.round((it.value / maxV) * 100) : 0
         return (
-          <div key={it.label} className="flex flex-col gap-1.5">
+          <div key={it.label} className="flex flex-col gap-1.5 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
             <div className="flex items-center justify-between text-sm font-medium text-slate-700 dark:text-slate-200">
               <div className="flex items-center gap-2.5">
                 {isPerson && (
                   profilesMap[it.label] ? (
-                    <img src={profilesMap[it.label]} alt="" className="w-8 h-8 rounded-full object-cover shadow-sm border border-slate-200 dark:border-slate-700 shrink-0" />
+                    <img src={profilesMap[it.label]} alt="" className="w-7 h-7 rounded-full object-cover shadow-sm border border-slate-200 dark:border-slate-700 shrink-0" />
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-xs font-bold shrink-0">
+                    <div className="w-7 h-7 rounded-full bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-[10px] font-bold shrink-0">
                       {it.label.charAt(0).toUpperCase()}
                     </div>
                   )
                 )}
                 <span className="truncate leading-tight max-w-[150px]">{it.label}</span>
               </div>
-              <span className="text-[#063955] dark:text-white font-semibold shrink-0">{it.value}</span>
+              <span className="text-[#063955] dark:text-white font-bold shrink-0">{it.value}</span>
             </div>
             
             <div className="flex items-center gap-3">
-              <div className="h-2 flex-1 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                <div className="h-full rounded-full transition-all duration-500" style={{ width: `${w}%`, background: color }} />
+              <div className="h-1.5 flex-1 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+                <div className="h-full rounded-full transition-all duration-700 ease-out" style={{ width: `${w}%`, background: color }} />
               </div>
-              <span className="text-[11px] font-medium text-slate-400 w-8 text-right shrink-0">{w}%</span>
             </div>
           </div>
         )
@@ -213,7 +299,7 @@ function DoubleBarList({ items, profilesMap, colors }: { items: { name: string, 
   const maxV = Math.max(1, ...items.map(i => i.total))
 
   return (
-    <div className="space-y-6 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
+    <div className="space-y-3 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
       {items.map(it => {
         const wOnTime = maxV > 0 ? Math.round((it.onTime / maxV) * 100) : 0
         const wLate = maxV > 0 ? Math.round((it.late / maxV) * 100) : 0
@@ -221,35 +307,35 @@ function DoubleBarList({ items, profilesMap, colors }: { items: { name: string, 
         const pctLate = it.total > 0 ? 100 - pctOnTime : 0
         
         return (
-          <div key={it.name} className="flex flex-col gap-1.5">
+          <div key={it.name} className="flex flex-col gap-2 p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
             <div className="flex items-center justify-between text-sm font-medium text-slate-700 dark:text-slate-200">
               <div className="flex items-center gap-2.5">
                 {profilesMap[it.name] ? (
                   <img src={profilesMap[it.name]} alt="" className="w-8 h-8 rounded-full object-cover shadow-sm border border-slate-200 dark:border-slate-700 shrink-0" />
                 ) : (
-                  <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-xs font-bold shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-[10px] font-bold shrink-0">
                     {it.name.charAt(0).toUpperCase()}
                   </div>
                 )}
-                <span className="truncate leading-tight font-semibold text-[#063955] dark:text-white max-w-[150px]">{it.name}</span>
+                <span className="truncate leading-tight font-semibold text-[#063955] dark:text-white max-w-[140px]">{it.name}</span>
               </div>
-              <span className="text-[#063955] dark:text-white font-bold shrink-0">{it.total}</span>
+              <span className="text-[#063955] dark:text-white font-black shrink-0">{it.total}</span>
             </div>
             
             <div className="flex items-center gap-3">
               <div className="h-2.5 flex-1 rounded-full overflow-hidden bg-slate-100 dark:bg-slate-800 flex">
-                <div className="h-full transition-all duration-500" style={{ width: `${wOnTime}%`, background: colors.okGreen }} title={`No Prazo: ${it.onTime} (${pctOnTime}%)`} />
-                <div className="h-full transition-all duration-500" style={{ width: `${wLate}%`, background: colors.dangerRed }} title={`Atrasadas: ${it.late} (${pctLate}%)`} />
+                <div className="h-full transition-all duration-700 ease-out" style={{ width: `${wOnTime}%`, background: colors.okGreen }} title={`No Prazo: ${it.onTime} (${pctOnTime}%)`} />
+                <div className="h-full transition-all duration-700 ease-out" style={{ width: `${wLate}%`, background: colors.dangerRed }} title={`Atrasadas: ${it.late} (${pctLate}%)`} />
               </div>
             </div>
             
-            <div className="flex justify-between text-[11px] px-1">
+            <div className="flex justify-between text-[10px] font-bold tracking-wide uppercase px-1">
               {it.onTime > 0 ? (
-                <span className="text-[#2d6943] dark:text-[#4ade80] font-semibold">{it.onTime} no prazo <span className="opacity-70 ml-0.5">({pctOnTime}%)</span></span>
+                <span className="text-[#2d6943] dark:text-[#4ade80]">{it.onTime} no prazo <span className="opacity-60 ml-0.5">({pctOnTime}%)</span></span>
               ) : <span />}
               
               {it.late > 0 ? (
-                <span className="text-[#b43a3d] dark:text-[#f87171] font-semibold">{it.late} com atraso <span className="opacity-70 ml-0.5">({pctLate}%)</span></span>
+                <span className="text-[#b43a3d] dark:text-[#f87171]">{it.late} com atraso <span className="opacity-60 ml-0.5">({pctLate}%)</span></span>
               ) : <span />}
             </div>
           </div>
@@ -268,22 +354,22 @@ function TwoBars({ onTime, late, colors }: { onTime: number; late: number; color
     <div className="space-y-6">
       <div>
         <div className="flex items-center justify-between text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">
-          <span>Entregue no Prazo</span><span className="text-[#063955] dark:text-white font-semibold">{onTime}</span>
+          <span>Entregue no Prazo</span><span className="text-[#063955] dark:text-white font-bold">{onTime}</span>
         </div>
-        <div className="h-3 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-          <div className="h-full transition-all duration-500" style={{ width: `${a}%`, background: colors.okGreen }} />
+        <div className="h-3 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+          <div className="h-full transition-all duration-700 ease-out" style={{ width: `${a}%`, background: colors.okGreen }} />
         </div>
       </div>
       <div>
         <div className="flex items-center justify-between text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">
-          <span>Entregue com Atraso</span><span className="text-[#063955] dark:text-white font-semibold">{late}</span>
+          <span>Entregue com Atraso</span><span className="text-[#063955] dark:text-white font-bold">{late}</span>
         </div>
-        <div className="h-3 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-          <div className="h-full transition-all duration-500" style={{ width: `${b}%`, background: colors.dangerRed }} />
+        <div className="h-3 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+          <div className="h-full transition-all duration-700 ease-out" style={{ width: `${b}%`, background: colors.dangerRed }} />
         </div>
       </div>
       <div className="pt-4 border-t border-slate-100 dark:border-slate-800 text-xs font-medium text-slate-500 dark:text-slate-400">
-        Taxa de pontualidade real: <span className="text-[#063955] dark:text-white font-bold text-sm ml-1">{a}%</span>
+        Taxa de pontualidade da equipa: <span className="text-[#063955] dark:text-white font-bold text-sm ml-1 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">{a}%</span>
       </div>
     </div>
   )
@@ -661,7 +747,7 @@ export default function DashboardPage() {
             {planners.map((p) => <option key={p} value={p}>{p}</option>)}
           </select>
 
-          <div className="flex items-center bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden focus-within:border-[#0f88a8] transition-colors">
+          <div className="flex items-center bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden focus-within:border-[#0f88a8] transition-colors relative z-30">
             <select
               className="bg-transparent py-2.5 pl-4 pr-2 text-sm font-medium text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
               value={mesInicio}
@@ -701,34 +787,56 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <div id="dashboard-content" className="bg-slate-50 dark:bg-slate-950 p-2 transition-colors">
+      <div id="dashboard-content" className="bg-slate-50 dark:bg-slate-950 p-2 transition-colors relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
-          <KPI title="Total Volume" value={metrics.total} isDark={isDark} />
+          <KPI title="Total Volume" value={metrics.total} isDark={isDark} info="Número total de tarefas atribuídas no período selecionado." />
           <KPI title="Concluídas" value={metrics.done} accent="text-[#2d6943] dark:text-[#4ade80]" isDark={isDark} />
-          <KPI title="Em Atraso" value={metrics.overdue} accent="text-[#b43a3d] dark:text-[#f87171]" isDark={isDark} />
+          <KPI title="Em Atraso" value={metrics.overdue} accent="text-[#b43a3d] dark:text-[#f87171]" isDark={isDark} info="Tarefas pendentes cuja data limite já foi ultrapassada." />
           <KPI title="Para Hoje" value={metrics.dueToday} accent="text-[#0f88a8] dark:text-[#38bdf8]" isDark={isDark} />
           <KPI title="Próx. 7 Dias" value={metrics.next7Count} isDark={isDark} />
-          <KPI title="Eficiência" value={`${metrics.pct}%`} accent="text-[#0f88a8] dark:text-[#38bdf8]" isDark={isDark} />
+          <KPI title="Eficiência" value={`${metrics.pct}%`} accent="text-[#0f88a8] dark:text-[#38bdf8]" isDark={isDark} info="Rácio entre as tarefas já concluídas e o volume total atribuído." />
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          <Section title="Produtividade Diária" subtitle="Tarefas concluídas no período" right={loading ? <span className="text-xs font-medium text-slate-400 animate-pulse">A carregar…</span> : null}>
+          <Section 
+            title="Produtividade Diária" 
+            subtitle="Tarefas concluídas no período" 
+            info="Demonstra o volume de tarefas terminadas dia a dia. Picos altos indicam dias de maior esforço da equipa."
+            right={loading ? <span className="text-xs font-medium text-slate-400 animate-pulse">A carregar…</span> : null}
+          >
             <LineChart points={donePerDay} colors={colors} />
           </Section>
 
-          <Section title="Distribuição de Status" subtitle="Visão geral do andamento">
+          <Section 
+            title="Distribuição de Status" 
+            subtitle="Visão geral do andamento"
+            info="Mapeamento do estado atual de todas as tarefas. Ajuda a encontrar os gargalos da operação."
+          >
             <Doughnut items={statusDist} size={140} colors={colors} />
           </Section>
 
-          <Section title="Qualidade de Entrega" subtitle="Entregas no prazo vs atrasadas" right={<span className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Entregue: {onTimeLate.onTime + onTimeLate.late}</span>}>
+          <Section 
+            title="Qualidade de Entrega" 
+            subtitle="Entregas no prazo vs atrasadas" 
+            info="Mede a eficácia. Compara a data de conclusão da tarefa com a sua data limite teórica."
+            right={<span className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Entregue: {onTimeLate.onTime + onTimeLate.late}</span>}
+          >
             <TwoBars onTime={onTimeLate.onTime} late={onTimeLate.late} colors={colors} />
           </Section>
 
-          <Section title="Saúde da Operação" subtitle="Volume Planejado vs Ad Hoc">
+          <Section 
+            title="Saúde da Operação" 
+            subtitle="Volume Planejado vs Ad Hoc"
+            info="Uma operação saudável deve ter a maioria do seu volume como 'Planeado'. Muitos 'Ad Hocs' indicam incêndios diários."
+          >
             <Doughnut items={additionalMetrics.mix} size={140} colors={colors} />
           </Section>
 
-          <Section title="Aging de Pendências" subtitle="Tempo de atraso das tarefas em aberto">
+          <Section 
+            title="Aging de Pendências" 
+            subtitle="Tempo de atraso das tarefas em aberto"
+            info="Classifica o perigo das tarefas atrasadas pela sua 'idade'. Dívidas com mais de 5 dias exigem atenção imediata."
+          >
             {additionalMetrics.aging.some(a => a.value > 0) ? (
               <BarList items={additionalMetrics.aging} color={colors.warnAmber} colors={colors} />
             ) : (
@@ -736,7 +844,11 @@ export default function DashboardPage() {
             )}
           </Section>
 
-          <Section title="Entregas por Pessoa" subtitle="Análise de pontualidade individual">
+          <Section 
+            title="Entregas por Pessoa" 
+            subtitle="Análise de pontualidade individual"
+            info="Avalia a performance de cada membro. O verde indica tarefas fechadas dentro do prazo, e o vermelho, tarefas concluídas fora de tempo."
+          >
             {deliveriesByPerson.length > 0 ? (
                <DoubleBarList items={deliveriesByPerson} profilesMap={profilesMap} colors={colors} />
             ) : (
@@ -744,10 +856,13 @@ export default function DashboardPage() {
             )}
           </Section>
 
-          {/* SÓ MOSTRA GRÁFICOS DA EQUIPE SE FOR ADMIN */}
           {userRole === 'admin' && (
             <>
-              <Section title="Atrasadas por Responsável" subtitle="Contas com pendências vencidas">
+              <Section 
+                title="Atrasadas por Responsável" 
+                subtitle="Contas com pendências vencidas"
+                info="Identifica rapidamente quem tem o maior volume de tarefas pendentes e já fora do prazo."
+              >
                 {overdueByPerson.length ? (
                   <BarList items={overdueByPerson} color={colors.dangerRed} isPerson={true} profilesMap={profilesMap} colors={colors} />
                 ) : (
@@ -755,11 +870,11 @@ export default function DashboardPage() {
                 )}
               </Section>
 
-              <Section title="Volume por Setor" subtitle="Demandas ativas no período">
+              <Section title="Volume por Setor" subtitle="Demandas ativas no período" info="Mostra quais os departamentos com maior carga de processos neste mês.">
                 {bySector.length ? <BarList items={bySector} color={colors.darkBlue} colors={colors} /> : <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-50 dark:bg-slate-800 rounded-xl p-6 transition-colors">Sem dados para exibir.</div>}
               </Section>
 
-              <Section title="Volume por Colaborador" subtitle="Demandas ativas no período">
+              <Section title="Volume por Colaborador" subtitle="Demandas ativas no período" info="Ranqueia os membros da equipa pela quantidade bruta de responsabilidades que lhes foram atribuídas.">
                 {byPerson.length ? <BarList items={byPerson} color={colors.darkBlue} isPerson={true} profilesMap={profilesMap} colors={colors} /> : <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-50 dark:bg-slate-800 rounded-xl p-6 transition-colors">Sem dados para exibir.</div>}
               </Section>
             </>
