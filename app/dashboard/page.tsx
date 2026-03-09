@@ -22,6 +22,7 @@ type Row = {
   atividades?: {
     planner_name?: string | null
     frequencia?: string | null
+    responsaveis_lista?: any // 💡 ADICIONADO PARA LER MÚLTIPLOS RESPONSÁVEIS
     setores?: { nome?: string | null } | null
     responsaveis?: { nome?: string | null; email?: string | null } | null
   } | null
@@ -39,6 +40,17 @@ const parseISODateOnly = (s: string) => {
   return new Date(y, (m || 1) - 1, d || 1)
 }
 const niceLabel = (d: string) => `${d.slice(8, 10)}/${d.slice(5, 7)}`
+
+// 💡 HELPER: Garante a leitura de múltiplos responsáveis para a segurança e gráficos
+const getResponsaveis = (atv: any) => {
+  if (atv?.responsaveis_lista && Array.isArray(atv.responsaveis_lista) && atv.responsaveis_lista.length > 0) {
+    return atv.responsaveis_lista;
+  }
+  if (atv?.responsaveis) {
+    return [atv.responsaveis];
+  }
+  return [];
+}
 
 // PALETA OFICIAL
 const COLORS = {
@@ -280,7 +292,6 @@ export default function DashboardPage() {
   const [planners, setPlanners] = useState<string[]>([])
   const [plannerSel, setPlannerSel] = useState<string>('Todos')
 
-  // 💡 INTERVALO DE MESES
   const hoje = new Date()
   const [mesInicio, setMesInicio] = useState<number>(hoje.getMonth())
   const [mesFim, setMesFim] = useState<number>(hoje.getMonth())
@@ -292,8 +303,6 @@ export default function DashboardPage() {
   
   const [profilesMap, setProfilesMap] = useState<Record<string, string>>({})
 
-  // 💡 CÁLCULO INTELIGENTE DO INÍCIO E FIM BASEADO NOS MESES
-  // Ex: Se escolher Jan a Março de 2026 -> 2026-01-01 até 2026-03-31
   const start = useMemo(() => new Date(anoAlvo, Math.min(mesInicio, mesFim), 1).toISOString().slice(0, 10), [anoAlvo, mesInicio, mesFim])
   const end = useMemo(() => new Date(anoAlvo, Math.max(mesInicio, mesFim) + 1, 0).toISOString().slice(0, 10), [anoAlvo, mesInicio, mesFim])
 
@@ -331,6 +340,7 @@ export default function DashboardPage() {
     }
   }
 
+  // 💡 MURALHA DE SEGURANÇA E BUSCA DE DADOS
   const carregar = async () => {
     if (!authLoaded) return
     setLoading(true)
@@ -341,7 +351,7 @@ export default function DashboardPage() {
         .select(`
           id, data_vencimento, status, data_conclusao,
           atividades!tarefas_diarias_atividade_id_fkey (
-            planner_name, frequencia,
+            planner_name, frequencia, responsaveis_lista,
             setores!atividades_setor_id_fkey (nome),
             responsaveis!atividades_responsavel_id_fkey (nome, email)
           )
@@ -354,8 +364,13 @@ export default function DashboardPage() {
 
       let baseData = data || []
 
+      // 💡 SEGURANÇA REFORÇADA PARA MEMBROS
       if (userRole !== 'admin') {
-        baseData = baseData.filter((r: any) => r?.atividades?.responsaveis?.email === userEmail)
+        const emailSeguroLogado = userEmail.trim().toLowerCase()
+        baseData = baseData.filter((r: any) => {
+          const respsTask = getResponsaveis(r?.atividades)
+          return respsTask.some((res: any) => (res.email || '').trim().toLowerCase() === emailSeguroLogado)
+        })
       }
 
       const filtered = plannerSel === 'Todos' ? baseData : baseData.filter((r: any) => r?.atividades?.planner_name === plannerSel)
@@ -505,6 +520,7 @@ export default function DashboardPage() {
     return days.map((d) => ({ x: d, y: count[d] || 0 }))
   }, [rows, start, end])
 
+  // 💡 MÚLTIPLOS RESPONSÁVEIS: Atrasos mapeados corretamente para todas as pessoas envolvidas
   const overdueByPerson = useMemo(() => {
     const today = startOfDay(new Date())
     const map: Record<string, number> = {}
@@ -515,8 +531,15 @@ export default function DashboardPage() {
       const due = startOfDay(parseISODateOnly(String(r.data_vencimento).slice(0, 10)))
       if (due >= today) return
 
-      const name = r.atividades?.responsaveis?.nome || '—'
-      map[name] = (map[name] || 0) + 1
+      const resps = getResponsaveis(r.atividades)
+      if (resps.length === 0) {
+        map['Sem Responsável'] = (map['Sem Responsável'] || 0) + 1
+      } else {
+        resps.forEach((res: any) => {
+          const name = res.nome || 'Sem Responsável'
+          map[name] = (map[name] || 0) + 1
+        })
+      }
     })
 
     return Object.entries(map).map(([label, value]) => ({ label, value })).sort((a, b) => b.value - a.value).slice(0, 8)
@@ -528,12 +551,24 @@ export default function DashboardPage() {
     return Object.entries(map).map(([label, value]) => ({ label, value })).sort((a, b) => b.value - a.value).slice(0, 10)
   }, [rows])
 
+  // 💡 MÚLTIPLOS RESPONSÁVEIS: Volume total de trabalho mapeado corretamente para todos
   const byPerson = useMemo(() => {
     const map: Record<string, number> = {}
-    rows.forEach((r) => { const k = r.atividades?.responsaveis?.nome || '—'; map[k] = (map[k] || 0) + 1 })
+    rows.forEach((r) => { 
+      const resps = getResponsaveis(r.atividades)
+      if (resps.length === 0) {
+        map['Sem Responsável'] = (map['Sem Responsável'] || 0) + 1
+      } else {
+        resps.forEach((res: any) => {
+          const name = res.nome || 'Sem Responsável'
+          map[name] = (map[name] || 0) + 1
+        })
+      }
+    })
     return Object.entries(map).map(([label, value]) => ({ label, value })).sort((a, b) => b.value - a.value).slice(0, 10)
   }, [rows])
 
+  // 💡 MÚLTIPLOS RESPONSÁVEIS: Entregas divididas corretamente
   const deliveriesByPerson = useMemo(() => {
     const map: Record<string, { onTime: number, late: number }> = {}
     
@@ -541,18 +576,27 @@ export default function DashboardPage() {
       const st = (r.status || '').toLowerCase()
       if (!st.includes('concl')) return 
       
-      const name = r.atividades?.responsaveis?.nome || '—'
-      if (!map[name]) map[name] = { onTime: 0, late: 0 }
-
       const dueStr = (r.data_vencimento || '').slice(0, 10)
       const doneStr = (r.data_conclusao || r.data_vencimento || '').slice(0, 10)
       if (!dueStr) return
 
       const due = startOfDay(parseISODateOnly(dueStr))
       const done = startOfDay(parseISODateOnly(doneStr))
+      const isOnTime = done.getTime() <= due.getTime()
 
-      if (done.getTime() <= due.getTime()) map[name].onTime++
-      else map[name].late++
+      const resps = getResponsaveis(r.atividades)
+      if (resps.length === 0) {
+        if (!map['Sem Responsável']) map['Sem Responsável'] = { onTime: 0, late: 0 }
+        if (isOnTime) map['Sem Responsável'].onTime++
+        else map['Sem Responsável'].late++
+      } else {
+        resps.forEach((res: any) => {
+          const name = res.nome || 'Sem Responsável'
+          if (!map[name]) map[name] = { onTime: 0, late: 0 }
+          if (isOnTime) map[name].onTime++
+          else map[name].late++
+        })
+      }
     })
 
     return Object.entries(map)
@@ -580,7 +624,6 @@ export default function DashboardPage() {
 
   if (!authLoaded) return <div className="min-h-screen bg-slate-50 flex items-center justify-center text-[#0f88a8] font-medium animate-pulse">A preparar o seu painel...</div>
 
-  // Mês de apresentação pro título
   const isMesmoMes = mesInicio === mesFim
   const tituloPeriodo = isMesmoMes 
     ? `${MESES.find(m => m.v === mesInicio)?.n}/${anoAlvo}` 
@@ -609,7 +652,6 @@ export default function DashboardPage() {
             {planners.map((p) => <option key={p} value={p}>{p}</option>)}
           </select>
 
-          {/* 💡 NOVO FILTRO ESTILIZADO DE INTERVALO */}
           <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl shadow-sm overflow-hidden focus-within:border-[#0f88a8] transition-colors">
             <select
               className="bg-transparent py-2.5 pl-4 pr-2 text-sm font-medium text-slate-700 outline-none cursor-pointer"
