@@ -66,7 +66,6 @@ const badge = (s?: string | null) => {
   return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
 }
 
-// 💡 Helper Inteligente para Múltiplos Responsáveis (Lida com o passado e o futuro)
 const getResponsaveis = (atv: any) => {
   if (atv?.responsaveis_lista && Array.isArray(atv.responsaveis_lista) && atv.responsaveis_lista.length > 0) {
     return atv.responsaveis_lista;
@@ -132,7 +131,6 @@ const TaskCard = React.memo(({ r, mode, statuses, statusOrderMap, setStatus, exc
   const chkTotal = chk.length
   const chkDone = chk.filter((c: ChecklistItem) => c.concluido).length
 
-  // 💡 Usando o Helper para pegar todos os nomes
   const responsaveisAtuais = getResponsaveis(atv)
   const nomesResponsaveis = responsaveisAtuais.length > 0 ? responsaveisAtuais.map((res: any) => res.nome).join(', ') : '—'
 
@@ -177,12 +175,9 @@ const TaskCard = React.memo(({ r, mode, statuses, statusOrderMap, setStatus, exc
           </span>
         )}
         <span className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded text-[10px] font-medium">{atv.setores?.nome || '—'}</span>
-        
-        {/* 💡 EXIBE OS MÚLTIPLOS NOMES AQUI */}
         <span className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded text-[10px] font-medium truncate max-w-[120px]" title={nomesResponsaveis}>
           {nomesResponsaveis}
         </span>
-        
         <span className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded text-[10px] font-medium">{atv.planner_name || '—'}</span>
       </div>
 
@@ -268,7 +263,6 @@ export default function TarefasPage() {
   const [drawerAnexo, setDrawerAnexo] = useState<string>('')
   const [drawerChecklists, setDrawerChecklists] = useState<ChecklistItem[]>([])
   const [drawerClassificacao, setDrawerClassificacao] = useState<string>('')
-  // 💡 NOVO ESTADO: LISTA DE RESPONSÁVEIS SELECIONADOS NO DRAWER
   const [drawerResps, setDrawerResps] = useState<any[]>([])
 
   const [novoItemChecklist, setNovoItemChecklist] = useState('')
@@ -300,7 +294,6 @@ export default function TarefasPage() {
   const [adhocOpen, setAdhocOpen] = useState(false)
   const [adhocNome, setAdhocNome] = useState('')
   const [adhocSetorId, setAdhocSetorId] = useState<string>('')
-  // 💡 NOVO ESTADO: LISTA DE RESPONSÁVEIS NO AD HOC
   const [adhocResps, setAdhocResps] = useState<any[]>([])
   
   const [adhocVenc, setAdhocVenc] = useState<string>(new Date().toISOString().slice(0, 10))
@@ -369,8 +362,8 @@ export default function TarefasPage() {
   const carregar = async () => {
     if (!plannerSel || !authLoaded || !userEmail) return
     setCarregando(true)
+    
     try {
-      // 💡 BUSCAMOS TAMBÉM O NOVO CAMPO 'responsaveis_lista'
       const { data, error } = await supabase.from('tarefas_diarias').select(`
           id, data_vencimento, status, data_conclusao, observacoes, anexo_url, checklists,
           atividades!tarefas_diarias_atividade_id_fkey (
@@ -383,7 +376,6 @@ export default function TarefasPage() {
 
       let baseData = data || []
 
-      // 💡 SEGURANÇA REFORÇADA: Procura o email do usuário na lista múltipla
       if (userRole !== 'admin') {
         const emailSeguroLogado = userEmail.trim().toLowerCase()
         
@@ -402,7 +394,53 @@ export default function TarefasPage() {
     }
   }
 
-  // 💡 ENVIO DE E-MAIL PARA TODOS OS RESPONSÁVEIS
+  // 💡 A MÁQUINA DE ENVIO DE E-MAIL DO LEMBRETE DIÁRIO (DISCRETO E SILENCIOSO)
+  useEffect(() => {
+    if (carregando || !userEmail || rows.length === 0) return;
+
+    const dt = new Date();
+    const hojeLocal = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+    const cacheKey = `email_lembrete_${userEmail}_${hojeLocal}`;
+
+    // Se já tivermos guardado no navegador que enviamos hoje, ele pára aqui e não faz spam.
+    if (localStorage.getItem(cacheKey)) return; 
+
+    const emailSeguroLogado = userEmail.trim().toLowerCase();
+    
+    // Filtra as tarefas do usuário logado que vencem exatamente hoje e estão pendentes
+    const minhasTarefasHoje = rows.filter(r => {
+      const isPendente = !(r.status || '').toLowerCase().includes('concl');
+      const isParaHoje = r.data_vencimento && r.data_vencimento.slice(0, 10) === hojeLocal;
+      
+      const respsTask = getResponsaveis(r?.atividades);
+      const souResponsavel = respsTask.some((res: any) => (res.email || '').trim().toLowerCase() === emailSeguroLogado);
+      
+      return isPendente && isParaHoje && souResponsavel;
+    });
+
+    if (minhasTarefasHoje.length > 0) {
+      // 1. Regista no navegador que já avisou hoje
+      localStorage.setItem(cacheKey, 'true');
+
+      // 2. Monta o corpo do e-mail
+      const taskListHtml = minhasTarefasHoje.map(t => `<li><strong>${t.atividades?.nome_atividade}</strong></li>`).join('');
+
+      // 3. Dispara o envio silenciosamente
+      fetch('/api/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: userEmail,
+          subject: `[Lembrete de Vencimento] ${minhasTarefasHoje.length} tarefa(s) expiram HOJE!`,
+          taskName: `Resumo Diário`,
+          action: `exigem a sua atenção hoje`,
+          userName: userName,
+          observacoes: `Olá! As seguintes tarefas sob sua responsabilidade têm prazo de entrega para hoje (${dt.toLocaleDateString('pt-BR')}):<br/><br/><ul>${taskListHtml}</ul><br/>Acesse o Portal da Controladoria para atualizar os status.`
+        })
+      });
+    }
+  }, [carregando, rows, userEmail, userName]);
+
   const sendEmailNotification = async (taskId: string, actionText: string, extraObs?: string) => {
     try {
       const task = rows.find(r => r.id === taskId)
@@ -480,7 +518,6 @@ export default function TarefasPage() {
     comentInputRef.current?.focus()
   }
 
-  // 💡 NOTIFICA TODOS OS ENVOLVIDOS SOBRE O COMENTÁRIO
   const enviarComentario = async () => {
     if (!selected) return
     const msg = comentNovo.trim()
@@ -582,7 +619,6 @@ export default function TarefasPage() {
     setDrawerAnexo(r.anexo_url || '') 
     setDrawerChecklists(r.checklists || []) 
     setDrawerClassificacao(r.atividades?.classificacao || '')
-    // 💡 INJETA A LISTA ATUAL NO DRAWER
     setDrawerResps(getResponsaveis(r.atividades))
     
     setDrawerOpen(true)
@@ -649,14 +685,13 @@ export default function TarefasPage() {
       let mudouMatriz = false
       const nomeAntigo = selected.atividades?.nome_atividade || ''
       const classifAntiga = selected.atividades?.classificacao || ''
-      // Verifica se a lista mudou (forma simples comparando tamanhos, mas guardamos sempre na duvida)
       
       if (selected.atividades?.task_id) {
         const { error: errAtv } = await supabase.from('atividades')
           .update({ 
             nome_atividade: drawerNome,
             classificacao: drawerClassificacao || null,
-            responsaveis_lista: drawerResps.length > 0 ? drawerResps : null // 💡 SALVA A LISTA MULTIPLA AQUI
+            responsaveis_lista: drawerResps.length > 0 ? drawerResps : null 
           })
           .eq('task_id', selected.atividades.task_id)
         
@@ -730,7 +765,7 @@ export default function TarefasPage() {
         status: 'Ativo',
         prioridade_descricao: adhocPrioridade,
         classificacao: adhocClassificacao || null,
-        responsaveis_lista: adhocResps.length > 0 ? adhocResps : null // 💡 SALVA A LISTA MULTIPLA AQUI
+        responsaveis_lista: adhocResps.length > 0 ? adhocResps : null 
       }
       const { data: atv, error: errAtv } = await supabase.from('atividades').insert([payloadAtv]).select('task_id').single()
       if (errAtv) throw errAtv
@@ -780,7 +815,6 @@ export default function TarefasPage() {
 
   const setorOptions = useMemo(() => Array.from(new Set(rows.map(r => r.atividades?.setores?.nome).filter(Boolean))).sort(), [rows])
   
-  // 💡 GERA A LISTA DE FILTROS COM BASE EM TODOS OS NOMES QUE APARECEM NAS TAREFAS
   const respOptions = useMemo(() => {
     const allNames = new Set<string>();
     rows.forEach(r => {
@@ -806,7 +840,6 @@ export default function TarefasPage() {
       const okStatus = filtroStatus === 'Todos' ? true : st === filtroStatus
       const okSetor = filtroSetor === 'Todos' ? true : (atv.setores?.nome === filtroSetor)
       
-      // 💡 APLICA O FILTRO PROCURANDO DENTRO DA LISTA
       const okResp = filtroResp === 'Todos' ? true : respsTask.some((res: any) => res.nome === filtroResp)
       const okClassificacao = filtroClassificacao === 'Todos' ? true : (atv.classificacao === filtroClassificacao)
       
@@ -1100,7 +1133,6 @@ export default function TarefasPage() {
                 </select>
               </div>
 
-              {/* 💡 NOVA LISTA DE RESPONSÁVEIS MÚLTIPLOS NO AD HOC */}
               <div>
                 <label className="text-xs text-slate-500 dark:text-slate-400 font-medium block mb-1 flex justify-between">
                   Envolvidos na Tarefa
@@ -1213,7 +1245,6 @@ export default function TarefasPage() {
                   </select>
                 </div>
 
-                {/* 💡 NOVA LISTA DE RESPONSÁVEIS MÚLTIPLOS NO DETALHE */}
                 <div>
                   <label className="text-xs text-slate-500 dark:text-slate-400 font-medium block mb-1 flex justify-between">
                     Envolvidos na Tarefa
