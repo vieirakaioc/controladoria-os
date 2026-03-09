@@ -30,7 +30,7 @@ type TimeBucket = 'Atrasadas' | 'Hoje' | 'Amanhã' | 'Próx 7 dias' | 'Sem data'
 type Lookup = { id: string; nome: string; email?: string }
 
 // ==========================================
-// FUNÇÕES PURAS
+// FUNÇÕES PURAS & HELPERS
 // ==========================================
 const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate())
 const addDays = (d: Date, n: number) => {
@@ -64,6 +64,17 @@ const badge = (s?: string | null) => {
   if (st.includes('aguard')) return 'bg-[#efc486]/20 text-[#063955] dark:bg-[#efc486]/20 dark:text-[#fde047]' 
   if (st.includes('pend')) return 'bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300'
   return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+}
+
+// 💡 Helper Inteligente para Múltiplos Responsáveis (Lida com o passado e o futuro)
+const getResponsaveis = (atv: any) => {
+  if (atv?.responsaveis_lista && Array.isArray(atv.responsaveis_lista) && atv.responsaveis_lista.length > 0) {
+    return atv.responsaveis_lista;
+  }
+  if (atv?.responsaveis) {
+    return [atv.responsaveis];
+  }
+  return [];
 }
 
 // ==========================================
@@ -121,6 +132,10 @@ const TaskCard = React.memo(({ r, mode, statuses, statusOrderMap, setStatus, exc
   const chkTotal = chk.length
   const chkDone = chk.filter((c: ChecklistItem) => c.concluido).length
 
+  // 💡 Usando o Helper para pegar todos os nomes
+  const responsaveisAtuais = getResponsaveis(atv)
+  const nomesResponsaveis = responsaveisAtuais.length > 0 ? responsaveisAtuais.map((res: any) => res.nome).join(', ') : '—'
+
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
     e.dataTransfer.effectAllowed = 'move'
     e.dataTransfer.setData('text/plain', r.id)
@@ -162,7 +177,12 @@ const TaskCard = React.memo(({ r, mode, statuses, statusOrderMap, setStatus, exc
           </span>
         )}
         <span className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded text-[10px] font-medium">{atv.setores?.nome || '—'}</span>
-        <span className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded text-[10px] font-medium">{atv.responsaveis?.nome || '—'}</span>
+        
+        {/* 💡 EXIBE OS MÚLTIPLOS NOMES AQUI */}
+        <span className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded text-[10px] font-medium truncate max-w-[120px]" title={nomesResponsaveis}>
+          {nomesResponsaveis}
+        </span>
+        
         <span className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded text-[10px] font-medium">{atv.planner_name || '—'}</span>
       </div>
 
@@ -248,6 +268,9 @@ export default function TarefasPage() {
   const [drawerAnexo, setDrawerAnexo] = useState<string>('')
   const [drawerChecklists, setDrawerChecklists] = useState<ChecklistItem[]>([])
   const [drawerClassificacao, setDrawerClassificacao] = useState<string>('')
+  // 💡 NOVO ESTADO: LISTA DE RESPONSÁVEIS SELECIONADOS NO DRAWER
+  const [drawerResps, setDrawerResps] = useState<any[]>([])
+
   const [novoItemChecklist, setNovoItemChecklist] = useState('')
   const [savingDrawer, setSavingDrawer] = useState(false)
   const [uploadingAnexo, setUploadingAnexo] = useState(false)
@@ -277,7 +300,9 @@ export default function TarefasPage() {
   const [adhocOpen, setAdhocOpen] = useState(false)
   const [adhocNome, setAdhocNome] = useState('')
   const [adhocSetorId, setAdhocSetorId] = useState<string>('')
-  const [adhocRespId, setAdhocRespId] = useState<string>('')
+  // 💡 NOVO ESTADO: LISTA DE RESPONSÁVEIS NO AD HOC
+  const [adhocResps, setAdhocResps] = useState<any[]>([])
+  
   const [adhocVenc, setAdhocVenc] = useState<string>(new Date().toISOString().slice(0, 10))
   const [adhocPrioridade, setAdhocPrioridade] = useState<string>('Média')
   const [adhocClassificacao, setAdhocClassificacao] = useState<string>('')
@@ -288,7 +313,6 @@ export default function TarefasPage() {
   const fim = useMemo(() => new Date(anoAlvo, mesAlvo + 1, 1), [anoAlvo, mesAlvo])
   const iso = (d: Date) => d.toISOString().split('T')[0]
 
-  // 💡 LÓGICA DE USUÁRIO REFORÇADA
   const carregarUsuario = async () => {
     const { data, error } = await supabase.auth.getUser()
     if (error || !data?.user) {
@@ -342,15 +366,15 @@ export default function TarefasPage() {
     if (filtroStatus !== 'Todos' && !final.includes(filtroStatus)) setFiltroStatus('Todos')
   }
 
-  // 💡 MURALHA DE SEGURANÇA 100% BLINDADA PARA MEMBROS
   const carregar = async () => {
     if (!plannerSel || !authLoaded || !userEmail) return
     setCarregando(true)
     try {
+      // 💡 BUSCAMOS TAMBÉM O NOVO CAMPO 'responsaveis_lista'
       const { data, error } = await supabase.from('tarefas_diarias').select(`
           id, data_vencimento, status, data_conclusao, observacoes, anexo_url, checklists,
           atividades!tarefas_diarias_atividade_id_fkey (
-            task_id, nome_atividade, planner_name, frequencia, prioridade_descricao, responsavel_id, classificacao,
+            task_id, nome_atividade, planner_name, frequencia, prioridade_descricao, responsavel_id, classificacao, responsaveis_lista,
             setores!atividades_setor_id_fkey (nome), responsaveis!atividades_responsavel_id_fkey (nome, email)
           )
         `).gte('data_vencimento', iso(inicio)).lt('data_vencimento', iso(fim)).order('data_vencimento', { ascending: true })
@@ -359,13 +383,13 @@ export default function TarefasPage() {
 
       let baseData = data || []
 
-      // Filtro rigoroso: Só deixa passar se o email do login for EXATAMENTE igual ao da tabela responsaveis.
+      // 💡 SEGURANÇA REFORÇADA: Procura o email do usuário na lista múltipla
       if (userRole !== 'admin') {
         const emailSeguroLogado = userEmail.trim().toLowerCase()
         
         baseData = baseData.filter((r: any) => {
-          const emailDoCartao = (r?.atividades?.responsaveis?.email || '').trim().toLowerCase()
-          return emailDoCartao !== '' && emailDoCartao === emailSeguroLogado
+          const respsTask = getResponsaveis(r?.atividades)
+          return respsTask.some((res: any) => (res.email || '').trim().toLowerCase() === emailSeguroLogado)
         })
       }
 
@@ -378,27 +402,26 @@ export default function TarefasPage() {
     }
   }
 
+  // 💡 ENVIO DE E-MAIL PARA TODOS OS RESPONSÁVEIS
   const sendEmailNotification = async (taskId: string, actionText: string, extraObs?: string) => {
     try {
       const task = rows.find(r => r.id === taskId)
       if (!task) return
-      const destinatarioEmail = task.atividades?.responsaveis?.email
-      if (!destinatarioEmail) return 
-
-      const payload = {
-        to: destinatarioEmail,
-        subject: `[Portal da Controladoria] Atualização de Tarefa: ${task.atividades?.nome_atividade}`,
-        taskName: task.atividades?.nome_atividade,
-        action: actionText,
-        userName: userName,
-        observacoes: extraObs || task.observacoes || ''
+      
+      const resps = getResponsaveis(task.atividades)
+      
+      for (const resp of resps) {
+        if (!resp.email) continue;
+        const payload = {
+          to: resp.email,
+          subject: `[Portal da Controladoria] Atualização de Tarefa: ${task.atividades?.nome_atividade}`,
+          taskName: task.atividades?.nome_atividade,
+          action: actionText,
+          userName: userName,
+          observacoes: extraObs || task.observacoes || ''
+        }
+        await fetch('/api/notify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
       }
-
-      await fetch('/api/notify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      })
     } catch (error) {}
   }
 
@@ -457,6 +480,7 @@ export default function TarefasPage() {
     comentInputRef.current?.focus()
   }
 
+  // 💡 NOTIFICA TODOS OS ENVOLVIDOS SOBRE O COMENTÁRIO
   const enviarComentario = async () => {
     if (!selected) return
     const msg = comentNovo.trim()
@@ -475,19 +499,21 @@ export default function TarefasPage() {
     toast.success('Comentário enviado!')
 
     const task = rows.find(r => r.id === selected.id)
+    const respsTask = getResponsaveis(task?.atividades)
 
-    const taskOwnerEmail = task?.atividades?.responsaveis?.email
-    if (taskOwnerEmail && taskOwnerEmail !== userEmail) {
-      await supabase.from('notificacoes').insert({
-        user_email: taskOwnerEmail,
-        titulo: 'Novo Comentário',
-        mensagem: `${userName} comentou na sua tarefa: "${task?.atividades?.nome_atividade}"`
-      })
-    }
+    respsTask.forEach(async (resp: any) => {
+      if (resp.email && resp.email !== userEmail) {
+        await supabase.from('notificacoes').insert({
+          user_email: resp.email,
+          titulo: 'Novo Comentário',
+          mensagem: `${userName} comentou na tarefa: "${task?.atividades?.nome_atividade}"`
+        })
+      }
+    })
 
     const usersMentioned = respsDb.filter(r => msg.includes(`@${r.nome}`))
     for (const u of usersMentioned) {
-      if (u.email !== userEmail && u.email !== taskOwnerEmail) {
+      if (u.email !== userEmail && !respsTask.some((rt: any) => rt.email === u.email)) {
         await supabase.from('notificacoes').insert({
           user_email: u.email,
           titulo: 'Mencionaram-no!',
@@ -556,6 +582,8 @@ export default function TarefasPage() {
     setDrawerAnexo(r.anexo_url || '') 
     setDrawerChecklists(r.checklists || []) 
     setDrawerClassificacao(r.atividades?.classificacao || '')
+    // 💡 INJETA A LISTA ATUAL NO DRAWER
+    setDrawerResps(getResponsaveis(r.atividades))
     
     setDrawerOpen(true)
     setComentarios([])
@@ -575,6 +603,7 @@ export default function TarefasPage() {
     setDrawerAnexo('')
     setDrawerChecklists([])
     setDrawerClassificacao('')
+    setDrawerResps([])
     setNovoItemChecklist('')
     setSavingDrawer(false)
     setComentarios([])
@@ -620,12 +649,14 @@ export default function TarefasPage() {
       let mudouMatriz = false
       const nomeAntigo = selected.atividades?.nome_atividade || ''
       const classifAntiga = selected.atividades?.classificacao || ''
-
-      if (selected.atividades?.task_id && (drawerNome !== nomeAntigo || drawerClassificacao !== classifAntiga)) {
+      // Verifica se a lista mudou (forma simples comparando tamanhos, mas guardamos sempre na duvida)
+      
+      if (selected.atividades?.task_id) {
         const { error: errAtv } = await supabase.from('atividades')
           .update({ 
             nome_atividade: drawerNome,
-            classificacao: drawerClassificacao || null 
+            classificacao: drawerClassificacao || null,
+            responsaveis_lista: drawerResps.length > 0 ? drawerResps : null // 💡 SALVA A LISTA MULTIPLA AQUI
           })
           .eq('task_id', selected.atividades.task_id)
         
@@ -642,7 +673,8 @@ export default function TarefasPage() {
           atualizado.atividades = { 
             ...atualizado.atividades, 
             nome_atividade: drawerNome,
-            classificacao: drawerClassificacao || null 
+            classificacao: drawerClassificacao || null,
+            responsaveis_lista: drawerResps
           }
         }
         return atualizado
@@ -654,7 +686,8 @@ export default function TarefasPage() {
         atividades: { 
           ...prev.atividades, 
           nome_atividade: drawerNome,
-          classificacao: drawerClassificacao || null 
+          classificacao: drawerClassificacao || null,
+          responsaveis_lista: drawerResps
         } 
       } : prev)
 
@@ -693,11 +726,11 @@ export default function TarefasPage() {
         planner_name: 'Ad Hoc', 
         nome_atividade: nome, 
         setor_id: adhocSetorId || null, 
-        responsavel_id: adhocRespId || null, 
         frequencia: 'Ad Hoc', 
         status: 'Ativo',
         prioridade_descricao: adhocPrioridade,
-        classificacao: adhocClassificacao || null
+        classificacao: adhocClassificacao || null,
+        responsaveis_lista: adhocResps.length > 0 ? adhocResps : null // 💡 SALVA A LISTA MULTIPLA AQUI
       }
       const { data: atv, error: errAtv } = await supabase.from('atividades').insert([payloadAtv]).select('task_id').single()
       if (errAtv) throw errAtv
@@ -711,15 +744,12 @@ export default function TarefasPage() {
       const { error: errExec } = await supabase.from('tarefas_diarias').insert([payloadExec])
       if (errExec) throw errExec
 
-      setAdhocOpen(false); setAdhocNome(''); setAdhocSetorId(''); setAdhocRespId(''); setAdhocVenc(new Date().toISOString().slice(0, 10)); setAdhocPrioridade('Média'); setAdhocObs(''); setAdhocClassificacao('');
+      setAdhocOpen(false); setAdhocNome(''); setAdhocSetorId(''); setAdhocResps([]); setAdhocVenc(new Date().toISOString().slice(0, 10)); setAdhocPrioridade('Média'); setAdhocObs(''); setAdhocClassificacao('');
       
-      const { data: novaTask } = await supabase.from('tarefas_diarias').select('*, atividades!inner(responsaveis(email))').eq('atividade_id', atv.task_id).single()
-      if (novaTask) {
-        const userResp = respsDb.find(r => r.id === adhocRespId)
-        if (userResp?.email) {
-          
+      adhocResps.forEach(async (resp) => {
+        if (resp.email) {
           await supabase.from('notificacoes').insert({
-            user_email: userResp.email,
+            user_email: resp.email,
             titulo: 'Nova Tarefa Ad Hoc',
             mensagem: `${userName} delegou a você: "${nome}" para o dia ${adhocVenc.slice(8,10)}/${adhocVenc.slice(5,7)}`
           })
@@ -728,7 +758,7 @@ export default function TarefasPage() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              to: userResp.email,
+              to: resp.email,
               subject: `[Portal da Controladoria] Nova Tarefa Ad Hoc: ${nome}`,
               taskName: nome,
               action: `criada e atribuída a você`,
@@ -737,7 +767,7 @@ export default function TarefasPage() {
             })
           })
         }
-      }
+      })
 
       await carregarPlanners(); await carregar()
       toast.success('Tarefa Ad Hoc criada!', { id: toastId })
@@ -749,7 +779,17 @@ export default function TarefasPage() {
   }
 
   const setorOptions = useMemo(() => Array.from(new Set(rows.map(r => r.atividades?.setores?.nome).filter(Boolean))).sort(), [rows])
-  const respOptions = useMemo(() => Array.from(new Set(rows.map(r => r.atividades?.responsaveis?.nome).filter(Boolean))).sort(), [rows])
+  
+  // 💡 GERA A LISTA DE FILTROS COM BASE EM TODOS OS NOMES QUE APARECEM NAS TAREFAS
+  const respOptions = useMemo(() => {
+    const allNames = new Set<string>();
+    rows.forEach(r => {
+      const resps = getResponsaveis(r.atividades);
+      resps.forEach((res: any) => { if (res.nome) allNames.add(res.nome); });
+    });
+    return Array.from(allNames).sort();
+  }, [rows])
+  
   const classifOptions = useMemo(() => Array.from(new Set(rows.map(r => r.atividades?.classificacao).filter(Boolean))).sort(), [rows])
 
   const filtradas = useMemo(() => {
@@ -758,10 +798,16 @@ export default function TarefasPage() {
       const atv = r.atividades || {}
       const nome = (atv.nome_atividade || '').toLowerCase()
       const st = r.status || statuses[0] || 'Pendente'
-      const okTexto = !q || nome.includes(q) || (atv.setores?.nome || '').toLowerCase().includes(q) || (atv.responsaveis?.nome || '').toLowerCase().includes(q)
+      
+      const respsTask = getResponsaveis(atv)
+      const matchesRespFiltro = respsTask.some((res: any) => res.nome?.toLowerCase().includes(q))
+      
+      const okTexto = !q || nome.includes(q) || (atv.setores?.nome || '').toLowerCase().includes(q) || matchesRespFiltro
       const okStatus = filtroStatus === 'Todos' ? true : st === filtroStatus
       const okSetor = filtroSetor === 'Todos' ? true : (atv.setores?.nome === filtroSetor)
-      const okResp = filtroResp === 'Todos' ? true : (atv.responsaveis?.nome === filtroResp)
+      
+      // 💡 APLICA O FILTRO PROCURANDO DENTRO DA LISTA
+      const okResp = filtroResp === 'Todos' ? true : respsTask.some((res: any) => res.nome === filtroResp)
       const okClassificacao = filtroClassificacao === 'Todos' ? true : (atv.classificacao === filtroClassificacao)
       
       return okTexto && okStatus && okSetor && okResp && okClassificacao
@@ -834,7 +880,6 @@ export default function TarefasPage() {
 
       <header className="flex flex-col xl:flex-row xl:justify-between xl:items-center gap-4 mb-6 bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 transition-colors">
         <div>
-          {/* 💡 A ETIQUETA VISUAL DE ACESSO */}
           <h1 className="text-2xl font-semibold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
             Painel de Execução 
             <span className="text-[10px] uppercase font-bold tracking-widest bg-[#0f88a8]/10 text-[#0f88a8] dark:bg-[#38bdf8]/10 dark:text-[#38bdf8] px-2 py-1 rounded-md mt-1">
@@ -932,7 +977,10 @@ export default function TarefasPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
-                    {filtradas.map((r) => (
+                    {filtradas.map((r) => {
+                      const respsList = getResponsaveis(r.atividades);
+                      const nomesTd = respsList.length > 0 ? respsList.map((res:any) => res.nome).join(', ') : '—';
+                      return (
                       <tr key={r.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors text-sm">
                         <td className="p-4 text-slate-600 dark:text-slate-400">{r.data_vencimento ? String(r.data_vencimento).slice(0, 10) : '—'}</td>
                         <td className="p-4 font-medium text-slate-800 dark:text-white flex items-center gap-2">
@@ -943,14 +991,14 @@ export default function TarefasPage() {
                           </div>
                         </td>
                         <td className="p-4 text-slate-500 dark:text-slate-400">{r.atividades?.setores?.nome || '-'}</td>
-                        <td className="p-4 text-slate-500 dark:text-slate-400">{r.atividades?.responsaveis?.nome || '-'}</td>
+                        <td className="p-4 text-slate-500 dark:text-slate-400 max-w-[150px] truncate" title={nomesTd}>{nomesTd}</td>
                         <td className="p-4"><span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${badge(r.status)}`}>{r.status}</span></td>
                         <td className="p-4 text-right flex justify-end items-center gap-3">
                           <button onClick={() => excluirTarefa(r.id)} className="text-slate-300 hover:text-[#b43a3d] dark:hover:text-[#f87171] transition-colors" title="Excluir">🗑️</button>
                           <button onClick={() => abrirDrawer(r)} className="text-[#0f88a8] dark:text-[#38bdf8] hover:text-[#063955] dark:hover:text-white font-medium transition-colors">Detalhes</button>
                         </td>
                       </tr>
-                    ))}
+                    )})}
                   </tbody>
                 </table>
               </div>
@@ -1044,20 +1092,38 @@ export default function TarefasPage() {
                 <input value={adhocNome} onChange={(e) => setAdhocNome(e.target.value)} className="w-full bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-xl px-4 py-3 text-sm outline-none focus:border-[#0f88a8]" placeholder="Ex: Ajustar lançamento X..." />
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs text-slate-500 dark:text-slate-400 font-medium block mb-1">Setor</label>
-                  <select value={adhocSetorId} onChange={(e) => setAdhocSetorId(e.target.value)} className="w-full bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-xl px-3 py-3 text-sm outline-none focus:border-[#0f88a8]">
-                    <option value="" className="dark:bg-slate-900">(sem setor)</option>
-                    {setoresDb.map(s => <option key={s.id} value={s.id} className="dark:bg-slate-900">{s.nome}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs text-slate-500 dark:text-slate-400 font-medium block mb-1">Responsável</label>
-                  <select value={adhocRespId} onChange={(e) => setAdhocRespId(e.target.value)} className="w-full bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-xl px-3 py-3 text-sm outline-none focus:border-[#0f88a8]">
-                    <option value="" className="dark:bg-slate-900">(sem responsável)</option>
-                    {respsDb.map(r => <option key={r.id} value={r.id} className="dark:bg-slate-900">{r.nome}</option>)}
-                  </select>
+              <div>
+                <label className="text-xs text-slate-500 dark:text-slate-400 font-medium block mb-1">Setor</label>
+                <select value={adhocSetorId} onChange={(e) => setAdhocSetorId(e.target.value)} className="w-full bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-xl px-3 py-3 text-sm outline-none focus:border-[#0f88a8]">
+                  <option value="" className="dark:bg-slate-900">(sem setor)</option>
+                  {setoresDb.map(s => <option key={s.id} value={s.id} className="dark:bg-slate-900">{s.nome}</option>)}
+                </select>
+              </div>
+
+              {/* 💡 NOVA LISTA DE RESPONSÁVEIS MÚLTIPLOS NO AD HOC */}
+              <div>
+                <label className="text-xs text-slate-500 dark:text-slate-400 font-medium block mb-1 flex justify-between">
+                  Envolvidos na Tarefa
+                  <span className="text-[#0f88a8] font-bold">{adhocResps.length} selecionado(s)</span>
+                </label>
+                <div className="border rounded-xl p-2 max-h-36 overflow-y-auto bg-transparent border-slate-200 dark:border-slate-800 custom-scrollbar">
+                  {respsDb.map(r => {
+                    const isChecked = adhocResps.some(dr => dr.id === r.id);
+                    return (
+                      <label key={r.id} className="flex items-center gap-3 p-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded cursor-pointer transition-colors">
+                        <input 
+                          type="checkbox" 
+                          checked={isChecked} 
+                          onChange={(e) => {
+                            if (e.target.checked) setAdhocResps([...adhocResps, {id: r.id, nome: r.nome, email: r.email}])
+                            else setAdhocResps(adhocResps.filter(dr => dr.id !== r.id))
+                          }}
+                          className="w-4 h-4 rounded border-slate-300 text-[#0f88a8] focus:ring-[#0f88a8] cursor-pointer"
+                        />
+                        <span className={`text-sm ${isChecked ? 'font-semibold text-[#0f88a8] dark:text-[#38bdf8]' : 'text-slate-700 dark:text-slate-300'}`}>{r.nome}</span>
+                      </label>
+                    )
+                  })}
                 </div>
               </div>
               
@@ -1118,7 +1184,7 @@ export default function TarefasPage() {
                 <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-2">
                   <span>{selected.atividades?.setores?.nome || '—'}</span>
                   <span>•</span>
-                  <span>{selected.atividades?.responsaveis?.nome || '—'}</span>
+                  <span>{selected.atividades?.planner_name || '—'}</span>
                 </div>
               </div>
               <button onClick={fecharDrawer} className="text-slate-400 hover:text-[#063955] dark:hover:text-white p-2">✕</button>
@@ -1145,6 +1211,33 @@ export default function TarefasPage() {
                     <option value="" className="dark:bg-slate-900">(Nenhuma)</option>
                     {classificacoesDb.map(c => <option key={c.id} value={c.nome} className="dark:bg-slate-900">{c.nome}</option>)}
                   </select>
+                </div>
+
+                {/* 💡 NOVA LISTA DE RESPONSÁVEIS MÚLTIPLOS NO DETALHE */}
+                <div>
+                  <label className="text-xs text-slate-500 dark:text-slate-400 font-medium block mb-1 flex justify-between">
+                    Envolvidos na Tarefa
+                    <span className="text-[#0f88a8] font-bold">{drawerResps.length} selecionado(s)</span>
+                  </label>
+                  <div className="border rounded-xl p-2 max-h-36 overflow-y-auto bg-transparent border-slate-200 dark:border-slate-800 custom-scrollbar">
+                    {respsDb.map(r => {
+                      const isChecked = drawerResps.some(dr => dr.id === r.id);
+                      return (
+                        <label key={r.id} className="flex items-center gap-3 p-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded cursor-pointer transition-colors">
+                          <input 
+                            type="checkbox" 
+                            checked={isChecked} 
+                            onChange={(e) => {
+                              if (e.target.checked) setDrawerResps([...drawerResps, {id: r.id, nome: r.nome, email: r.email}])
+                              else setDrawerResps(drawerResps.filter(dr => dr.id !== r.id))
+                            }}
+                            className="w-4 h-4 rounded border-slate-300 text-[#0f88a8] focus:ring-[#0f88a8] cursor-pointer"
+                          />
+                          <span className={`text-sm ${isChecked ? 'font-semibold text-[#0f88a8] dark:text-[#38bdf8]' : 'text-slate-700 dark:text-slate-300'}`}>{r.nome}</span>
+                        </label>
+                      )
+                    })}
+                  </div>
                 </div>
 
                 <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700/50">
