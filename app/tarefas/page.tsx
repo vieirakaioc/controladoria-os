@@ -169,6 +169,12 @@ const TaskCard = React.memo(({ r, mode, statuses, statusOrderMap, setStatus, exc
       <div className="text-sm font-medium text-slate-800 dark:text-white leading-snug pointer-events-none">{atv.nome_atividade || '-'}</div>
 
       <div className="mt-3 flex flex-wrap gap-1.5 pointer-events-none">
+        {/* 💡 Exibe badge do Projeto se existir */}
+        {atv.projeto_id && (
+          <span className="bg-[#031D2D]/10 text-[#031D2D] border border-[#031D2D]/20 dark:bg-[#C7A77B]/10 dark:text-[#C7A77B] dark:border-[#C7A77B]/20 px-2 py-0.5 rounded text-[10px] font-bold tracking-wide uppercase">
+            Projeto
+          </span>
+        )}
         {atv.classificacao && (
           <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20 px-2 py-0.5 rounded text-[10px] font-bold tracking-wide uppercase">
             {atv.classificacao}
@@ -243,6 +249,7 @@ export default function TarefasPage() {
   const [filtroSetor, setFiltroSetor] = useState<string>('Todos')
   const [filtroResp, setFiltroResp] = useState<string>('Todos')
   const [filtroClassificacao, setFiltroClassificacao] = useState<string>('Todos')
+  const [filtroProjeto, setFiltroProjeto] = useState<string>('Todos') // 💡 NOVO FILTRO DE PROJETO
 
   const [view, setView] = useState<'list' | 'board' | 'timeboard' | 'calendar'>('timeboard')
 
@@ -264,6 +271,7 @@ export default function TarefasPage() {
   const [drawerChecklists, setDrawerChecklists] = useState<ChecklistItem[]>([])
   const [drawerClassificacao, setDrawerClassificacao] = useState<string>('')
   const [drawerResps, setDrawerResps] = useState<any[]>([])
+  const [drawerProjetoId, setDrawerProjetoId] = useState<string>('') // 💡 NOVO ESTADO DRAWER PROJETO
 
   const [novoItemChecklist, setNovoItemChecklist] = useState('')
   const [savingDrawer, setSavingDrawer] = useState(false)
@@ -289,8 +297,6 @@ export default function TarefasPage() {
   const [setoresDb, setSetoresDb] = useState<Lookup[]>([])
   const [respsDb, setRespsDb] = useState<Lookup[]>([])
   const [classificacoesDb, setClassificacoesDb] = useState<Lookup[]>([])
-  
-  // 💡 NOVO: Projetos
   const [projetosDb, setProjetosDb] = useState<any[]>([])
 
   // Modal Ad Hoc
@@ -298,7 +304,7 @@ export default function TarefasPage() {
   const [adhocNome, setAdhocNome] = useState('')
   const [adhocSetorId, setAdhocSetorId] = useState<string>('')
   const [adhocResps, setAdhocResps] = useState<any[]>([])
-  const [adhocProjetoId, setAdhocProjetoId] = useState<string>('') // 💡 NOVO
+  const [adhocProjetoId, setAdhocProjetoId] = useState<string>('')
   
   const [adhocVenc, setAdhocVenc] = useState<string>(new Date().toISOString().slice(0, 10))
   const [adhocPrioridade, setAdhocPrioridade] = useState<string>('Média')
@@ -327,7 +333,6 @@ export default function TarefasPage() {
     setAuthLoaded(true) 
   }
 
-  // 💡 ATUALIZADO: Busca os Projetos Ativos
   const carregarLookups = async () => {
     const [{ data: s }, { data: r }, { data: c }, { data: p }] = await Promise.all([
       supabase.from('setores').select('id,nome').order('nome', { ascending: true }),
@@ -371,10 +376,11 @@ export default function TarefasPage() {
     setCarregando(true)
     
     try {
+      // 💡 Inclusão do projeto_id na busca das atividades
       const { data, error } = await supabase.from('tarefas_diarias').select(`
           id, data_vencimento, status, data_conclusao, observacoes, anexo_url, checklists,
           atividades!tarefas_diarias_atividade_id_fkey (
-            task_id, nome_atividade, planner_name, frequencia, prioridade_descricao, responsavel_id, classificacao, responsaveis_lista,
+            task_id, nome_atividade, planner_name, frequencia, prioridade_descricao, responsavel_id, classificacao, responsaveis_lista, projeto_id,
             setores!atividades_setor_id_fkey (nome), responsaveis!atividades_responsavel_id_fkey (nome, email)
           )
         `).gte('data_vencimento', iso(inicio)).lt('data_vencimento', iso(fim)).order('data_vencimento', { ascending: true })
@@ -621,6 +627,8 @@ export default function TarefasPage() {
     setDrawerChecklists(r.checklists || []) 
     setDrawerClassificacao(r.atividades?.classificacao || '')
     setDrawerResps(getResponsaveis(r.atividades))
+    // 💡 INJETA O PROJETO_ID NO ESTADO DO DRAWER
+    setDrawerProjetoId(r.atividades?.projeto_id || '')
     
     setDrawerOpen(true)
     setComentarios([])
@@ -641,6 +649,7 @@ export default function TarefasPage() {
     setDrawerChecklists([])
     setDrawerClassificacao('')
     setDrawerResps([])
+    setDrawerProjetoId('') // 💡 LIMPA
     setNovoItemChecklist('')
     setSavingDrawer(false)
     setComentarios([])
@@ -684,15 +693,15 @@ export default function TarefasPage() {
       if (error) throw error
 
       let mudouMatriz = false
-      const nomeAntigo = selected.atividades?.nome_atividade || ''
-      const classifAntiga = selected.atividades?.classificacao || ''
       
       if (selected.atividades?.task_id) {
+        // 💡 SALVA O PROJETO_ID ATUALIZADO NA TABELA DE ATIVIDADES
         const { error: errAtv } = await supabase.from('atividades')
           .update({ 
             nome_atividade: drawerNome,
             classificacao: drawerClassificacao || null,
-            responsaveis_lista: drawerResps.length > 0 ? drawerResps : null 
+            responsaveis_lista: drawerResps.length > 0 ? drawerResps : null,
+            projeto_id: drawerProjetoId || null
           })
           .eq('task_id', selected.atividades.task_id)
         
@@ -710,7 +719,8 @@ export default function TarefasPage() {
             ...atualizado.atividades, 
             nome_atividade: drawerNome,
             classificacao: drawerClassificacao || null,
-            responsaveis_lista: drawerResps
+            responsaveis_lista: drawerResps,
+            projeto_id: drawerProjetoId || null
           }
         }
         return atualizado
@@ -723,7 +733,8 @@ export default function TarefasPage() {
           ...prev.atividades, 
           nome_atividade: drawerNome,
           classificacao: drawerClassificacao || null,
-          responsaveis_lista: drawerResps
+          responsaveis_lista: drawerResps,
+          projeto_id: drawerProjetoId || null
         } 
       } : prev)
 
@@ -750,7 +761,6 @@ export default function TarefasPage() {
     fecharDrawer()
   }
 
-  // 💡 ATUALIZADO: Salva o projeto_id
   const criarAdHoc = async () => {
     const nome = adhocNome.trim(); if (!nome || !adhocVenc) return
     setSavingAdhoc(true)
@@ -768,7 +778,7 @@ export default function TarefasPage() {
         prioridade_descricao: adhocPrioridade,
         classificacao: adhocClassificacao || null,
         responsaveis_lista: adhocResps.length > 0 ? adhocResps : null,
-        projeto_id: adhocProjetoId || null // 💡 NOVO CAMPO DE PROJETO
+        projeto_id: adhocProjetoId || null
       }
       const { data: atv, error: errAtv } = await supabase.from('atividades').insert([payloadAtv]).select('task_id').single()
       if (errAtv) throw errAtv
@@ -829,6 +839,7 @@ export default function TarefasPage() {
   
   const classifOptions = useMemo(() => Array.from(new Set(rows.map(r => r.atividades?.classificacao).filter(Boolean))).sort(), [rows])
 
+  // 💡 APLICAÇÃO DO FILTRO DE PROJETOS LÁ NO TOPO
   const filtradas = useMemo(() => {
     const q = filtroTexto.trim().toLowerCase()
     return rows.filter((r) => {
@@ -845,10 +856,11 @@ export default function TarefasPage() {
       
       const okResp = filtroResp === 'Todos' ? true : respsTask.some((res: any) => res.nome === filtroResp)
       const okClassificacao = filtroClassificacao === 'Todos' ? true : (atv.classificacao === filtroClassificacao)
+      const okProjeto = filtroProjeto === 'Todos' ? true : (atv.projeto_id === filtroProjeto)
       
-      return okTexto && okStatus && okSetor && okResp && okClassificacao
+      return okTexto && okStatus && okSetor && okResp && okClassificacao && okProjeto
     })
-  }, [rows, filtroTexto, filtroStatus, filtroSetor, filtroResp, filtroClassificacao, statuses])
+  }, [rows, filtroTexto, filtroStatus, filtroSetor, filtroResp, filtroClassificacao, filtroProjeto, statuses])
 
   const dashboard = useMemo(() => {
     const done = filtradas.filter(r => (r.status || '').toLowerCase().includes('concl')).length
@@ -983,6 +995,12 @@ export default function TarefasPage() {
       <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 mb-6 flex flex-wrap gap-3 items-center transition-colors">
         <input value={filtroTexto} onChange={(e) => setFiltroTexto(e.target.value)} placeholder="Buscar atividade..." className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-sm w-full md:w-64 outline-none focus:border-[#0f88a8] dark:text-white transition-colors" />
         
+        {/* 💡 NOVO FILTRO LÁ NO TOPO: POR PROJETOS */}
+        <select value={filtroProjeto} onChange={(e) => setFiltroProjeto(e.target.value)} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-sm text-[#C7A77B] dark:text-[#C7A77B] font-semibold outline-none transition-colors">
+          <option value="Todos">Projeto: Todos</option>
+          {projetosDb.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
+        </select>
+
         <select value={filtroClassificacao} onChange={(e) => setFiltroClassificacao(e.target.value)} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-sm text-slate-700 dark:text-slate-200 outline-none transition-colors">
           <option value="Todos">Classificação: Todas</option>
           {classifOptions.map(c => <option key={c as string} value={c as string}>{c as string}</option>)}
@@ -994,7 +1012,7 @@ export default function TarefasPage() {
         
         <select value={filtroStatus} onChange={(e) => setFiltroStatus(e.target.value)} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-sm text-slate-700 dark:text-slate-200 outline-none transition-colors"><option value="Todos">Status: Todos</option>{statuses.map(s => <option key={s} value={s}>{s}</option>)}</select>
         
-        <button onClick={() => { setFiltroTexto(''); setFiltroSetor('Todos'); setFiltroResp('Todos'); setFiltroStatus('Todos'); setFiltroClassificacao('Todos') }} className="text-sm font-medium text-slate-500 hover:text-slate-800 dark:hover:text-slate-300 px-2 transition-colors">Limpar Filtros</button>
+        <button onClick={() => { setFiltroTexto(''); setFiltroSetor('Todos'); setFiltroResp('Todos'); setFiltroStatus('Todos'); setFiltroClassificacao('Todos'); setFiltroProjeto('Todos'); }} className="text-sm font-medium text-slate-500 hover:text-slate-800 dark:hover:text-slate-300 px-2 transition-colors">Limpar Filtros</button>
         <span className="ml-auto text-sm font-medium text-slate-400">{filtradas.length} tarefas</span>
       </div>
 
@@ -1185,7 +1203,6 @@ export default function TarefasPage() {
                 </select>
               </div>
 
-              {/* 💡 NOVO: VINCULAR AO PROJETO */}
               <div>
                 <label className="text-xs text-slate-500 dark:text-slate-400 font-medium block mb-1">Vincular a Projeto (Opcional)</label>
                 <select value={adhocProjetoId} onChange={(e) => setAdhocProjetoId(e.target.value)} className="w-full bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-xl px-3 py-3 text-sm outline-none focus:border-[#0f88a8]">
@@ -1249,12 +1266,22 @@ export default function TarefasPage() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="text-xs text-slate-500 dark:text-slate-400 font-medium block mb-1">Classificação da Tarefa</label>
-                  <select value={drawerClassificacao} onChange={e => setDrawerClassificacao(e.target.value)} className="w-full bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-xl p-2.5 text-sm outline-none focus:border-[#0f88a8]">
-                    <option value="" className="dark:bg-slate-900">(Nenhuma)</option>
-                    {classificacoesDb.map(c => <option key={c.id} value={c.nome} className="dark:bg-slate-900">{c.nome}</option>)}
-                  </select>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs text-slate-500 dark:text-slate-400 font-medium block mb-1">Classificação da Tarefa</label>
+                    <select value={drawerClassificacao} onChange={e => setDrawerClassificacao(e.target.value)} className="w-full bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-xl p-2.5 text-sm outline-none focus:border-[#0f88a8]">
+                      <option value="" className="dark:bg-slate-900">(Nenhuma)</option>
+                      {classificacoesDb.map(c => <option key={c.id} value={c.nome} className="dark:bg-slate-900">{c.nome}</option>)}
+                    </select>
+                  </div>
+                  {/* 💡 NOVO: VINCULAR AO PROJETO (NO DRAWER) */}
+                  <div>
+                    <label className="text-xs text-slate-500 dark:text-slate-400 font-medium block mb-1 text-[#C7A77B]">Vincular a Projeto</label>
+                    <select value={drawerProjetoId} onChange={e => setDrawerProjetoId(e.target.value)} className="w-full bg-transparent border border-[#C7A77B]/50 dark:border-slate-800 dark:text-white rounded-xl p-2.5 text-sm outline-none focus:border-[#C7A77B]">
+                      <option value="" className="dark:bg-slate-900">(Sem Projeto)</option>
+                      {projetosDb.map(p => <option key={p.id} value={p.id} className="dark:bg-slate-900">{p.nome}</option>)}
+                    </select>
+                  </div>
                 </div>
 
                 <div>
