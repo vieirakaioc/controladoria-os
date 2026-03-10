@@ -16,12 +16,14 @@ import {
   Shield,
   Bell,
   CheckCheck,
-  Key // 💡 ADICIONE ISTO AQUI
+  Key,
+  Briefcase // 💡 ÍCONE DE PROJETOS ADICIONADO AQUI
 } from 'lucide-react'
 
 const allNavItems = [
   { name: 'Início (Sincronizar)', href: '/', icon: Home, adminOnly: true },
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, adminOnly: false }, 
+  { name: 'Gestão de Projetos', href: '/projetos', icon: Briefcase, adminOnly: true }, // 💡 NOVA ABA DE PROJETOS ADICIONADA AQUI
   { name: 'Controle de Tarefas', href: '/tarefas', icon: CheckSquare, adminOnly: false },
   { name: 'Workflows', href: '/workflows', icon: GitMerge, adminOnly: true },
   { name: 'Gestão de Acessos', href: '/acessos', icon: Key, adminOnly: true },

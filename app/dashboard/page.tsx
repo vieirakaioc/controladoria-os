@@ -63,7 +63,6 @@ const getColors = (isDark: boolean) => ({
   dangerRed: isDark ? '#f87171' : '#b43a3d',
 })
 
-// 💡 TOOLTIP CORRIGIDO: Agora fica sempre em primeiro plano e centralizado
 function InfoTooltip({ text }: { text: string }) {
   return (
     <div className="group relative flex items-center justify-center cursor-help">
@@ -76,7 +75,6 @@ function InfoTooltip({ text }: { text: string }) {
   )
 }
 
-// 💡 SECTION CORRIGIDA: Removido overflow-hidden e adicionado hover:z-20 para o tooltip não ser cortado
 function Section({ title, subtitle, right, info, children }: { title: string; subtitle?: string; right?: React.ReactNode; info?: string; children: React.ReactNode }) {
   return (
     <div className="relative hover:z-20 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm hover:shadow-md dark:hover:shadow-slate-900/50 transition-all duration-300 flex flex-col h-full">
@@ -180,12 +178,15 @@ function Doughnut({ items, size = 140, colors }: { items: { label: string; value
   )
 }
 
-// 💡 GRÁFICO DE LINHA ATUALIZADO: Mostra valores e remove as datas do eixo X
 function LineChart({ points, height = 180, colors }: { points: { x: string; y: number }[]; height?: number; colors: any }) {
   const [hoverIdx, setHoverIdx] = useState<number | null>(null)
   
   const w = 720; const h = height; const pad = 18
-  const maxY = Math.max(1, ...points.map(p => p.y))
+  
+  // 💡 MÁGICA DO HEADROOM (Adiciona 20% de espaço no topo para o número não cortar)
+  const actualMaxY = Math.max(1, ...points.map(p => p.y))
+  const maxY = actualMaxY * 1.2 
+  
   const xStep = points.length > 1 ? (w - pad * 2) / (points.length - 1) : 0
   const toX = (i: number) => pad + i * xStep
   const toY = (y: number) => h - pad - (y / (maxY || 1)) * (h - pad * 2)
@@ -215,17 +216,28 @@ function LineChart({ points, height = 180, colors }: { points: { x: string; y: n
         {/* A linha principal */}
         <path d={d} fill="none" stroke={colors.cyan} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
 
-        {/* 💡 VALORES REAIS IMPRESSOS NO GRÁFICO */}
+        {/* 💡 DATAS NO EIXO X INFERIOR ESTÃO DE VOLTA! */}
         {points.map((p, i) => {
-          if (p.y === 0) return null; // Esconde zeros para o gráfico não ficar poluído
+          // Mostra menos datas se houver muitos pontos, mas mostra sempre a data que o rato está a focar
+          if (points.length > 20 && i % 4 !== 0 && hoverIdx !== i) return null
           return (
-            <text key={`val-${i}`} x={toX(i)} y={toY(p.y) - 12} textAnchor="middle" fontSize="12" fontWeight="bold" fill={colors.cyan} className="pointer-events-none drop-shadow-sm">
+            <text key={`lbl-${i}`} x={toX(i)} y={h - 2} textAnchor="middle" fontSize="10" fontWeight="600" fill={hoverIdx === i ? colors.cyan : colors.muted} className="transition-colors">
+              {niceLabel(p.x)}
+            </text>
+          )
+        })}
+
+        {/* Valores Visíveis (Agora têm espaço de sobra no topo) */}
+        {points.map((p, i) => {
+          if (p.y === 0) return null;
+          return (
+            <text key={`val-${i}`} x={toX(i)} y={toY(p.y) - 10} textAnchor="middle" fontSize="12" fontWeight="bold" fill={colors.cyan} className="pointer-events-none drop-shadow-sm transition-all duration-200" opacity={hoverIdx === i ? 0 : 1}>
               {p.y}
             </text>
           )
         })}
 
-        {/* Hitboxes Invisíveis para facilitar o hover do rato (O segredo do Power BI) */}
+        {/* Hitboxes Invisíveis para facilitar o hover do rato */}
         {points.map((p, i) => (
           <circle key={`hit-${i}`} cx={toX(i)} cy={toY(p.y)} r="16" fill="transparent" onMouseEnter={() => setHoverIdx(i)} className="cursor-pointer outline-none" />
         ))}
@@ -244,9 +256,9 @@ function LineChart({ points, height = 180, colors }: { points: { x: string; y: n
           />
         ))}
 
-        {/* 💡 O Balão Flutuante (Tooltip) levantado para não tapar o número */}
+        {/* O Balão Flutuante (Tooltip) */}
         {hoverIdx !== null && (
-          <g transform={`translate(${toX(hoverIdx)}, ${toY(points[hoverIdx].y) - 34})`} className="pointer-events-none transition-transform duration-200">
+          <g transform={`translate(${toX(hoverIdx)}, ${toY(points[hoverIdx].y) - 34})`} className="pointer-events-none transition-transform duration-200 z-[999]">
             <rect x="-40" y="-40" width="80" height="34" rx="6" fill={colors.darkBlue} className="shadow-2xl" style={{ filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))' }} />
             <polygon points="-6,-6 6,-6 0,2" fill={colors.darkBlue} />
             <text x="0" y="-24" textAnchor="middle" fill="#fff" fontSize="13" fontWeight="bold">{points[hoverIdx].y} concl.</text>
@@ -313,7 +325,7 @@ function DoubleBarList({ items, profilesMap, colors }: { items: { name: string, 
                 {profilesMap[it.name] ? (
                   <img src={profilesMap[it.name]} alt="" className="w-8 h-8 rounded-full object-cover shadow-sm border border-slate-200 dark:border-slate-700 shrink-0" />
                 ) : (
-                  <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-[10px] font-bold shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-[10px] font-bold shrink-0">
                     {it.name.charAt(0).toUpperCase()}
                   </div>
                 )}
@@ -323,7 +335,7 @@ function DoubleBarList({ items, profilesMap, colors }: { items: { name: string, 
             </div>
             
             <div className="flex items-center gap-3">
-              <div className="h-2.5 flex-1 rounded-full overflow-hidden bg-slate-100 dark:bg-slate-800 flex">
+              <div className="h-2.5 flex-1 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-800 flex">
                 <div className="h-full transition-all duration-700 ease-out" style={{ width: `${wOnTime}%`, background: colors.okGreen }} title={`No Prazo: ${it.onTime} (${pctOnTime}%)`} />
                 <div className="h-full transition-all duration-700 ease-out" style={{ width: `${wLate}%`, background: colors.dangerRed }} title={`Atrasadas: ${it.late} (${pctLate}%)`} />
               </div>

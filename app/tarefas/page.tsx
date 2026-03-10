@@ -289,12 +289,16 @@ export default function TarefasPage() {
   const [setoresDb, setSetoresDb] = useState<Lookup[]>([])
   const [respsDb, setRespsDb] = useState<Lookup[]>([])
   const [classificacoesDb, setClassificacoesDb] = useState<Lookup[]>([])
+  
+  // 💡 NOVO: Projetos
+  const [projetosDb, setProjetosDb] = useState<any[]>([])
 
   // Modal Ad Hoc
   const [adhocOpen, setAdhocOpen] = useState(false)
   const [adhocNome, setAdhocNome] = useState('')
   const [adhocSetorId, setAdhocSetorId] = useState<string>('')
   const [adhocResps, setAdhocResps] = useState<any[]>([])
+  const [adhocProjetoId, setAdhocProjetoId] = useState<string>('') // 💡 NOVO
   
   const [adhocVenc, setAdhocVenc] = useState<string>(new Date().toISOString().slice(0, 10))
   const [adhocPrioridade, setAdhocPrioridade] = useState<string>('Média')
@@ -323,15 +327,18 @@ export default function TarefasPage() {
     setAuthLoaded(true) 
   }
 
+  // 💡 ATUALIZADO: Busca os Projetos Ativos
   const carregarLookups = async () => {
-    const [{ data: s }, { data: r }, { data: c }] = await Promise.all([
+    const [{ data: s }, { data: r }, { data: c }, { data: p }] = await Promise.all([
       supabase.from('setores').select('id,nome').order('nome', { ascending: true }),
       supabase.from('responsaveis').select('id,nome,email').order('nome', { ascending: true }),
       supabase.from('classificacoes').select('id,nome').order('nome', { ascending: true }),
+      supabase.from('projetos').select('id,nome').eq('status', 'Em Andamento').order('nome', { ascending: true })
     ])
     setSetoresDb((s || []) as any)
     setRespsDb((r || []) as any)
     setClassificacoesDb((c || []) as any)
+    setProjetosDb(p || [])
   }
 
   const carregarPlanners = async () => {
@@ -394,7 +401,6 @@ export default function TarefasPage() {
     }
   }
 
-  // 💡 A MÁQUINA DE ENVIO DE E-MAIL DO LEMBRETE DIÁRIO (DISCRETO E SILENCIOSO)
   useEffect(() => {
     if (carregando || !userEmail || rows.length === 0) return;
 
@@ -402,12 +408,10 @@ export default function TarefasPage() {
     const hojeLocal = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
     const cacheKey = `email_lembrete_${userEmail}_${hojeLocal}`;
 
-    // Se já tivermos guardado no navegador que enviamos hoje, ele pára aqui e não faz spam.
     if (localStorage.getItem(cacheKey)) return; 
 
     const emailSeguroLogado = userEmail.trim().toLowerCase();
     
-    // Filtra as tarefas do usuário logado que vencem exatamente hoje e estão pendentes
     const minhasTarefasHoje = rows.filter(r => {
       const isPendente = !(r.status || '').toLowerCase().includes('concl');
       const isParaHoje = r.data_vencimento && r.data_vencimento.slice(0, 10) === hojeLocal;
@@ -419,13 +423,10 @@ export default function TarefasPage() {
     });
 
     if (minhasTarefasHoje.length > 0) {
-      // 1. Regista no navegador que já avisou hoje
       localStorage.setItem(cacheKey, 'true');
 
-      // 2. Monta o corpo do e-mail
       const taskListHtml = minhasTarefasHoje.map(t => `<li><strong>${t.atividades?.nome_atividade}</strong></li>`).join('');
 
-      // 3. Dispara o envio silenciosamente
       fetch('/api/notify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -749,6 +750,7 @@ export default function TarefasPage() {
     fecharDrawer()
   }
 
+  // 💡 ATUALIZADO: Salva o projeto_id
   const criarAdHoc = async () => {
     const nome = adhocNome.trim(); if (!nome || !adhocVenc) return
     setSavingAdhoc(true)
@@ -765,7 +767,8 @@ export default function TarefasPage() {
         status: 'Ativo',
         prioridade_descricao: adhocPrioridade,
         classificacao: adhocClassificacao || null,
-        responsaveis_lista: adhocResps.length > 0 ? adhocResps : null 
+        responsaveis_lista: adhocResps.length > 0 ? adhocResps : null,
+        projeto_id: adhocProjetoId || null // 💡 NOVO CAMPO DE PROJETO
       }
       const { data: atv, error: errAtv } = await supabase.from('atividades').insert([payloadAtv]).select('task_id').single()
       if (errAtv) throw errAtv
@@ -779,7 +782,7 @@ export default function TarefasPage() {
       const { error: errExec } = await supabase.from('tarefas_diarias').insert([payloadExec])
       if (errExec) throw errExec
 
-      setAdhocOpen(false); setAdhocNome(''); setAdhocSetorId(''); setAdhocResps([]); setAdhocVenc(new Date().toISOString().slice(0, 10)); setAdhocPrioridade('Média'); setAdhocObs(''); setAdhocClassificacao('');
+      setAdhocOpen(false); setAdhocNome(''); setAdhocSetorId(''); setAdhocResps([]); setAdhocProjetoId(''); setAdhocVenc(new Date().toISOString().slice(0, 10)); setAdhocPrioridade('Média'); setAdhocObs(''); setAdhocClassificacao('');
       
       adhocResps.forEach(async (resp) => {
         if (resp.email) {
@@ -1179,6 +1182,15 @@ export default function TarefasPage() {
                 <select value={adhocClassificacao} onChange={(e) => setAdhocClassificacao(e.target.value)} className="w-full bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-xl px-3 py-3 text-sm outline-none focus:border-[#0f88a8]">
                   <option value="" className="dark:bg-slate-900">(Nenhuma)</option>
                   {classificacoesDb.map(c => <option key={c.id} value={c.nome} className="dark:bg-slate-900">{c.nome}</option>)}
+                </select>
+              </div>
+
+              {/* 💡 NOVO: VINCULAR AO PROJETO */}
+              <div>
+                <label className="text-xs text-slate-500 dark:text-slate-400 font-medium block mb-1">Vincular a Projeto (Opcional)</label>
+                <select value={adhocProjetoId} onChange={(e) => setAdhocProjetoId(e.target.value)} className="w-full bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-xl px-3 py-3 text-sm outline-none focus:border-[#0f88a8]">
+                  <option value="" className="dark:bg-slate-900">(Sem Projeto - Tarefa Solta)</option>
+                  {projetosDb.map(p => <option key={p.id} value={p.id} className="dark:bg-slate-900">{p.nome}</option>)}
                 </select>
               </div>
 
