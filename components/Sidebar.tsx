@@ -17,13 +17,13 @@ import {
   Bell,
   CheckCheck,
   Key,
-  Briefcase // 💡 ÍCONE DE PROJETOS ADICIONADO AQUI
+  Briefcase 
 } from 'lucide-react'
 
 const allNavItems = [
   { name: 'Início (Sincronizar)', href: '/', icon: Home, adminOnly: true },
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, adminOnly: false }, 
-  { name: 'Gestão de Projetos', href: '/projetos', icon: Briefcase, adminOnly: true }, // 💡 NOVA ABA DE PROJETOS ADICIONADA AQUI
+  { name: 'Gestão de Projetos', href: '/projetos', icon: Briefcase, adminOnly: false },
   { name: 'Controle de Tarefas', href: '/tarefas', icon: CheckSquare, adminOnly: false },
   { name: 'Workflows', href: '/workflows', icon: GitMerge, adminOnly: true },
   { name: 'Gestão de Acessos', href: '/acessos', icon: Key, adminOnly: true },
@@ -39,7 +39,9 @@ export default function Sidebar() {
   const [avatarUrl, setAvatarUrl] = useState<string>('')
   const pathname = usePathname()
 
-  // 💡 ESTADO DAS NOTIFICAÇÕES
+  // 💡 ESTADO DA LOGO DA EMPRESA
+  const [logoEmpresa, setLogoEmpresa] = useState<string | null>(null)
+
   const [notificacoes, setNotificacoes] = useState<any[]>([])
   const [notifOpen, setNotifOpen] = useState(false)
   const unreadCount = notificacoes.filter(n => !n.lida).length
@@ -55,7 +57,15 @@ export default function Sidebar() {
     if (data) setNotificacoes(data)
   }
 
-useEffect(() => {
+  // 💡 BUSCA A LOGO GLOBAL DA EMPRESA
+  const fetchConfigEmpresa = async () => {
+    const { data } = await supabase.from('empresa_config').select('logo_url').eq('id', 1).single()
+    if (data?.logo_url) setLogoEmpresa(data.logo_url)
+  }
+
+  useEffect(() => {
+    fetchConfigEmpresa() // Chama a logo ao carregar a sidebar
+
     const fetchUserData = async (userId: string, email: string) => {
       setUserEmail(email)
       fetchNotificacoes(email)
@@ -68,17 +78,14 @@ useEffect(() => {
       }
     }
 
-    // Pega a sessão atual
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) fetchUserData(session.user.id, session.user.email || '')
     })
 
-    // OUVINTE EM TEMPO REAL: Muda a interface assim que houver login/logout
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         fetchUserData(session.user.id, session.user.email || '')
       } else {
-        // Se a sessão cair, limpa a interface
         setUserName('')
         setUserEmail('')
         setUserRole('membro')
@@ -90,7 +97,6 @@ useEffect(() => {
     return () => subscription.unsubscribe()
   }, [pathname])
 
-  // Atualiza as notificações silenciosamente a cada 30 segundos
   useEffect(() => {
     if (!userEmail) return
     const interval = setInterval(() => fetchNotificacoes(userEmail), 30000)
@@ -114,7 +120,7 @@ useEffect(() => {
   return (
     <aside className={`relative bg-[#063955] text-white transition-all duration-300 ease-in-out flex flex-col shadow-2xl z-50 ${isExpanded ? 'w-64' : 'w-20'}`}>
       
-      <div className="h-24 flex items-center justify-center border-b border-white/10 px-4">
+      <div className="h-24 flex items-center justify-center border-b border-white/10 px-4 shrink-0">
         {isExpanded ? (
           <div className="flex flex-col items-center">
             <span className="text-lg font-bold tracking-tight text-white text-center leading-tight">Portal da<br/><span className="text-[#efc486]">Controladoria</span></span>
@@ -124,6 +130,17 @@ useEffect(() => {
         )}
       </div>
 
+      {/* 💡 ESPAÇO DA LOGO DA EMPRESA AQUI (Entre Título e Abas) */}
+      {logoEmpresa && (
+        <div className={`flex justify-center items-center py-5 border-b border-white/5 shrink-0 bg-white/5 transition-all ${isExpanded ? 'px-4' : 'px-2'}`}>
+          <img 
+            src={logoEmpresa} 
+            alt="Logo Empresa" 
+            className={`object-contain transition-all duration-300 drop-shadow-md ${isExpanded ? 'max-h-16 max-w-full' : 'max-h-8 max-w-[40px]'}`} 
+          />
+        </div>
+      )}
+
       <button 
         onClick={() => setIsExpanded(!isExpanded)}
         className="absolute -right-3 top-8 bg-[#0f88a8] text-white rounded-full p-1.5 shadow-lg hover:brightness-110 transition-all z-50"
@@ -131,7 +148,7 @@ useEffect(() => {
         {isExpanded ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
       </button>
 
-      <nav className="flex-1 pt-8 space-y-2 px-3 overflow-y-auto custom-scrollbar">
+      <nav className="flex-1 pt-6 space-y-2 px-3 overflow-y-auto custom-scrollbar">
         {navItems.map((item) => {
           const isActive = pathname === item.href
           const Icon = item.icon
@@ -151,8 +168,8 @@ useEffect(() => {
         })}
       </nav>
 
-      {/* RODAPÉ DO MENU (NOTIFICAÇÕES + PERFIL + SAIR) */}
-      <div className="p-4 border-t border-white/10 bg-white/5 space-y-2 relative">
+      {/* RODAPÉ DO MENU */}
+      <div className="p-4 border-t border-white/10 bg-white/5 space-y-2 relative shrink-0">
         
         {/* BOTÃO DO SININHO */}
         <button 

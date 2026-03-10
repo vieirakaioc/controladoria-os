@@ -24,6 +24,9 @@ type Row = {
     planner_name?: string | null
     frequencia?: string | null
     responsaveis_lista?: any
+    projeto_id?: string | null
+    prioridade_descricao?: string | null
+    projetos?: { nome?: string | null } | null 
     setores?: { nome?: string | null } | null
     responsaveis?: { nome?: string | null; email?: string | null } | null
   } | null
@@ -53,20 +56,22 @@ const getResponsaveis = (atv: any) => {
 }
 
 const getColors = (isDark: boolean) => ({
-  darkBlue: isDark ? '#f8fafc' : '#063955', 
-  cyan: isDark ? '#38bdf8' : '#0f88a8',     
-  lightCyan: isDark ? '#0284c7' : '#c4e3eb',
-  grayTrack: isDark ? '#1e293b' : '#F1F5F9',
+  darkBlue: isDark ? '#f8fafc' : '#031D2D', 
+  primaryAccent: isDark ? '#E5D6A7' : '#C7A77B', 
+  chartLines: isDark ? '#475569' : '#94A3B8', 
+  grayTrack: isDark ? '#1e293b' : '#F1F5F9', 
   muted: isDark ? '#94a3b8' : '#818284',    
-  okGreen: isDark ? '#4ade80' : '#2d6943',  
-  warnAmber: isDark ? '#fde047' : '#efc486',
-  dangerRed: isDark ? '#f87171' : '#b43a3d',
+  okGreen: isDark ? '#82A384' : '#5A755C',  
+  warnAmber: isDark ? '#E2B276' : '#C79A63', 
+  statusWait: isDark ? '#a78bfa' : '#7c3aed', 
+  chartPlan: isDark ? '#60a5fa' : '#2563eb',  
+  chartAdhoc: isDark ? '#fb923c' : '#ea580c', 
 })
 
 function InfoTooltip({ text }: { text: string }) {
   return (
     <div className="group relative flex items-center justify-center cursor-help">
-      <Info size={14} className="text-slate-400 hover:text-[#0f88a8] dark:hover:text-[#38bdf8] transition-colors" />
+      <Info size={14} className="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors" />
       <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-64 p-3 bg-slate-800 dark:bg-slate-700 text-white text-[11px] leading-relaxed rounded-xl shadow-2xl z-[99999] text-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 font-medium">
         {text}
         <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800 dark:border-t-slate-700"></div>
@@ -77,11 +82,11 @@ function InfoTooltip({ text }: { text: string }) {
 
 function Section({ title, subtitle, right, info, children }: { title: string; subtitle?: string; right?: React.ReactNode; info?: string; children: React.ReactNode }) {
   return (
-    <div className="relative hover:z-20 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm hover:shadow-md dark:hover:shadow-slate-900/50 transition-all duration-300 flex flex-col h-full">
-      <div className="p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 flex items-start justify-between gap-4 shrink-0 rounded-t-2xl">
+    <div className="relative hover:z-20 bg-white dark:bg-slate-900 border border-slate-100/50 dark:border-slate-800/50 rounded-2xl shadow-sm hover:shadow-xl dark:hover:shadow-slate-900/50 transition-all duration-500 flex flex-col h-full">
+      <div className="p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/20 dark:bg-slate-950/20 flex items-start justify-between gap-4 shrink-0 rounded-t-2xl">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-base font-semibold text-[#063955] dark:text-white">{title}</h2>
+            <h2 className="text-base font-semibold text-slate-800 dark:text-white tracking-tight">{title}</h2>
             {info && <InfoTooltip text={info} />}
           </div>
           {subtitle ? <div className="text-[13px] font-medium text-slate-500 dark:text-slate-400 mt-0.5">{subtitle}</div> : null}
@@ -97,12 +102,12 @@ function Section({ title, subtitle, right, info, children }: { title: string; su
 
 function KPI({ title, value, accent, isDark, info }: { title: string; value: any; accent?: string; isDark: boolean; info?: string }) {
   return (
-    <div className="relative hover:z-20 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 shadow-sm hover:shadow-md dark:hover:shadow-slate-900/50 hover:-translate-y-0.5 transition-all duration-300">
+    <div className="relative hover:z-20 bg-white dark:bg-slate-900 border border-slate-100/50 dark:border-slate-800/50 rounded-2xl p-5 shadow-sm hover:shadow-xl dark:hover:shadow-slate-900/50 hover:-translate-y-0.5 transition-all duration-300">
       <div className="flex justify-between items-start">
         <div className="text-xs font-semibold tracking-wider text-slate-400 dark:text-slate-500 uppercase">{title}</div>
         {info && <InfoTooltip text={info} />}
       </div>
-      <div className={`text-3xl font-semibold ${accent || (isDark ? 'text-white' : 'text-[#063955]')} mt-2`}>{value}</div>
+      <div className={`text-3xl font-bold ${accent || (isDark ? 'text-white' : 'text-slate-900')} mt-2 tracking-tighter`}>{value}</div>
     </div>
   )
 }
@@ -148,7 +153,7 @@ function Doughnut({ items, size = 140, colors }: { items: { label: string; value
             />
           ))}
           
-          <text x={cx} y={cy - 2} textAnchor="middle" fill={colors.darkBlue} fontSize="18" fontWeight="600">{realTotal}</text>
+          <text x={cx} y={cy - 2} textAnchor="middle" fill={colors.darkBlue} fontSize="20" fontWeight="bold" className="tracking-tight">{realTotal}</text>
           <text x={cx} y={cy + 16} textAnchor="middle" fill={colors.muted} fontSize="10" fontWeight="500">tarefas</text>
         </svg>
       </div>
@@ -167,7 +172,7 @@ function Doughnut({ items, size = 140, colors }: { items: { label: string; value
                 <span className="inline-block w-3 h-3 rounded-md shrink-0 transition-transform" style={{ background: it.color, transform: hoverIdx === i ? 'scale(1.2)' : 'scale(1)' }} />
                 <span className={`font-medium truncate transition-colors ${hoverIdx === i ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-300'}`}>{it.label}</span>
               </div>
-              <span className={`font-semibold shrink-0 transition-colors ${hoverIdx === i ? 'text-slate-900 dark:text-white' : 'text-[#063955] dark:text-white'}`}>
+              <span className={`font-semibold shrink-0 transition-colors ${hoverIdx === i ? 'text-slate-900 dark:text-white' : 'text-slate-800 dark:text-white'}`}>
                 {it.value} <span className="text-[11px] font-medium opacity-60 ml-1">({pct}%)</span>
               </span>
             </div>
@@ -183,9 +188,8 @@ function LineChart({ points, height = 180, colors }: { points: { x: string; y: n
   
   const w = 720; const h = height; const pad = 18
   
-  // 💡 MÁGICA DO HEADROOM (Adiciona 20% de espaço no topo para o número não cortar)
   const actualMaxY = Math.max(1, ...points.map(p => p.y))
-  const maxY = actualMaxY * 1.2 
+  const maxY = actualMaxY * 1.3 
   
   const xStep = points.length > 1 ? (w - pad * 2) / (points.length - 1) : 0
   const toX = (i: number) => pad + i * xStep
@@ -199,64 +203,55 @@ function LineChart({ points, height = 180, colors }: { points: { x: string; y: n
       <svg viewBox={`0 0 ${w} ${h}`} className="min-w-[500px] w-full h-full block" onMouseLeave={() => setHoverIdx(null)}>
         <defs>
           <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={colors.cyan} stopOpacity="0.3" />
-            <stop offset="100%" stopColor={colors.cyan} stopOpacity="0.0" />
+            <stop offset="0%" stopColor={colors.chartLines} stopOpacity="0.2" />
+            <stop offset="100%" stopColor={colors.chartLines} stopOpacity="0.0" />
           </linearGradient>
         </defs>
 
-        {/* Linhas de grelha horizontais */}
         {[0, 0.25, 0.5, 0.75, 1].map((t, i) => {
           const y = h - pad - t * (h - pad * 2)
           return <line key={i} x1={pad} y1={y} x2={w - pad} y2={y} stroke={colors.grayTrack} strokeWidth="1.5" strokeDasharray={i === 0 ? "0" : "4 4"} />
         })}
 
-        {/* Preenchimento sob a linha */}
         {points.length > 1 && <path d={dArea} fill="url(#areaGradient)" className="transition-all duration-300" />}
         
-        {/* A linha principal */}
-        <path d={d} fill="none" stroke={colors.cyan} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+        <path d={d} fill="none" stroke={colors.chartLines} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
 
-        {/* 💡 DATAS NO EIXO X INFERIOR ESTÃO DE VOLTA! */}
         {points.map((p, i) => {
-          // Mostra menos datas se houver muitos pontos, mas mostra sempre a data que o rato está a focar
           if (points.length > 20 && i % 4 !== 0 && hoverIdx !== i) return null
           return (
-            <text key={`lbl-${i}`} x={toX(i)} y={h - 2} textAnchor="middle" fontSize="10" fontWeight="600" fill={hoverIdx === i ? colors.cyan : colors.muted} className="transition-colors">
+            <text key={`lbl-${i}`} x={toX(i)} y={h - 2} textAnchor="middle" fontSize="10" fontWeight="600" fill={hoverIdx === i ? colors.primaryAccent : colors.muted} className="transition-colors">
               {niceLabel(p.x)}
             </text>
           )
         })}
 
-        {/* Valores Visíveis (Agora têm espaço de sobra no topo) */}
         {points.map((p, i) => {
           if (p.y === 0) return null;
           return (
-            <text key={`val-${i}`} x={toX(i)} y={toY(p.y) - 10} textAnchor="middle" fontSize="12" fontWeight="bold" fill={colors.cyan} className="pointer-events-none drop-shadow-sm transition-all duration-200" opacity={hoverIdx === i ? 0 : 1}>
+            <text key={`val-${i}`} x={toX(i)} y={toY(p.y) - 10} textAnchor="middle" fontSize="12" fontWeight="bold" fill={colors.primaryAccent} className="pointer-events-none drop-shadow-sm transition-all duration-200" opacity={hoverIdx === i ? 0 : 1}>
               {p.y}
             </text>
           )
         })}
 
-        {/* Hitboxes Invisíveis para facilitar o hover do rato */}
         {points.map((p, i) => (
           <circle key={`hit-${i}`} cx={toX(i)} cy={toY(p.y)} r="16" fill="transparent" onMouseEnter={() => setHoverIdx(i)} className="cursor-pointer outline-none" />
         ))}
 
-        {/* Bolinhas Visíveis */}
         {points.map((p, i) => (
           <circle 
             key={`pt-${i}`} 
             cx={toX(i)} 
             cy={toY(p.y)} 
             r={hoverIdx === i ? "6" : "3"} 
-            fill={hoverIdx === i ? "#fff" : colors.cyan} 
-            stroke={colors.cyan}
+            fill={hoverIdx === i ? "#fff" : colors.chartLines} 
+            stroke={hoverIdx === i ? colors.primaryAccent : colors.chartLines}
             strokeWidth={hoverIdx === i ? "3" : "0"}
             className="transition-all duration-200 pointer-events-none" 
           />
         ))}
 
-        {/* O Balão Flutuante (Tooltip) */}
         {hoverIdx !== null && (
           <g transform={`translate(${toX(hoverIdx)}, ${toY(points[hoverIdx].y) - 34})`} className="pointer-events-none transition-transform duration-200 z-[999]">
             <rect x="-40" y="-40" width="80" height="34" rx="6" fill={colors.darkBlue} className="shadow-2xl" style={{ filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))' }} />
@@ -279,8 +274,9 @@ function BarList({ items, color, isPerson = false, profilesMap = {}, colors }: {
         const w = maxV > 0 ? Math.round((it.value / maxV) * 100) : 0
         return (
           <div key={it.label} className="flex flex-col gap-1.5 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-            <div className="flex items-center justify-between text-sm font-medium text-slate-700 dark:text-slate-200">
-              <div className="flex items-center gap-2.5">
+            {/* 💡 CORREÇÃO AQUI: gap-3, flex-1, min-w-0 e block para permitir expansão elástica */}
+            <div className="flex items-center justify-between text-sm font-medium text-slate-700 dark:text-slate-200 gap-3">
+              <div className="flex items-center gap-2.5 flex-1 min-w-0">
                 {isPerson && (
                   profilesMap[it.label] ? (
                     <img src={profilesMap[it.label]} alt="" className="w-7 h-7 rounded-full object-cover shadow-sm border border-slate-200 dark:border-slate-700 shrink-0" />
@@ -290,9 +286,9 @@ function BarList({ items, color, isPerson = false, profilesMap = {}, colors }: {
                     </div>
                   )
                 )}
-                <span className="truncate leading-tight max-w-[150px]">{it.label}</span>
+                <span className="truncate leading-tight font-medium block">{it.label}</span>
               </div>
-              <span className="text-[#063955] dark:text-white font-bold shrink-0">{it.value}</span>
+              <span className="text-slate-900 dark:text-white font-bold shrink-0">{it.value}</span>
             </div>
             
             <div className="flex items-center gap-3">
@@ -320,8 +316,9 @@ function DoubleBarList({ items, profilesMap, colors }: { items: { name: string, 
         
         return (
           <div key={it.name} className="flex flex-col gap-2 p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-            <div className="flex items-center justify-between text-sm font-medium text-slate-700 dark:text-slate-200">
-              <div className="flex items-center gap-2.5">
+            {/* 💡 CORREÇÃO AQUI também: gap-3, flex-1, min-w-0 e block */}
+            <div className="flex items-center justify-between text-sm font-medium text-slate-700 dark:text-slate-200 gap-3">
+              <div className="flex items-center gap-2.5 flex-1 min-w-0">
                 {profilesMap[it.name] ? (
                   <img src={profilesMap[it.name]} alt="" className="w-8 h-8 rounded-full object-cover shadow-sm border border-slate-200 dark:border-slate-700 shrink-0" />
                 ) : (
@@ -329,25 +326,25 @@ function DoubleBarList({ items, profilesMap, colors }: { items: { name: string, 
                     {it.name.charAt(0).toUpperCase()}
                   </div>
                 )}
-                <span className="truncate leading-tight font-semibold text-[#063955] dark:text-white max-w-[140px]">{it.name}</span>
+                <span className="truncate leading-tight font-semibold text-slate-900 dark:text-white block">{it.name}</span>
               </div>
-              <span className="text-[#063955] dark:text-white font-black shrink-0">{it.total}</span>
+              <span className="text-slate-900 dark:text-white font-black shrink-0 tracking-tight">{it.total}</span>
             </div>
             
             <div className="flex items-center gap-3">
-              <div className="h-2.5 flex-1 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-800 flex">
+              <div className="h-2.5 flex-1 rounded-full overflow-hidden bg-slate-100 dark:bg-slate-800 flex">
                 <div className="h-full transition-all duration-700 ease-out" style={{ width: `${wOnTime}%`, background: colors.okGreen }} title={`No Prazo: ${it.onTime} (${pctOnTime}%)`} />
-                <div className="h-full transition-all duration-700 ease-out" style={{ width: `${wLate}%`, background: colors.dangerRed }} title={`Atrasadas: ${it.late} (${pctLate}%)`} />
+                <div className="h-full transition-all duration-700 ease-out" style={{ width: `${wLate}%`, background: colors.chartLines }} title={`Atrasadas: ${it.late} (${pctLate}%)`} />
               </div>
             </div>
             
             <div className="flex justify-between text-[10px] font-bold tracking-wide uppercase px-1">
               {it.onTime > 0 ? (
-                <span className="text-[#2d6943] dark:text-[#4ade80]">{it.onTime} no prazo <span className="opacity-60 ml-0.5">({pctOnTime}%)</span></span>
+                <span className="text-slate-600 dark:text-slate-300">{it.onTime} no prazo <span className="opacity-60 ml-0.5">({pctOnTime}%)</span></span>
               ) : <span />}
               
               {it.late > 0 ? (
-                <span className="text-[#b43a3d] dark:text-[#f87171]">{it.late} com atraso <span className="opacity-60 ml-0.5">({pctLate}%)</span></span>
+                <span className="text-slate-500 dark:text-slate-400">{it.late} com atraso <span className="opacity-60 ml-0.5">({pctLate}%)</span></span>
               ) : <span />}
             </div>
           </div>
@@ -363,25 +360,25 @@ function TwoBars({ onTime, late, colors }: { onTime: number; late: number; color
   const b = total > 0 ? 100 - a : 0
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-2">
       <div>
-        <div className="flex items-center justify-between text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">
-          <span>Entregue no Prazo</span><span className="text-[#063955] dark:text-white font-bold">{onTime}</span>
+        <div className="flex items-center justify-between text-sm font-medium text-slate-600 dark:text-slate-300 mb-2.5">
+          <span>Entregue no Prazo</span><span className="text-slate-900 dark:text-white font-bold tracking-tight">{onTime}</span>
         </div>
-        <div className="h-3 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+        <div className="h-3 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
           <div className="h-full transition-all duration-700 ease-out" style={{ width: `${a}%`, background: colors.okGreen }} />
         </div>
       </div>
       <div>
-        <div className="flex items-center justify-between text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">
-          <span>Entregue com Atraso</span><span className="text-[#063955] dark:text-white font-bold">{late}</span>
+        <div className="flex items-center justify-between text-sm font-medium text-slate-600 dark:text-slate-300 mb-2.5">
+          <span>Entregue com Atraso</span><span className="text-slate-900 dark:text-white font-bold tracking-tight">{late}</span>
         </div>
-        <div className="h-3 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
-          <div className="h-full transition-all duration-700 ease-out" style={{ width: `${b}%`, background: colors.dangerRed }} />
+        <div className="h-3 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+          <div className="h-full transition-all duration-700 ease-out" style={{ width: `${b}%`, background: colors.chartLines }} />
         </div>
       </div>
-      <div className="pt-4 border-t border-slate-100 dark:border-slate-800 text-xs font-medium text-slate-500 dark:text-slate-400">
-        Taxa de pontualidade da equipa: <span className="text-[#063955] dark:text-white font-bold text-sm ml-1 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">{a}%</span>
+      <div className="pt-5 border-t border-slate-100 dark:border-slate-800 text-[11px] font-medium text-slate-500 dark:text-slate-400 flex items-center justify-between">
+        Taxa de pontualidade da equipa: <span className="text-slate-950 dark:text-white font-black text-sm ml-1 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg">{a}%</span>
       </div>
     </div>
   )
@@ -459,9 +456,10 @@ export default function DashboardPage() {
         .select(`
           id, data_vencimento, status, data_conclusao,
           atividades!tarefas_diarias_atividade_id_fkey (
-            planner_name, frequencia, responsaveis_lista,
+            planner_name, frequencia, responsaveis_lista, projeto_id, prioridade_descricao,
             setores!atividades_setor_id_fkey (nome),
-            responsaveis!atividades_responsavel_id_fkey (nome, email)
+            responsaveis!atividades_responsavel_id_fkey (nome, email),
+            projetos (nome)
           )
         `)
         .gte('data_vencimento', start)
@@ -586,10 +584,42 @@ export default function DashboardPage() {
     return {
       aging: Object.entries(agingMap).map(([label, value]) => ({ label, value })),
       mix: [
-        { label: 'Planejado', value: planned, color: colors.cyan },
+        { label: 'Planejado', value: planned, color: colors.okGreen },
         { label: 'Ad Hoc', value: adhoc, color: colors.warnAmber }
       ]
     }
+  }, [rows, colors])
+
+  const effortMix = useMemo(() => {
+    let projetos = 0, rotina = 0
+    rows.forEach(r => {
+      if (r.atividades?.projetos?.nome || r.atividades?.projeto_id) projetos++
+      else rotina++
+    })
+    return [
+      { label: 'Projetos Estratégicos', value: projetos, color: colors.primaryAccent },
+      { label: 'Rotina / Operacional', value: rotina, color: colors.chartLines }
+    ]
+  }, [rows, colors])
+
+  const priorityMix = useMemo(() => {
+    let alta = 0, media = 0, baixa = 0, sem = 0
+    rows.forEach(r => {
+      if ((r.status || '').toLowerCase().includes('concl')) return;
+
+      const p = r.atividades?.prioridade_descricao || 'Sem Prioridade'
+      if (p === 'Alta') alta++
+      else if (p === 'Média') media++
+      else if (p === 'Baixa') baixa++
+      else sem++
+    })
+    const res = []
+    if (alta > 0) res.push({ label: 'Alta Prioridade', value: alta, color: colors.primaryAccent }) 
+    if (media > 0) res.push({ label: 'Prioridade Média', value: media, color: colors.chartLines })
+    if (baixa > 0) res.push({ label: 'Prioridade Baixa', value: baixa, color: colors.okGreen })
+    if (sem > 0) res.push({ label: 'Não Classificada', value: sem, color: colors.muted })
+    
+    return res.sort((a, b) => b.value - a.value)
   }, [rows, colors])
 
   const statusDist = useMemo(() => {
@@ -604,8 +634,8 @@ export default function DashboardPage() {
     })
     return [
       { label: 'Concluído', value: map['Concluído'], color: colors.okGreen },
-      { label: 'Em andamento', value: map['Em andamento'], color: colors.cyan },
-      { label: 'Aguardando', value: map['Aguardando'], color: colors.lightCyan },
+      { label: 'Em andamento', value: map['Em andamento'], color: colors.chartPlan },
+      { label: 'Aguardando', value: map['Aguardando'], color: colors.statusWait },
       { label: 'Pendente', value: map['Pendente'], color: colors.warnAmber },
       { label: 'Outros', value: map['Outros'], color: colors.muted },
     ]
@@ -673,6 +703,17 @@ export default function DashboardPage() {
     return Object.entries(map).map(([label, value]) => ({ label, value })).sort((a, b) => b.value - a.value).slice(0, 10)
   }, [rows])
 
+  const byProject = useMemo(() => {
+    const map: Record<string, number> = {}
+    rows.forEach((r) => { 
+      const projName = r.atividades?.projetos?.nome
+      if (projName) {
+        map[projName] = (map[projName] || 0) + 1 
+      }
+    })
+    return Object.entries(map).map(([label, value]) => ({ label, value })).sort((a, b) => b.value - a.value).slice(0, 10)
+  }, [rows])
+
   const deliveriesByPerson = useMemo(() => {
     const map: Record<string, { onTime: number, late: number }> = {}
     
@@ -726,7 +767,7 @@ export default function DashboardPage() {
     return { onTime, late }
   }, [rows])
 
-  if (!authLoaded) return <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center text-[#0f88a8] font-medium animate-pulse">A preparar o seu painel...</div>
+  if (!authLoaded) return <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center text-slate-800 dark:text-white font-medium animate-pulse">A preparar o seu painel...</div>
 
   const isMesmoMes = mesInicio === mesFim
   const tituloPeriodo = isMesmoMes 
@@ -735,23 +776,23 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-8 font-sans transition-colors duration-300">
-      <Toaster position="bottom-right" toastOptions={{ style: { background: isDark ? '#1e293b' : '#063955', color: '#fff', borderRadius: '12px' } }} />
+      <Toaster position="bottom-right" toastOptions={{ style: { background: isDark ? '#1e293b' : '#031D2D', color: '#fff', borderRadius: '12px' } }} />
 
-      <header className="flex flex-col xl:flex-row xl:justify-between xl:items-center gap-4 mb-6 bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 transition-colors">
+      <header className="flex flex-col xl:flex-row xl:justify-between xl:items-center gap-4 mb-8 bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100/50 dark:border-slate-800/50 transition-colors">
         <div>
-          <h1 className="text-2xl font-semibold text-[#063955] dark:text-white tracking-tight flex items-center gap-2">
+          <h1 className="text-3xl font-extrabold text-slate-950 dark:text-white tracking-tighter flex items-center gap-3">
             Dashboard de Resultados
-            <span className="text-[10px] uppercase font-bold tracking-widest bg-[#0f88a8]/10 text-[#0f88a8] dark:bg-[#38bdf8]/10 dark:text-[#38bdf8] px-2 py-1 rounded-md mt-1">
+            <span className="text-[10px] uppercase font-bold tracking-widest bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 px-3 py-1.5 rounded-lg mt-1">
               {userRole === 'admin' ? 'Visão Global' : 'Meu Desempenho'}
             </span>
           </h1>
-          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Visão estatística {tituloPeriodo}</p>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1.5 font-medium">Visão estatística {tituloPeriodo}</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
           
           <select
-            className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-sm font-medium text-[#063955] dark:text-white outline-none focus:border-[#0f88a8] cursor-pointer shadow-sm transition-colors"
+            className="bg-slate-50 dark:bg-slate-950 border border-slate-200/60 dark:border-slate-800/60 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-800 dark:text-white outline-none focus:border-slate-400 dark:focus:border-slate-600 cursor-pointer shadow-sm transition-colors"
             value={plannerSel}
             onChange={(e) => setPlannerSel(e.target.value)}
           >
@@ -759,9 +800,9 @@ export default function DashboardPage() {
             {planners.map((p) => <option key={p} value={p}>{p}</option>)}
           </select>
 
-          <div className="flex items-center bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden focus-within:border-[#0f88a8] transition-colors relative z-30">
+          <div className="flex items-center bg-slate-50 dark:bg-slate-950 border border-slate-200/60 dark:border-slate-800/60 rounded-xl shadow-sm overflow-hidden focus-within:border-slate-400 transition-colors relative z-30">
             <select
-              className="bg-transparent py-2.5 pl-4 pr-2 text-sm font-medium text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
+              className="bg-transparent py-2.5 pl-4 pr-2 text-sm font-semibold text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
               value={mesInicio}
               onChange={(e) => setMesInicio(Number(e.target.value))}
             >
@@ -771,17 +812,17 @@ export default function DashboardPage() {
             <span className="text-slate-400 text-xs font-medium px-1">até</span>
             
             <select
-              className="bg-transparent py-2.5 px-2 text-sm font-medium text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
+              className="bg-transparent py-2.5 px-2 text-sm font-semibold text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
               value={mesFim}
               onChange={(e) => setMesFim(Number(e.target.value))}
             >
               {MESES.map((m) => <option key={m.v} value={m.v}>{m.n}</option>)}
             </select>
             
-            <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-1"></div>
+            <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-1.5"></div>
             
             <input
-              className="bg-transparent py-2.5 px-3 text-sm font-medium text-slate-700 dark:text-slate-200 w-20 outline-none text-center"
+              className="bg-transparent py-2.5 px-3 text-sm font-semibold text-slate-800 dark:text-slate-200 w-20 outline-none text-center"
               type="number"
               value={anoAlvo}
               onChange={(e) => setAnoAlvo(Number(e.target.value))}
@@ -791,25 +832,25 @@ export default function DashboardPage() {
           <button 
             onClick={exportarPDF} 
             disabled={gerandoPdf}
-            className="flex items-center gap-2 bg-[#0f88a8] hover:bg-[#0c708b] text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm disabled:opacity-50"
+            className="flex items-center gap-2.5 bg-[#C7A77B] hover:bg-[#A68A63] text-[#031D2D] px-6 py-2.5 rounded-xl text-sm font-bold transition-all shadow disabled:opacity-50 tracking-tight"
           >
-            <FileText size={16} />
+            <FileText size={17} />
             {gerandoPdf ? 'A processar...' : 'Gerar Dossiê PDF'}
           </button>
         </div>
       </header>
 
       <div id="dashboard-content" className="bg-slate-50 dark:bg-slate-950 p-2 transition-colors relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-8">
           <KPI title="Total Volume" value={metrics.total} isDark={isDark} info="Número total de tarefas atribuídas no período selecionado." />
-          <KPI title="Concluídas" value={metrics.done} accent="text-[#2d6943] dark:text-[#4ade80]" isDark={isDark} />
-          <KPI title="Em Atraso" value={metrics.overdue} accent="text-[#b43a3d] dark:text-[#f87171]" isDark={isDark} info="Tarefas pendentes cuja data limite já foi ultrapassada." />
-          <KPI title="Para Hoje" value={metrics.dueToday} accent="text-[#0f88a8] dark:text-[#38bdf8]" isDark={isDark} />
+          <KPI title="Concluídas" value={metrics.done} accent="text-slate-800 dark:text-white" isDark={isDark} />
+          <KPI title="Em Atraso" value={metrics.overdue} accent="text-[#A68A63] dark:text-[#E2B276]" isDark={isDark} info="Tarefas pendentes cuja data limite já foi ultrapassada." />
+          <KPI title="Para Hoje" value={metrics.dueToday} accent="text-slate-800 dark:text-white" isDark={isDark} />
           <KPI title="Próx. 7 Dias" value={metrics.next7Count} isDark={isDark} />
-          <KPI title="Eficiência" value={`${metrics.pct}%`} accent="text-[#0f88a8] dark:text-[#38bdf8]" isDark={isDark} info="Rácio entre as tarefas já concluídas e o volume total atribuído." />
+          <KPI title="Eficiência" value={`${metrics.pct}%`} accent="text-slate-800 dark:text-white" isDark={isDark} info="Rácio entre as tarefas já concluídas e o volume total atribuído." />
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
           <Section 
             title="Produtividade Diária" 
             subtitle="Tarefas concluídas no período" 
@@ -852,42 +893,70 @@ export default function DashboardPage() {
             {additionalMetrics.aging.some(a => a.value > 0) ? (
               <BarList items={additionalMetrics.aging} color={colors.warnAmber} colors={colors} />
             ) : (
-              <div className="text-sm font-medium text-slate-500 py-4 text-center bg-slate-50 dark:bg-slate-800 rounded-xl transition-colors">Nenhum atraso no momento 🎉</div>
+              <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-50 dark:bg-slate-800 rounded-xl transition-colors p-10">Nenhum atraso no momento 🎉</div>
             )}
           </Section>
 
           <Section 
             title="Entregas por Pessoa" 
             subtitle="Análise de pontualidade individual"
-            info="Avalia a performance de cada membro. O verde indica tarefas fechadas dentro do prazo, e o vermelho, tarefas concluídas fora de tempo."
+            info="Avalia a performance de cada membro. O verde indica tarefas fechadas dentro do prazo, e o ardósia, tarefas concluídas fora de tempo."
           >
             {deliveriesByPerson.length > 0 ? (
                <DoubleBarList items={deliveriesByPerson} profilesMap={profilesMap} colors={colors} />
             ) : (
-               <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-50 dark:bg-slate-800 rounded-xl p-6 transition-colors">Ainda não há tarefas concluídas neste período.</div>
+               <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-100/50 dark:bg-slate-800/50 rounded-xl p-6 transition-colors">Ainda não há tarefas concluídas neste período.</div>
             )}
           </Section>
 
           {userRole === 'admin' && (
             <>
               <Section 
+                title="Foco da Operação" 
+                subtitle="Projetos vs Rotina Diária"
+                info="Mede quanto do volume da equipa está a ser investido em evolução e iniciativas (Projetos) contra a manutenção da base (Rotina)."
+              >
+                <Doughnut items={effortMix} size={140} colors={colors} />
+              </Section>
+
+              <Section 
+                title="Top Projetos Ativos" 
+                subtitle="Volume de demandas por projeto estratégico"
+                info="Identifica quais as iniciativas da empresa que estão a consumir a maior quantidade de tarefas ativas neste momento."
+              >
+                {byProject.length ? <BarList items={byProject} color={colors.primaryAccent} colors={colors} /> : <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-100/50 dark:bg-slate-800/50 rounded-xl p-6 transition-colors">Nenhum projeto em curso neste período.</div>}
+              </Section>
+
+              <Section 
                 title="Atrasadas por Responsável" 
                 subtitle="Contas com pendências vencidas"
                 info="Identifica rapidamente quem tem o maior volume de tarefas pendentes e já fora do prazo."
               >
                 {overdueByPerson.length ? (
-                  <BarList items={overdueByPerson} color={colors.dangerRed} isPerson={true} profilesMap={profilesMap} colors={colors} />
+                  <BarList items={overdueByPerson} color={colors.chartLines} isPerson={true} profilesMap={profilesMap} colors={colors} />
                 ) : (
-                  <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-50 dark:bg-slate-800 rounded-xl p-6 transition-colors">Nenhuma tarefa atrasada 🎉</div>
+                  <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-100/50 dark:bg-slate-800/50 rounded-xl p-6 transition-colors">Nenhuma tarefa atrasada 🎉</div>
                 )}
               </Section>
 
               <Section title="Volume por Setor" subtitle="Demandas ativas no período" info="Mostra quais os departamentos com maior carga de processos neste mês.">
-                {bySector.length ? <BarList items={bySector} color={colors.darkBlue} colors={colors} /> : <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-50 dark:bg-slate-800 rounded-xl p-6 transition-colors">Sem dados para exibir.</div>}
+                {bySector.length ? <BarList items={bySector} color={colors.darkBlue} colors={colors} /> : <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-100/50 dark:bg-slate-800/50 rounded-xl p-6 transition-colors">Sem dados para exibir.</div>}
               </Section>
 
               <Section title="Volume por Colaborador" subtitle="Demandas ativas no período" info="Ranqueia os membros da equipa pela quantidade bruta de responsabilidades que lhes foram atribuídas.">
-                {byPerson.length ? <BarList items={byPerson} color={colors.darkBlue} isPerson={true} profilesMap={profilesMap} colors={colors} /> : <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-50 dark:bg-slate-800 rounded-xl p-6 transition-colors">Sem dados para exibir.</div>}
+                {byPerson.length ? <BarList items={byPerson} color={colors.darkBlue} isPerson={true} profilesMap={profilesMap} colors={colors} /> : <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-100/50 dark:bg-slate-800/50 rounded-xl p-6 transition-colors">Sem dados para exibir.</div>}
+              </Section>
+
+              <Section 
+                title="Matriz de Urgência" 
+                subtitle="Carga de trabalho por prioridade"
+                info="Avalia o nível de criticidade das tarefas pendentes. Um volume muito alto de 'Alta Prioridade' indica sobrecarga e exige atenção."
+              >
+                {priorityMix.length > 0 ? (
+                  <Doughnut items={priorityMix} size={140} colors={colors} />
+                ) : (
+                  <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-100/50 dark:bg-slate-800/50 rounded-xl p-6 transition-colors">Sem dados de prioridade.</div>
+                )}
               </Section>
             </>
           )}
