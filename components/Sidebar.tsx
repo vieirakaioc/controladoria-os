@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { 
   LayoutDashboard, 
@@ -38,44 +38,55 @@ export default function Sidebar() {
   const [userEmail, setUserEmail] = useState<string>('')
   const [avatarUrl, setAvatarUrl] = useState<string>('')
   const pathname = usePathname()
+  const router = useRouter()
 
-  // 💡 ESTADO DA LOGO DA EMPRESA
   const [logoEmpresa, setLogoEmpresa] = useState<string | null>(null)
-
   const [notificacoes, setNotificacoes] = useState<any[]>([])
   const [notifOpen, setNotifOpen] = useState(false)
   const unreadCount = notificacoes.filter(n => !n.lida).length
 
   const fetchNotificacoes = async (emailBusca: string) => {
-    if (!emailBusca) return
-    const { data } = await supabase
-      .from('notificacoes')
-      .select('*')
-      .eq('user_email', emailBusca)
-      .order('created_at', { ascending: false })
-      .limit(20)
-    if (data) setNotificacoes(data)
+    try {
+      if (!emailBusca) return
+      const { data, error } = await supabase
+        .from('notificacoes')
+        .select('*')
+        .eq('user_email', emailBusca)
+        .order('created_at', { ascending: false })
+        .limit(20)
+      if (!error && data) setNotificacoes(data)
+    } catch (e) {
+      console.error("Erro silencioso nas notificações", e)
+    }
   }
 
-  // 💡 BUSCA A LOGO GLOBAL DA EMPRESA
   const fetchConfigEmpresa = async () => {
-    const { data } = await supabase.from('empresa_config').select('logo_url').eq('id', 1).single()
-    if (data?.logo_url) setLogoEmpresa(data.logo_url)
+    try {
+      // 💡 BLINDAGEM: Usamos maybeSingle para não dar erro se a tabela estiver vazia
+      const { data, error } = await supabase.from('empresa_config').select('logo_url').eq('id', 1).maybeSingle()
+      if (!error && data?.logo_url) {
+        setLogoEmpresa(data.logo_url)
+      }
+    } catch (e) {
+      console.error("Erro silencioso ao buscar logo", e)
+    }
   }
 
   useEffect(() => {
-    fetchConfigEmpresa() // Chama a logo ao carregar a sidebar
+    fetchConfigEmpresa()
 
     const fetchUserData = async (userId: string, email: string) => {
       setUserEmail(email)
       fetchNotificacoes(email)
       
-      const { data } = await supabase.from('profiles').select('role, full_name, avatar_url').eq('id', userId).single()
-      if (data) {
-        setUserRole(data.role || 'membro')
-        setUserName(data.full_name || email.split('@')[0] || 'Usuário')
-        setAvatarUrl(data.avatar_url || '')
-      }
+      try {
+        const { data } = await supabase.from('profiles').select('role, full_name, avatar_url').eq('id', userId).single()
+        if (data) {
+          setUserRole(data.role || 'membro')
+          setUserName(data.full_name || email.split('@')[0] || 'Usuário')
+          setAvatarUrl(data.avatar_url || '')
+        }
+      } catch(e) {}
     }
 
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -103,9 +114,25 @@ export default function Sidebar() {
     return () => clearInterval(interval)
   }, [userEmail])
 
-  const marcarComoLida = async (id: string) => {
-    setNotificacoes(prev => prev.map(n => n.id === id ? { ...n, lida: true } : n))
-    await supabase.from('notificacoes').update({ lida: true }).eq('id', id)
+  // 💡 O DEEP LINKING BLINDADO
+  const handleClickNotificacao = async (n: any) => {
+    try {
+      if (!n.lida) {
+        setNotificacoes(prev => prev.map(notif => notif.id === n.id ? { ...notif, lida: true } : notif))
+        await supabase.from('notificacoes').update({ lida: true }).eq('id', n.id)
+      }
+      
+      setNotifOpen(false) 
+
+      if (n.tarefa_id) {
+        router.push(`/tarefas?taskId=${n.tarefa_id}`)
+      } else {
+        router.push('/tarefas')
+      }
+    } catch(e) {
+      console.error("Erro no clique da notificação", e)
+      router.push('/tarefas') // Fallback de segurança
+    }
   }
 
   const marcarTodasComoLidas = async () => {
@@ -130,7 +157,6 @@ export default function Sidebar() {
         )}
       </div>
 
-      {/* 💡 ESPAÇO DA LOGO DA EMPRESA AQUI (Entre Título e Abas) */}
       {logoEmpresa && (
         <div className={`flex justify-center items-center py-5 border-b border-white/5 shrink-0 bg-white/5 transition-all ${isExpanded ? 'px-4' : 'px-2'}`}>
           <img 
@@ -171,7 +197,6 @@ export default function Sidebar() {
       {/* RODAPÉ DO MENU */}
       <div className="p-4 border-t border-white/10 bg-white/5 space-y-2 relative shrink-0">
         
-        {/* BOTÃO DO SININHO */}
         <button 
           onClick={() => setNotifOpen(!notifOpen)}
           className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all w-full relative ${
@@ -195,7 +220,6 @@ export default function Sidebar() {
           )}
         </button>
 
-        {/* PAINEL FLUTUANTE DE NOTIFICAÇÕES */}
         {notifOpen && (
           <div className="absolute bottom-4 left-full ml-4 w-80 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[450px] z-[100]">
             <div className="p-4 bg-[#063955] flex justify-between items-center text-white shrink-0">
@@ -210,7 +234,7 @@ export default function Sidebar() {
               {notificacoes.map(n => (
                 <div 
                   key={n.id} 
-                  onClick={() => marcarComoLida(n.id)} 
+                  onClick={() => handleClickNotificacao(n)}
                   className={`p-3 rounded-xl cursor-pointer transition-all ${n.lida ? 'bg-white opacity-60 hover:opacity-100' : 'bg-[#0f88a8]/10 border border-[#0f88a8]/20 shadow-sm'}`}
                 >
                   <h4 className={`text-xs ${n.lida ? 'font-semibold text-slate-700' : 'font-bold text-[#063955]'}`}>{n.titulo}</h4>

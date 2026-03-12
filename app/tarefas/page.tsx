@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useMemo, useState, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Toaster, toast } from 'react-hot-toast'
 
@@ -169,7 +169,6 @@ const TaskCard = React.memo(({ r, mode, statuses, statusOrderMap, setStatus, exc
       <div className="text-sm font-medium text-slate-800 dark:text-white leading-snug pointer-events-none">{atv.nome_atividade || '-'}</div>
 
       <div className="mt-3 flex flex-wrap gap-1.5 pointer-events-none">
-        {/* 💡 Exibe badge do Projeto se existir */}
         {atv.projeto_id && (
           <span className="bg-[#031D2D]/10 text-[#031D2D] border border-[#031D2D]/20 dark:bg-[#C7A77B]/10 dark:text-[#C7A77B] dark:border-[#C7A77B]/20 px-2 py-0.5 rounded text-[10px] font-bold tracking-wide uppercase">
             Projeto
@@ -236,6 +235,8 @@ const BoardColumn = ({ status, tasks, statuses, statusOrderMap, setStatus, exclu
 // ==========================================
 export default function TarefasPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const taskIdUrl = searchParams?.get('taskId')
 
   const hoje = new Date()
   const [mesAlvo, setMesAlvo] = useState<number>(hoje.getMonth())
@@ -249,7 +250,7 @@ export default function TarefasPage() {
   const [filtroSetor, setFiltroSetor] = useState<string>('Todos')
   const [filtroResp, setFiltroResp] = useState<string>('Todos')
   const [filtroClassificacao, setFiltroClassificacao] = useState<string>('Todos')
-  const [filtroProjeto, setFiltroProjeto] = useState<string>('Todos') // 💡 NOVO FILTRO DE PROJETO
+  const [filtroProjeto, setFiltroProjeto] = useState<string>('Todos')
 
   const [view, setView] = useState<'list' | 'board' | 'timeboard' | 'calendar'>('timeboard')
 
@@ -259,7 +260,7 @@ export default function TarefasPage() {
   const [statuses, setStatuses] = useState<string[]>([])
   const [statusOrderMap, setStatusOrderMap] = useState<Record<string, number>>({})
 
-  // Drawer & Upload State
+  // Modal Detalhes State
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [selected, setSelected] = useState<Row | null>(null)
   
@@ -271,7 +272,7 @@ export default function TarefasPage() {
   const [drawerChecklists, setDrawerChecklists] = useState<ChecklistItem[]>([])
   const [drawerClassificacao, setDrawerClassificacao] = useState<string>('')
   const [drawerResps, setDrawerResps] = useState<any[]>([])
-  const [drawerProjetoId, setDrawerProjetoId] = useState<string>('') // 💡 NOVO ESTADO DRAWER PROJETO
+  const [drawerProjetoId, setDrawerProjetoId] = useState<string>('')
 
   const [novoItemChecklist, setNovoItemChecklist] = useState('')
   const [savingDrawer, setSavingDrawer] = useState(false)
@@ -376,7 +377,6 @@ export default function TarefasPage() {
     setCarregando(true)
     
     try {
-      // 💡 Inclusão do projeto_id na busca das atividades
       const { data, error } = await supabase.from('tarefas_diarias').select(`
           id, data_vencimento, status, data_conclusao, observacoes, anexo_url, checklists,
           atividades!tarefas_diarias_atividade_id_fkey (
@@ -406,6 +406,19 @@ export default function TarefasPage() {
       setCarregando(false)
     }
   }
+
+  useEffect(() => {
+    if (rows.length > 0 && !carregando && taskIdUrl && !drawerOpen) {
+      const task = rows.find(r => r.id === taskIdUrl)
+      if (task) {
+        abrirDrawer(task)
+        router.replace('/tarefas') 
+      } else {
+        toast.error('Tarefa da notificação não encontrada na vista atual.')
+        router.replace('/tarefas') 
+      }
+    }
+  }, [rows, carregando, taskIdUrl, drawerOpen, router])
 
   useEffect(() => {
     if (carregando || !userEmail || rows.length === 0) return;
@@ -550,7 +563,8 @@ export default function TarefasPage() {
         await supabase.from('notificacoes').insert({
           user_email: resp.email,
           titulo: 'Novo Comentário',
-          mensagem: `${userName} comentou na tarefa: "${task?.atividades?.nome_atividade}"`
+          mensagem: `${userName} comentou na tarefa: "${task?.atividades?.nome_atividade}"`,
+          tarefa_id: selected.id 
         })
       }
     })
@@ -561,7 +575,8 @@ export default function TarefasPage() {
         await supabase.from('notificacoes').insert({
           user_email: u.email,
           titulo: 'Mencionaram-no!',
-          mensagem: `${userName} mencionou-o em "${task?.atividades?.nome_atividade}": "${msg}"`
+          mensagem: `${userName} mencionou-o em "${task?.atividades?.nome_atividade}": "${msg}"`,
+          tarefa_id: selected.id 
         })
       }
     }
@@ -627,7 +642,6 @@ export default function TarefasPage() {
     setDrawerChecklists(r.checklists || []) 
     setDrawerClassificacao(r.atividades?.classificacao || '')
     setDrawerResps(getResponsaveis(r.atividades))
-    // 💡 INJETA O PROJETO_ID NO ESTADO DO DRAWER
     setDrawerProjetoId(r.atividades?.projeto_id || '')
     
     setDrawerOpen(true)
@@ -649,7 +663,7 @@ export default function TarefasPage() {
     setDrawerChecklists([])
     setDrawerClassificacao('')
     setDrawerResps([])
-    setDrawerProjetoId('') // 💡 LIMPA
+    setDrawerProjetoId('')
     setNovoItemChecklist('')
     setSavingDrawer(false)
     setComentarios([])
@@ -695,7 +709,6 @@ export default function TarefasPage() {
       let mudouMatriz = false
       
       if (selected.atividades?.task_id) {
-        // 💡 SALVA O PROJETO_ID ATUALIZADO NA TABELA DE ATIVIDADES
         const { error: errAtv } = await supabase.from('atividades')
           .update({ 
             nome_atividade: drawerNome,
@@ -789,7 +802,8 @@ export default function TarefasPage() {
         status: statuses[0] || 'Pendente',
         observacoes: adhocObs || null 
       }
-      const { error: errExec } = await supabase.from('tarefas_diarias').insert([payloadExec])
+      
+      const { data: execData, error: errExec } = await supabase.from('tarefas_diarias').insert([payloadExec]).select('id').single()
       if (errExec) throw errExec
 
       setAdhocOpen(false); setAdhocNome(''); setAdhocSetorId(''); setAdhocResps([]); setAdhocProjetoId(''); setAdhocVenc(new Date().toISOString().slice(0, 10)); setAdhocPrioridade('Média'); setAdhocObs(''); setAdhocClassificacao('');
@@ -799,7 +813,8 @@ export default function TarefasPage() {
           await supabase.from('notificacoes').insert({
             user_email: resp.email,
             titulo: 'Nova Tarefa Ad Hoc',
-            mensagem: `${userName} delegou a você: "${nome}" para o dia ${adhocVenc.slice(8,10)}/${adhocVenc.slice(5,7)}`
+            mensagem: `${userName} delegou a você: "${nome}" para o dia ${adhocVenc.slice(8,10)}/${adhocVenc.slice(5,7)}`,
+            tarefa_id: execData.id 
           })
 
           await fetch('/api/notify', {
@@ -839,7 +854,6 @@ export default function TarefasPage() {
   
   const classifOptions = useMemo(() => Array.from(new Set(rows.map(r => r.atividades?.classificacao).filter(Boolean))).sort(), [rows])
 
-  // 💡 APLICAÇÃO DO FILTRO DE PROJETOS LÁ NO TOPO
   const filtradas = useMemo(() => {
     const q = filtroTexto.trim().toLowerCase()
     return rows.filter((r) => {
@@ -995,7 +1009,6 @@ export default function TarefasPage() {
       <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 mb-6 flex flex-wrap gap-3 items-center transition-colors">
         <input value={filtroTexto} onChange={(e) => setFiltroTexto(e.target.value)} placeholder="Buscar atividade..." className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-sm w-full md:w-64 outline-none focus:border-[#0f88a8] dark:text-white transition-colors" />
         
-        {/* 💡 NOVO FILTRO LÁ NO TOPO: POR PROJETOS */}
         <select value={filtroProjeto} onChange={(e) => setFiltroProjeto(e.target.value)} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-sm text-[#C7A77B] dark:text-[#C7A77B] font-semibold outline-none transition-colors">
           <option value="Todos">Projeto: Todos</option>
           {projetosDb.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
@@ -1130,14 +1143,14 @@ export default function TarefasPage() {
         </>
       )}
 
-      {/* MODAL AD HOC */}
+      {/* 💡 MODAL AD HOC (CENTRALIZADO COM BLUR) */}
       {adhocOpen && (
-        <>
-          <div className="fixed inset-0 bg-[#063955]/20 dark:bg-black/60 backdrop-blur-sm z-40 transition-all" onClick={() => setAdhocOpen(false)} />
-          <aside className="fixed top-0 right-0 h-full w-full sm:w-[480px] bg-white dark:bg-slate-900 z-50 shadow-2xl border-l border-slate-200 dark:border-slate-800 flex flex-col transition-colors">
-            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-start">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+          <div className="absolute inset-0 bg-[#031D2D]/60 dark:bg-black/80 backdrop-blur-md transition-opacity" onClick={() => setAdhocOpen(false)} />
+          <div className="relative bg-white dark:bg-slate-900 w-full max-w-2xl max-h-[95vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-100 dark:border-slate-800 animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-start bg-slate-50/50 dark:bg-slate-950/50 shrink-0">
               <div><span className="text-xs text-[#0f88a8] dark:text-[#38bdf8] font-semibold tracking-wide uppercase">Nova Tarefa Pontual</span><h2 className="text-xl text-slate-900 dark:text-white font-semibold mt-1">Planner: Ad Hoc</h2></div>
-              <button onClick={() => setAdhocOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2">✕</button>
+              <button onClick={() => setAdhocOpen(false)} className="text-slate-400 hover:text-[#063955] dark:hover:text-white p-2">✕</button>
             </div>
             
             <div className="p-6 space-y-5 flex-1 overflow-y-auto custom-scrollbar">
@@ -1217,31 +1230,30 @@ export default function TarefasPage() {
               </div>
             </div>
 
-            <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex gap-2 bg-slate-50 dark:bg-slate-950">
-              <button onClick={criarAdHoc} disabled={savingAdhoc} className="bg-[#0f88a8] text-white px-5 py-3 w-full rounded-xl text-sm font-semibold hover:bg-[#0c708b] transition-colors shadow-sm disabled:opacity-50">
+            <div className="p-5 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2 bg-slate-50 dark:bg-slate-950 shrink-0">
+              <button onClick={() => setAdhocOpen(false)} className="px-5 py-3 rounded-xl text-sm font-semibold text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors">Cancelar</button>
+              <button onClick={criarAdHoc} disabled={savingAdhoc} className="bg-[#0f88a8] text-white px-5 py-3 rounded-xl text-sm font-semibold hover:bg-[#0c708b] transition-colors shadow-sm disabled:opacity-50">
                 {savingAdhoc ? 'A processar...' : 'Criar Tarefa'}
               </button>
             </div>
-          </aside>
-        </>
+          </div>
+        </div>
       )}
 
-      {/* DRAWER COM DETALHES E MENÇÕES */}
+      {/* 💡 MODAL COM DETALHES E MENÇÕES (CENTRALIZADO COM BLUR) */}
       {drawerOpen && selected && (
-        <>
-          <div className="fixed inset-0 bg-[#063955]/20 dark:bg-black/60 backdrop-blur-sm z-40 transition-all" onClick={fecharDrawer} />
-          <aside className="fixed top-0 right-0 h-full w-full sm:w-[520px] bg-white dark:bg-slate-900 z-50 shadow-2xl border-l border-slate-200 dark:border-slate-800 flex flex-col transition-colors">
-            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-start">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+          <div className="absolute inset-0 bg-[#031D2D]/60 dark:bg-black/80 backdrop-blur-md transition-opacity" onClick={fecharDrawer} />
+          <div className="relative bg-white dark:bg-slate-900 w-full max-w-2xl max-h-[95vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-100 dark:border-slate-800 animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-start bg-slate-50/50 dark:bg-slate-950/50 shrink-0">
               <div className="w-full mr-4">
                 <span className="text-xs text-[#0f88a8] dark:text-[#38bdf8] font-semibold tracking-wide uppercase">Detalhes da Tarefa</span>
-                
                 <input 
                   value={drawerNome} 
                   onChange={(e) => setDrawerNome(e.target.value)} 
                   className="w-full text-xl text-[#063955] dark:text-white font-semibold mt-1 bg-transparent border-b-2 border-transparent focus:border-[#0f88a8] outline-none transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50 px-1 -ml-1 rounded"
                   title="Clique para editar o nome da atividade"
                 />
-
                 <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-2">
                   <span>{selected.atividades?.setores?.nome || '—'}</span>
                   <span>•</span>
@@ -1252,7 +1264,7 @@ export default function TarefasPage() {
             </div>
             
             <div className="p-6 flex-1 overflow-y-auto custom-scrollbar">
-              <div className="space-y-5">
+              <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-xs text-slate-500 dark:text-slate-400 font-medium block mb-1">Status</label>
@@ -1274,7 +1286,6 @@ export default function TarefasPage() {
                       {classificacoesDb.map(c => <option key={c.id} value={c.nome} className="dark:bg-slate-900">{c.nome}</option>)}
                     </select>
                   </div>
-                  {/* 💡 NOVO: VINCULAR AO PROJETO (NO DRAWER) */}
                   <div>
                     <label className="text-xs text-slate-500 dark:text-slate-400 font-medium block mb-1 text-[#C7A77B]">Vincular a Projeto</label>
                     <select value={drawerProjetoId} onChange={e => setDrawerProjetoId(e.target.value)} className="w-full bg-transparent border border-[#C7A77B]/50 dark:border-slate-800 dark:text-white rounded-xl p-2.5 text-sm outline-none focus:border-[#C7A77B]">
@@ -1408,15 +1419,16 @@ export default function TarefasPage() {
                 </div>
               </div>
             </div>
-            <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex justify-between bg-slate-50 dark:bg-slate-950 transition-colors">
+            
+            <div className="p-5 border-t border-slate-100 dark:border-slate-800 flex justify-between bg-slate-50 dark:bg-slate-950 shrink-0">
               <button onClick={() => excluirTarefa(selected.id)} className="text-[#b43a3d] dark:text-[#f87171] hover:bg-[#b43a3d]/10 dark:hover:bg-[#b43a3d]/20 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors">Excluir Tarefa</button>
               <div className="flex gap-2">
                 <button onClick={salvarDrawer} className="bg-[#0f88a8] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#0c708b] transition-colors shadow-sm">{savingDrawer ? 'A guardar...' : 'Salvar'}</button>
                 <button onClick={concluirNoDrawer} className="bg-[#2d6943] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#204e31] transition-colors shadow-sm">✓ Concluir</button>
               </div>
             </div>
-          </aside>
-        </>
+          </div>
+        </div>
       )}
     </div>
   )
