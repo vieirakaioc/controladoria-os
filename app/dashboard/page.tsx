@@ -65,7 +65,8 @@ const getColors = (isDark: boolean) => ({
   warnAmber: isDark ? '#E2B276' : '#C79A63', 
   statusWait: isDark ? '#a78bfa' : '#7c3aed', 
   chartPlan: isDark ? '#60a5fa' : '#2563eb',  
-  chartAdhoc: isDark ? '#fb923c' : '#ea580c', 
+  chartAdhoc: isDark ? '#fb923c' : '#ea580c',
+  dangerRed: isDark ? '#f87171' : '#b43a3d', // 💡 NOVO: Vermelho para o Alerta de Atraso
 })
 
 function InfoTooltip({ text }: { text: string }) {
@@ -274,7 +275,6 @@ function BarList({ items, color, isPerson = false, profilesMap = {}, colors }: {
         const w = maxV > 0 ? Math.round((it.value / maxV) * 100) : 0
         return (
           <div key={it.label} className="flex flex-col gap-1.5 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-            {/* 💡 CORREÇÃO AQUI: gap-3, flex-1, min-w-0 e block para permitir expansão elástica */}
             <div className="flex items-center justify-between text-sm font-medium text-slate-700 dark:text-slate-200 gap-3">
               <div className="flex items-center gap-2.5 flex-1 min-w-0">
                 {isPerson && (
@@ -316,7 +316,6 @@ function DoubleBarList({ items, profilesMap, colors }: { items: { name: string, 
         
         return (
           <div key={it.name} className="flex flex-col gap-2 p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-            {/* 💡 CORREÇÃO AQUI também: gap-3, flex-1, min-w-0 e block */}
             <div className="flex items-center justify-between text-sm font-medium text-slate-700 dark:text-slate-200 gap-3">
               <div className="flex items-center gap-2.5 flex-1 min-w-0">
                 {profilesMap[it.name] ? (
@@ -927,13 +926,14 @@ export default function DashboardPage() {
                 {byProject.length ? <BarList items={byProject} color={colors.primaryAccent} colors={colors} /> : <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-100/50 dark:bg-slate-800/50 rounded-xl p-6 transition-colors">Nenhum projeto em curso neste período.</div>}
               </Section>
 
+              {/* 💡 COR DA BARRA ALTERADA PARA VERMELHO (dangerRed) */}
               <Section 
                 title="Atrasadas por Responsável" 
                 subtitle="Contas com pendências vencidas"
                 info="Identifica rapidamente quem tem o maior volume de tarefas pendentes e já fora do prazo."
               >
                 {overdueByPerson.length ? (
-                  <BarList items={overdueByPerson} color={colors.chartLines} isPerson={true} profilesMap={profilesMap} colors={colors} />
+                  <BarList items={overdueByPerson} color={colors.dangerRed} isPerson={true} profilesMap={profilesMap} colors={colors} />
                 ) : (
                   <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-100/50 dark:bg-slate-800/50 rounded-xl p-6 transition-colors">Nenhuma tarefa atrasada 🎉</div>
                 )}
