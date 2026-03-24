@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Toaster, toast } from 'react-hot-toast'
-import { User, Upload, Briefcase, Building, Info } from 'lucide-react' // 💡 CORREÇÃO AQUI: 'Info' adicionado!
+import { User, Upload, Briefcase, Building, Info, Lock } from 'lucide-react' // 💡 CORREÇÃO AQUI: 'Lock' adicionado!
 
 export default function ProfilePage() {
   const router = useRouter()
@@ -14,6 +14,11 @@ export default function ProfilePage() {
   const [email, setEmail] = useState('')
   const [nome, setNome] = useState('')
   const [role, setRole] = useState('')
+
+  // Estados para a troca de senha
+  const [novaSenha, setNovaSenha] = useState('')
+  const [confirmarSenha, setConfirmarSenha] = useState('')
+  const [alterandoSenha, setAlterandoSenha] = useState(false)
   
   const [salvando, setSalvando] = useState(false)
 
@@ -71,6 +76,28 @@ export default function ProfilePage() {
       toast.error('Erro ao guardar o perfil.', { id: toastId })
     } finally {
       setSalvando(false)
+    }
+  }
+
+  const alterarSenha = async () => {
+    if (!novaSenha || !confirmarSenha) return toast.error('Preencha os dois campos de senha.')
+    if (novaSenha !== confirmarSenha) return toast.error('As senhas não coincidem.')
+    if (novaSenha.length < 6) return toast.error('A senha deve ter pelo menos 6 caracteres.')
+
+    setAlterandoSenha(true)
+    const toastId = toast.loading('A alterar a senha...')
+
+    try {
+      const { error } = await supabase.auth.updateUser({ password: novaSenha })
+      if (error) throw error
+
+      toast.success('Senha alterada com sucesso!', { id: toastId })
+      setNovaSenha('')
+      setConfirmarSenha('')
+    } catch (e: any) {
+      toast.error('Erro ao alterar a senha. Tente novamente.', { id: toastId })
+    } finally {
+      setAlterandoSenha(false)
     }
   }
 
@@ -137,44 +164,92 @@ export default function ProfilePage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
         
-        {/* CARD DO PERFIL DO USUÁRIO */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm p-8 flex flex-col transition-all">
-          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
-            <Briefcase size={20} className="text-slate-400" />
-            <h2 className="text-lg font-bold text-slate-800 dark:text-white">Dados Pessoais</h2>
-          </div>
-
-          <div className="space-y-5">
-            <div>
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">E-mail de Acesso</label>
-              <input value={email} disabled className="w-full border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/50 rounded-xl px-4 py-3 outline-none text-slate-500 dark:text-slate-400 font-medium cursor-not-allowed" />
+        <div className="space-y-8">
+          {/* CARD DO PERFIL DO USUÁRIO */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm p-8 flex flex-col transition-all">
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
+              <Briefcase size={20} className="text-slate-400" />
+              <h2 className="text-lg font-bold text-slate-800 dark:text-white">Dados Pessoais</h2>
             </div>
 
-            <div>
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Nome Completo</label>
-              <input value={nome} onChange={e => setNome(e.target.value)} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 rounded-xl px-4 py-3 outline-none focus:border-[#C7A77B] text-slate-800 dark:text-white font-medium transition-colors" placeholder="O seu nome..." />
-            </div>
+            <div className="space-y-5">
+              <div>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">E-mail de Acesso</label>
+                <input value={email} disabled className="w-full border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/50 rounded-xl px-4 py-3 outline-none text-slate-500 dark:text-slate-400 font-medium cursor-not-allowed" />
+              </div>
 
-            <div>
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Nível de Permissão</label>
-              <div className="flex items-center gap-2 mt-1">
-                <span className={`px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider border ${role === 'admin' ? 'bg-[#031D2D]/10 text-[#031D2D] border-[#031D2D]/20 dark:bg-[#C7A77B]/10 dark:text-[#C7A77B] dark:border-[#C7A77B]/20' : 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'}`}>
-                  {role === 'admin' ? '⭐ Administrador' : 'Membro da Equipa'}
-                </span>
+              <div>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Nome Completo</label>
+                <input value={nome} onChange={e => setNome(e.target.value)} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 rounded-xl px-4 py-3 outline-none focus:border-[#C7A77B] text-slate-800 dark:text-white font-medium transition-colors" placeholder="O seu nome..." />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Nível de Permissão</label>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className={`px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider border ${role === 'admin' ? 'bg-[#031D2D]/10 text-[#031D2D] border-[#031D2D]/20 dark:bg-[#C7A77B]/10 dark:text-[#C7A77B] dark:border-[#C7A77B]/20' : 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'}`}>
+                    {role === 'admin' ? '⭐ Administrador' : 'Membro da Equipa'}
+                  </span>
+                </div>
               </div>
             </div>
+
+            <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+              <button onClick={salvarPerfil} disabled={salvando} className="bg-[#031D2D] hover:bg-[#063955] text-[#E5D6A7] px-8 py-3 rounded-xl text-sm font-bold shadow-md transition-all disabled:opacity-50 tracking-tight">
+                {salvando ? 'A guardar...' : 'Guardar Alterações'}
+              </button>
+            </div>
           </div>
 
-          <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800 flex justify-end">
-            <button onClick={salvarPerfil} disabled={salvando} className="bg-[#031D2D] hover:bg-[#063955] text-[#E5D6A7] px-8 py-3 rounded-xl text-sm font-bold shadow-md transition-all disabled:opacity-50 tracking-tight">
-              {salvando ? 'A guardar...' : 'Guardar Alterações'}
-            </button>
+          {/* CARD DE SEGURANÇA / SENHA */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm p-8 flex flex-col transition-all">
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
+              <Lock size={20} className="text-slate-400" />
+              <h2 className="text-lg font-bold text-slate-800 dark:text-white">Segurança da Conta</h2>
+            </div>
+
+            <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+              Mantenha a sua conta segura. Escolha uma senha forte com pelo menos 6 caracteres.
+            </p>
+
+            <div className="space-y-5">
+              <div>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Nova Senha</label>
+                <input 
+                  type="password" 
+                  value={novaSenha} 
+                  onChange={e => setNovaSenha(e.target.value)} 
+                  className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 rounded-xl px-4 py-3 outline-none focus:border-[#C7A77B] text-slate-800 dark:text-white font-medium transition-colors" 
+                  placeholder="••••••••" 
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Confirmar Nova Senha</label>
+                <input 
+                  type="password" 
+                  value={confirmarSenha} 
+                  onChange={e => setConfirmarSenha(e.target.value)} 
+                  className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 rounded-xl px-4 py-3 outline-none focus:border-[#C7A77B] text-slate-800 dark:text-white font-medium transition-colors" 
+                  placeholder="••••••••" 
+                />
+              </div>
+            </div>
+
+            <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+              <button 
+                onClick={alterarSenha} 
+                disabled={alterandoSenha || !novaSenha || !confirmarSenha} 
+                className="bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-8 py-3 rounded-xl text-sm font-bold shadow-sm transition-all disabled:opacity-50 tracking-tight"
+              >
+                {alterandoSenha ? 'A alterar...' : 'Atualizar Senha'}
+              </button>
+            </div>
           </div>
         </div>
 
         {/* CARD DE CONFIGURAÇÃO DA EMPRESA (VISÍVEL APENAS PARA ADMIN) */}
         {role === 'admin' && (
-          <div className="bg-white dark:bg-slate-900 border border-[#C7A77B]/30 dark:border-[#C7A77B]/20 rounded-2xl shadow-lg p-8 flex flex-col relative overflow-hidden transition-all">
+          <div className="bg-white dark:bg-slate-900 border border-[#C7A77B]/30 dark:border-[#C7A77B]/20 rounded-2xl shadow-lg p-8 flex flex-col relative overflow-hidden transition-all h-full">
             <div className="absolute top-0 left-0 w-full h-1.5 bg-[#C7A77B]"></div>
             
             <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
@@ -186,7 +261,7 @@ export default function ProfilePage() {
               Como Administrador, pode alterar a <strong className="text-slate-800 dark:text-slate-300">Logo do Menu Principal</strong>. Esta alteração reflete-se automaticamente no sistema para <strong>todos os utilizadores</strong>.
             </p>
 
-            <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-950 mb-6">
+            <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-950 mb-6 flex-1">
               {logoEmpresaUrl ? (
                 <div className="flex flex-col items-center">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Logo Atual</span>
