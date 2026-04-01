@@ -450,9 +450,7 @@ export default function DashboardPage() {
     setLoading(true)
     
     try {
-      const { data, error } = await supabase
-        .from('tarefas_diarias')
-        .select(`
+      const selectQuery = `
           id, data_vencimento, status, data_conclusao,
           atividades!tarefas_diarias_atividade_id_fkey (
             planner_name, frequencia, responsaveis_lista, projeto_id, prioridade_descricao,
@@ -460,14 +458,31 @@ export default function DashboardPage() {
             responsaveis!atividades_responsavel_id_fkey (nome, email),
             projetos (nome)
           )
-        `)
-        .gte('data_vencimento', start)
-        .lte('data_vencimento', end)
-        .order('data_vencimento', { ascending: true })
+        `
 
-      if (error) throw error
+      const pageSize = 1000
+      let from = 0
+      let allRows: any[] = []
 
-      let baseData = data || []
+      while (true) {
+        const { data, error } = await supabase
+          .from('tarefas_diarias')
+          .select(selectQuery)
+          .gte('data_vencimento', start)
+          .lte('data_vencimento', end)
+          .order('data_vencimento', { ascending: true })
+          .range(from, from + pageSize - 1)
+
+        if (error) throw error
+
+        const batch = data || []
+        allRows = allRows.concat(batch)
+
+        if (batch.length < pageSize) break
+        from += pageSize
+      }
+
+      let baseData = allRows
 
       if (userRole !== 'admin') {
         const emailSeguroLogado = userEmail.trim().toLowerCase()
