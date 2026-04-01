@@ -377,17 +377,36 @@ export default function TarefasPage() {
     setCarregando(true)
     
     try {
-      const { data, error } = await supabase.from('tarefas_diarias').select(`
+      const pageSize = 1000
+      let from = 0
+      let todasAsTarefas: any[] = []
+
+      while (true) {
+        const { data, error } = await supabase
+          .from('tarefas_diarias')
+          .select(`
           id, data_vencimento, status, data_conclusao, observacoes, anexo_url, checklists,
           atividades!tarefas_diarias_atividade_id_fkey (
             task_id, nome_atividade, planner_name, frequencia, prioridade_descricao, responsavel_id, classificacao, responsaveis_lista, projeto_id,
             setores!atividades_setor_id_fkey (nome), responsaveis!atividades_responsavel_id_fkey (nome, email)
           )
-        `).gte('data_vencimento', iso(inicio)).lt('data_vencimento', iso(fim)).order('data_vencimento', { ascending: true })
+        `)
+          .gte('data_vencimento', iso(inicio))
+          .lt('data_vencimento', iso(fim))
+          .order('data_vencimento', { ascending: true })
+          .order('id', { ascending: true })
+          .range(from, from + pageSize - 1)
 
-      if (error) throw error
+        if (error) throw error
 
-      let baseData = data || []
+        const lote = data || []
+        todasAsTarefas = todasAsTarefas.concat(lote)
+
+        if (lote.length < pageSize) break
+        from += pageSize
+      }
+
+      let baseData = todasAsTarefas
 
       if (userRole !== 'admin') {
         const emailSeguroLogado = userEmail.trim().toLowerCase()
