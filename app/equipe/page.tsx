@@ -34,6 +34,7 @@ export default function EquipePage() {
   const [anoAlvo, setAnoAlvo] = useState(hoje.getFullYear())
   const [filtroPlanner, setFiltroPlanner] = useState<string>('Todos')
   const [filtroSetor, setFiltroSetor] = useState<string>('Todos')
+  const [esconderEmFerias, setEsconderEmFerias] = useState(false)
   const [tab, setTab] = useState<'mensal' | 'historico' | 'atividade'>('mensal')
   const [exporting, setExporting] = useState<'pdf' | 'xlsx' | null>(null)
   const { resolvedTheme } = useTheme()
@@ -61,10 +62,16 @@ export default function EquipePage() {
     return () => { cancelled = true }
   }, [router])
 
-  const { colaboradores, weights, plannerOptions, setorOptions, loading, erro, reload } = useEquipeData({
+  const { colaboradores: colaboradoresRaw, weights, plannerOptions, setorOptions, loading, erro, reload } = useEquipeData({
     mesAlvo, anoAlvo, enabled: authLoaded && isAdmin,
     filtroPlanner, filtroSetor,
   })
+
+  // Aplica filtro "esconder em férias" — afeta TUDO: KPIs, pódio, ranking, tabela
+  const colaboradores = useMemo(
+    () => esconderEmFerias ? colaboradoresRaw.filter(c => !c.ausenciaAtiva) : colaboradoresRaw,
+    [colaboradoresRaw, esconderEmFerias],
+  )
 
   const destaque = useDestaqueSemana(authLoaded && isAdmin)
 
@@ -216,6 +223,15 @@ export default function EquipePage() {
               Limpar filtros
             </button>
           )}
+          <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-[#063955] dark:hover:text-white transition-colors select-none">
+            <input
+              type="checkbox"
+              checked={esconderEmFerias}
+              onChange={e => setEsconderEmFerias(e.target.checked)}
+              className="w-4 h-4 rounded border-slate-300 text-[#0f88a8] focus:ring-[#0f88a8] cursor-pointer"
+            />
+            Esconder em férias
+          </label>
           <select
             value={mesAlvo}
             onChange={(e) => setMesAlvo(Number(e.target.value))}

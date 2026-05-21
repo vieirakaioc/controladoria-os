@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { checarRetornoAmanha } from '@/lib/adminReminders'
+import { notificarDesktop, pedirPermissaoNotificacoes, permissaoNotificacoes } from '@/lib/desktopNotify'
 import {
   LayoutDashboard,
   CheckSquare,
@@ -91,6 +93,11 @@ export default function Sidebar() {
           setUserRole(data.role || 'membro')
           setUserName(data.full_name || email.split('@')[0] || 'Usuário')
           setAvatarUrl(data.avatar_url || '')
+
+          // Avisos automáticos pra admin (1x/dia via localStorage)
+          if (data.role === 'admin' && email) {
+            checarRetornoAmanha(userId, email, data.full_name || email)
+          }
         }
       } catch(e) {}
     }
@@ -131,10 +138,18 @@ export default function Sidebar() {
           filter: `user_email=eq.${userEmail}`,
         },
         (payload) => {
+          const nova = payload.new as any
           setNotificacoes(prev => {
             // Evita duplicar se chegou via outro caminho (ex: refresh manual)
-            if (prev.some(n => n.id === (payload.new as any).id)) return prev
-            return [payload.new as any, ...prev].slice(0, 20)
+            if (prev.some(n => n.id === nova.id)) return prev
+            return [nova, ...prev].slice(0, 20)
+          })
+          // Notificação desktop (silenciosa se tab visível ou sem permissão)
+          notificarDesktop({
+            titulo: nova.titulo || 'Portal da Controladoria',
+            corpo: nova.mensagem || '',
+            url: nova.tarefa_id ? `/tarefas?taskId=${nova.tarefa_id}` : '/tarefas',
+            tag: `notif-${nova.id}`,
           })
         },
       )
@@ -243,7 +258,14 @@ export default function Sidebar() {
       <div className="p-4 border-t border-white/10 bg-white/5 space-y-2 relative shrink-0">
         
         <button 
-          onClick={() => setNotifOpen(!notifOpen)}
+          onClick={() => {
+            setNotifOpen(!notifOpen)
+            // Pede permissão pra notificação desktop na primeira interação real
+            // com o sino (intent claro do usuário). Idempotente.
+            if (!notifOpen && permissaoNotificacoes() === 'default') {
+              pedirPermissaoNotificacoes()
+            }
+          }}
           className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all w-full relative ${
             notifOpen ? 'bg-[#0f88a8] text-white shadow-md' : 'text-[#818284] hover:bg-white/5 hover:text-white'
           } ${!isExpanded && 'justify-center'}`}
