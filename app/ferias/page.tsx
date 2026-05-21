@@ -69,7 +69,7 @@ export default function FeriasPage() {
         // o que confunde o PostgREST. Fazemos o lookup do nome em JS com respData.
         supabase.from('ausencias')
           .select('id, responsavel_id, data_inicio, data_fim, motivo, observacao, substituto_id, created_at')
-          .order('data_inicio', { ascending: false }),
+          .order('data_inicio', { ascending: true }),
         supabase.from('responsaveis').select('id, nome, email').order('nome'),
       ])
       if (errAus) {
