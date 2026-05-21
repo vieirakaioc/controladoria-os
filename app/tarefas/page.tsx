@@ -23,7 +23,9 @@ import { CalendarView } from './_components/views/CalendarView'
 import { AdHocModal } from './_components/modals/AdHocModal'
 import { TaskDetailsModal } from './_components/modals/TaskDetailsModal'
 
-import type { ViewMode } from './_lib/types'
+import { MESES, type ViewMode } from './_lib/types'
+import { downloadIcs, type IcsTask } from '@/lib/ics'
+import { getResponsaveis } from '@/lib/responsaveis'
 
 export default function TarefasPage() {
   const router = useRouter()
@@ -75,6 +77,32 @@ export default function TarefasPage() {
     }
     router.replace('/tarefas')
   }, [tarefas.rows, tarefas.loading, taskIdUrl, m.drawerOpen, m, router])
+
+  // Handler: exporta as tarefas filtradas pra arquivo .ics (Google Calendar / Outlook)
+  const handleExportIcs = () => {
+    if (filters.filtradas.length === 0) {
+      toast.error('Nenhuma tarefa pra exportar no filtro atual.')
+      return
+    }
+    const tasks: IcsTask[] = filters.filtradas.map(r => {
+      const atv = r.atividades || {}
+      const resps = getResponsaveis(atv).map(x => x.nome).join(', ')
+      return {
+        id: r.id,
+        nome: atv.nome_atividade || 'Tarefa',
+        data_vencimento: r.data_vencimento,
+        status: r.status,
+        setor: atv.setores?.nome,
+        responsavel: resps || null,
+        planner: atv.planner_name,
+        observacoes: r.observacoes,
+        classificacao: atv.classificacao,
+      }
+    })
+    const mesNome = MESES.find(m => m.v === mesAlvo)?.n || ''
+    downloadIcs(tasks, `Tarefas_${mesNome}_${anoAlvo}.ics`, `Portal · ${mesNome}/${anoAlvo}`)
+    toast.success(`${tasks.length} tarefa(s) exportada(s)!`)
+  }
 
   const renderView = () => {
     if (tarefas.loading) {
@@ -146,6 +174,7 @@ export default function TarefasPage() {
         setPlannerSel={setPlannerSel}
         onNovaAdHoc={() => m.setAdhocOpen(true)}
         onRefresh={tarefas.refresh}
+        onExportIcs={handleExportIcs}
       />
 
       <KpiCards stats={filters.dashboard} loading={tarefas.loading} />

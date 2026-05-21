@@ -210,7 +210,43 @@ function InsightsCard({ rows, overdueByPerson, bySector, isDark }: any) {
   )
 }
 
-function KPI({ title, value, accent, isDark, info }: { title: string; value: any; accent?: string; isDark: boolean; info?: string }) {
+function KPI({
+  title, value, accent, isDark, info,
+  current, previous, lowerIsBetter,
+}: {
+  title: string; value: any; accent?: string; isDark: boolean; info?: string;
+  /** Valor atual numérico (pra calcular delta). Se omitido, não mostra delta. */
+  current?: number
+  /** Valor do período anterior pra comparação. */
+  previous?: number
+  /** Se true, queda é POSITIVA (caso de "Em Atraso"). Default false. */
+  lowerIsBetter?: boolean
+}) {
+  // Calcula delta % se tivermos os valores
+  let delta: { texto: string; cor: string; seta: string } | null = null
+  if (typeof current === 'number' && typeof previous === 'number') {
+    if (previous === 0 && current === 0) {
+      delta = { texto: 'sem dados', cor: 'text-slate-400', seta: '·' }
+    } else if (previous === 0) {
+      // Vinha do zero → não dá pra calcular %, mostra "novo"
+      delta = current > 0
+        ? { texto: 'novo', cor: lowerIsBetter ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400', seta: '↑' }
+        : { texto: 'sem dados', cor: 'text-slate-400', seta: '·' }
+    } else {
+      const diff = current - previous
+      const pct = Math.round((diff / previous) * 100)
+      const subiu = diff > 0
+      const bom = (subiu && !lowerIsBetter) || (!subiu && lowerIsBetter)
+      const cor = diff === 0
+        ? 'text-slate-400'
+        : bom
+          ? 'text-emerald-600 dark:text-emerald-400'
+          : 'text-rose-600 dark:text-rose-400'
+      const seta = diff === 0 ? '→' : subiu ? '↑' : '↓'
+      delta = { texto: `${Math.abs(pct)}%`, cor, seta }
+    }
+  }
+
   return (
     <div className="relative hover:z-20 bg-white dark:bg-slate-900 border border-slate-100/50 dark:border-slate-800/50 rounded-2xl p-5 shadow-sm hover:shadow-xl dark:hover:shadow-slate-900/50 hover:-translate-y-0.5 transition-all duration-300">
       <div className="flex justify-between items-start">
@@ -218,6 +254,13 @@ function KPI({ title, value, accent, isDark, info }: { title: string; value: any
         {info && <InfoTooltip text={info} />}
       </div>
       <div className={`text-3xl font-bold ${accent || (isDark ? 'text-white' : 'text-slate-900')} mt-2 tracking-tighter`}>{value}</div>
+      {delta && (
+        <div className={`mt-1.5 text-xs font-bold tabular-nums flex items-center gap-1 ${delta.cor}`}>
+          <span>{delta.seta}</span>
+          <span>{delta.texto}</span>
+          <span className="text-slate-400 font-medium ml-1">vs período anterior</span>
+        </div>
+      )}
     </div>
   )
 }
@@ -508,6 +551,7 @@ export default function DashboardPage() {
   const [anoAlvo, setAnoAlvo] = useState<number>(hoje.getFullYear())
 
   const [rows, setRows] = useState<Row[]>([])
+  const [rowsAnterior, setRowsAnterior] = useState<Row[]>([])
   const [loading, setLoading] = useState(true)
   const [gerandoPdf, setGerandoPdf] = useState(false)
   const [tab, setTab] = useState<'resumo' | 'detalhes'>('resumo')
@@ -520,6 +564,20 @@ export default function DashboardPage() {
 
   const start = useMemo(() => new Date(anoAlvo, Math.min(mesInicio, mesFim), 1).toISOString().slice(0, 10), [anoAlvo, mesInicio, mesFim])
   const end = useMemo(() => new Date(anoAlvo, Math.max(mesInicio, mesFim) + 1, 0).toISOString().slice(0, 10), [anoAlvo, mesInicio, mesFim])
+
+  // Período anterior: mesma quantidade de meses, imediatamente antes do start.
+  // Usado pra calcular delta % nos KPIs ("vs período anterior").
+  const { prevStart, prevEnd } = useMemo(() => {
+    const m1 = Math.min(mesInicio, mesFim)
+    const m2 = Math.max(mesInicio, mesFim)
+    const meses = m2 - m1 + 1
+    const inicio = new Date(anoAlvo, m1 - meses, 1)
+    const fim = new Date(anoAlvo, m1, 0) // último dia do mês anterior ao start
+    return {
+      prevStart: inicio.toISOString().slice(0, 10),
+      prevEnd: fim.toISOString().slice(0, 10),
+    }
+  }, [anoAlvo, mesInicio, mesFim])
 
   useEffect(() => {
     const initAuth = async () => {
@@ -570,30 +628,26 @@ export default function DashboardPage() {
           )
         `
 
+      // Fetch atual + período anterior em uma query só (range expandido pra trás)
       const pageSize = 1000
-      let from = 0
+      let fromIdx = 0
       let allRows: any[] = []
-
       while (true) {
         const { data, error } = await supabase
           .from('tarefas_diarias')
           .select(selectQuery)
-          .gte('data_vencimento', start)
+          .gte('data_vencimento', prevStart)
           .lte('data_vencimento', end)
           .order('data_vencimento', { ascending: true })
-          .range(from, from + pageSize - 1)
-
+          .range(fromIdx, fromIdx + pageSize - 1)
         if (error) throw error
-
         const batch = data || []
         allRows = allRows.concat(batch)
-
         if (batch.length < pageSize) break
-        from += pageSize
+        fromIdx += pageSize
       }
 
       let baseData = allRows
-
       if (userRole !== 'admin') {
         const emailSeguroLogado = userEmail.trim().toLowerCase()
         baseData = baseData.filter((r: any) => {
@@ -601,9 +655,14 @@ export default function DashboardPage() {
           return respsTask.some((res: any) => (res.email || '').trim().toLowerCase() === emailSeguroLogado)
         })
       }
+      const aplicarPlanner = (rs: any[]) =>
+        plannerSel === 'Todos' ? rs : rs.filter((r: any) => r?.atividades?.planner_name === plannerSel)
 
-      const filtered = plannerSel === 'Todos' ? baseData : baseData.filter((r: any) => r?.atividades?.planner_name === plannerSel)
-      setRows(filtered as any)
+      // Split: atual vs anterior baseado na data
+      const atuais = aplicarPlanner(baseData.filter((r: any) => r.data_vencimento >= start))
+      const anteriores = aplicarPlanner(baseData.filter((r: any) => r.data_vencimento < start))
+      setRows(atuais as any)
+      setRowsAnterior(anteriores as any)
       
     } catch (e: any) {
       toast.error('Erro ao carregar dashboard.')
@@ -619,7 +678,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     carregar()
-  }, [plannerSel, start, end, authLoaded, userRole, userEmail])
+  }, [plannerSel, start, end, prevStart, authLoaded, userRole, userEmail])
 
   const exportarPDF = async () => {
     setGerandoPdf(true)
@@ -659,28 +718,29 @@ export default function DashboardPage() {
     }
   }
 
-  const metrics = useMemo(() => {
+  // Função pura: computa métricas a partir de uma lista de rows.
+  // Usada pra atual E pra período anterior (delta nos KPIs).
+  function calcMetrics(rs: Row[]) {
     const today = startOfDay(new Date())
     const next7 = startOfDay(addDays(new Date(), 7))
     let total = 0, done = 0, overdue = 0, dueToday = 0, next7Count = 0
-
-    rows.forEach((r) => {
+    rs.forEach((r) => {
       total++
       const st = (r.status || '').toLowerCase()
       const isDone = st.includes('concl')
       if (isDone) done++
-
       if (!r.data_vencimento) return
       const due = startOfDay(parseISODateOnly(String(r.data_vencimento).slice(0, 10)))
-
       if (!isDone && due < today) overdue++
       if (!isDone && due.getTime() === today.getTime()) dueToday++
       if (!isDone && due > today && due <= next7) next7Count++
     })
-
     const pct = total ? Math.round((done / total) * 100) : 0
     return { total, done, overdue, dueToday, next7Count, pct }
-  }, [rows])
+  }
+
+  const metrics = useMemo(() => calcMetrics(rows), [rows])
+  const metricsAnterior = useMemo(() => calcMetrics(rowsAnterior), [rowsAnterior])
 
   const additionalMetrics = useMemo(() => {
     const agingMap = { '0 a 2 dias': 0, '3 a 5 dias': 0, '+ de 5 dias': 0 }
@@ -973,12 +1033,43 @@ export default function DashboardPage() {
           <InsightsCard rows={rows} overdueByPerson={overdueByPerson} bySector={bySector} isDark={isDark} />
         )}
 
-        {/* 4 KPIs (escolhidos pelo usuário) */}
+        {/* 4 KPIs com delta vs período anterior */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <KPI title="Total Volume" value={metrics.total} isDark={isDark} info="Número total de tarefas atribuídas no período selecionado." />
-          <KPI title="Concluídas" value={metrics.done} accent="text-slate-800 dark:text-white" isDark={isDark} />
-          <KPI title="Em Atraso" value={metrics.overdue} accent="text-rose-700 dark:text-rose-400" isDark={isDark} info="Tarefas pendentes cuja data limite já foi ultrapassada." />
-          <KPI title="Eficiência" value={`${metrics.pct}%`} accent="text-emerald-700 dark:text-emerald-400" isDark={isDark} info="Rácio entre as tarefas já concluídas e o volume total atribuído." />
+          <KPI
+            title="Total Volume"
+            value={metrics.total}
+            isDark={isDark}
+            info="Número total de tarefas atribuídas no período selecionado."
+            current={metrics.total}
+            previous={metricsAnterior.total}
+          />
+          <KPI
+            title="Concluídas"
+            value={metrics.done}
+            accent="text-slate-800 dark:text-white"
+            isDark={isDark}
+            current={metrics.done}
+            previous={metricsAnterior.done}
+          />
+          <KPI
+            title="Em Atraso"
+            value={metrics.overdue}
+            accent="text-rose-700 dark:text-rose-400"
+            isDark={isDark}
+            info="Tarefas pendentes cuja data limite já foi ultrapassada."
+            current={metrics.overdue}
+            previous={metricsAnterior.overdue}
+            lowerIsBetter
+          />
+          <KPI
+            title="Eficiência"
+            value={`${metrics.pct}%`}
+            accent="text-emerald-700 dark:text-emerald-400"
+            isDark={isDark}
+            info="Rácio entre as tarefas já concluídas e o volume total atribuído."
+            current={metrics.pct}
+            previous={metricsAnterior.pct}
+          />
         </div>
 
         {/* Tab switcher */}

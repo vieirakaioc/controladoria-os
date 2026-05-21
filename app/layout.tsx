@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import Sidebar from "@/components/Sidebar";
 import RouteGuard from "@/components/RouteGuard"; // <-- Importamos o Guarda
+import { TutorialBoasVindas } from "@/components/TutorialBoasVindas";
 import "./globals.css";
 
 const inter = Inter({
@@ -30,6 +31,7 @@ export default function RootLayout({
           <main className="flex-1 overflow-y-auto">
             {children}
           </main>
+          <TutorialBoasVindas />
         </RouteGuard>
       </body>
     </html>

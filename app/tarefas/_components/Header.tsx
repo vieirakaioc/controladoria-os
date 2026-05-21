@@ -1,5 +1,6 @@
 'use client'
 
+import { Calendar } from 'lucide-react'
 import { MESES, type ViewMode } from '../_lib/types'
 
 type Props = {
@@ -15,6 +16,7 @@ type Props = {
   setPlannerSel: (p: string) => void
   onNovaAdHoc: () => void
   onRefresh: () => void
+  onExportIcs: () => void
 }
 
 const views: { id: ViewMode; label: string }[] = [
@@ -26,7 +28,7 @@ const views: { id: ViewMode; label: string }[] = [
 
 export function Header({
   userRole, mesAlvo, anoAlvo, view, plannerSel, planners,
-  setMesAlvo, setAnoAlvo, setView, setPlannerSel, onNovaAdHoc, onRefresh,
+  setMesAlvo, setAnoAlvo, setView, setPlannerSel, onNovaAdHoc, onRefresh, onExportIcs,
 }: Props) {
   return (
     <header className="flex flex-col xl:flex-row xl:justify-between xl:items-center gap-4 mb-6 bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 transition-colors">
@@ -85,6 +87,14 @@ export function Header({
           value={anoAlvo}
           onChange={(e) => setAnoAlvo(Number(e.target.value))}
         />
+
+        <button
+          onClick={onExportIcs}
+          title="Baixar .ics pra importar no Google Calendar / Outlook"
+          className="flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-sm font-medium py-2 px-3 rounded-xl transition-all shadow-sm"
+        >
+          <Calendar size={14} /> Calendário
+        </button>
 
         <button
           onClick={onRefresh}
