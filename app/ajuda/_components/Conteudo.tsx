@@ -2,7 +2,7 @@
 
 import {
   AlertTriangle, Briefcase, CheckSquare, Download, Info, Key, LayoutDashboard,
-  Play, Shield, Sparkles, Upload, Users, BarChart3,
+  Play, Shield, Sparkles, Upload, Users, BarChart3, Plane, UserCheck,
 } from 'lucide-react'
 import Link from 'next/link'
 import { Section } from './Section'
@@ -199,7 +199,9 @@ export function Conteudo() {
           <PaginaItem icone={<CheckSquare size={18} />} titulo="Controle de Tarefas" admin={false}
             desc="O Kanban principal. 4 vistas: Lista, Status (por workflow), Dias (por bucket de tempo), Mês (calendário). Drag-and-drop pra mover status." />
           <PaginaItem icone={<Users size={18} />} titulo="Monitor da Equipe" admin={true}
-            desc="Tabela com cada colaborador: último acesso, tarefas no mês, % conclusão, % no prazo, atrasadas, dias ativos, score 0-100. Topo tem pódio Top 3 e ranking visual." />
+            desc="3 abas: Mensal (pódio + ranking + tabela), Histórico (heatmap 6 meses) e Atividade (heatmap 7×24 de horários ativos). Tem Destaque da Semana + filtros por planner/setor + export PDF/Excel." />
+          <PaginaItem icone={<Plane size={18} />} titulo="Férias da Equipe" admin={false}
+            desc="Calendário visual de quem está fora, próximas saídas, suas próprias ausências. Membro cadastra a si mesmo; admin cadastra/edita qualquer um. Pode designar substituto que recebe as tarefas no período." />
           <PaginaItem icone={<LayoutDashboard size={18} />} titulo="Início (Sincronizar)" admin={true}
             desc="Importação/exportação de Excel, execução da sincronização mensal, zona de perigo." />
           <PaginaItem icone={<Sparkles size={18} />} titulo="Workflows" admin={true}
@@ -217,21 +219,24 @@ export function Conteudo() {
       <Section
         id="monitor-score"
         title="Monitor da Equipe & Score 0-100"
-        subtitle="Como o score é calculado e como interpretar."
+        subtitle="3 abas de visualização, score em 5 dimensões e reconhecimento semanal."
       >
-        <p>
-          Cada colaborador recebe um <strong>score de desempenho de 0 a 100</strong>, calculado a partir
-          de 4 dimensões com pesos configuráveis pelo admin:
-        </p>
+        <h3 className="text-base font-bold text-[#063955] dark:text-white">Score 0-100 — 5 dimensões</h3>
+        <p>Cada colaborador recebe um score calculado a partir destas 5 dimensões com pesos configuráveis:</p>
         <div className="not-prose grid sm:grid-cols-2 gap-3 my-4">
-          <DimensaoCard nome="Conclusão" formula="concluídas / atribuídas" peso="default 60%" />
-          <DimensaoCard nome="Pontualidade" formula="concluídas no prazo / concluídas" peso="default 20%" />
+          <DimensaoCard nome="Conclusão" formula="concluídas / atribuídas" peso="default 45%" />
+          <DimensaoCard nome="Volume" formula="concluídas / maior do mês" peso="default 25%" />
+          <DimensaoCard nome="Pontualidade" formula="concluídas no prazo / concluídas" peso="default 15%" />
           <DimensaoCard nome="Aderência" formula="(atribuídas − atrasadas) / atribuídas" peso="default 10%" />
-          <DimensaoCard nome="Uso do App" formula="dias úteis ativos / total no mês" peso="default 10%" />
+          <DimensaoCard nome="Uso do App" formula="dias úteis ativos / total no mês" peso="default 5%" />
         </div>
+        <Aviso>
+          A dimensão <strong>Volume</strong> corrige o viés de quem tem poucas tarefas — quem produz em
+          absoluto mais ganha pontos, mesmo se a % de conclusão for menor que a de alguém com 5 tarefas.
+        </Aviso>
 
         <p className="text-sm">
-          A soma dos 4 pesos sempre dá 100. Pra alterar: vai em
+          A soma dos 5 pesos sempre dá 100. Pra alterar: vai em
           <Link href="/equipe" className="text-[#0f88a8] dark:text-[#38bdf8] font-semibold"> Monitor da Equipe</Link>,
           abre o painel <strong>Configuração do Score</strong> no topo, mexe nos sliders, clica em
           <Inline icon={<BarChart3 size={14} />}>Normalizar pra 100</Inline> se precisar e salva.
@@ -245,13 +250,89 @@ export function Conteudo() {
           <li><strong className="text-[#b43a3d] dark:text-[#f87171]">0-49</strong> Atenção</li>
         </ul>
 
+        <h3 className="text-base font-bold text-[#063955] dark:text-white mt-6">3 Abas de Visualização</h3>
+        <ul>
+          <li><strong>Mensal</strong> — pódio Top 3 + ranking visual + tabela detalhada</li>
+          <li><strong>Histórico (6 meses)</strong> — heatmap por colaborador com tendência ↑↓</li>
+          <li><strong>Atividade (30 dias)</strong> — heatmap 7×24 mostrando quando a equipe é mais ativa no app + strip individual por colaborador</li>
+        </ul>
+
+        <h3 className="text-base font-bold text-[#063955] dark:text-white mt-6">🏆 Destaque da Semana</h3>
+        <p>
+          Card dourado no topo do Monitor que mostra o Top 3 da semana corrente (seg-sex) com botões
+          <Inline>📋 Copiar mensagem</Inline> e <Inline>📱 Compartilhar no WhatsApp</Inline> — abre o WhatsApp
+          com texto pronto pra colar no grupo da equipe.
+        </p>
+
+        <h3 className="text-base font-bold text-[#063955] dark:text-white mt-6">Filtros & Export</h3>
+        <ul>
+          <li>Filtros por <strong>Planner</strong> e <strong>Setor</strong> recortam o score (KPIs, pódio, ranking, tabela)</li>
+          <li>Toggle <strong>Esconder em férias</strong> remove quem está ausente hoje</li>
+          <li>Botões <strong>Excel</strong> (3 abas) e <strong>PDF</strong> exportam tudo</li>
+        </ul>
+
         <h3 className="text-base font-bold text-[#063955] dark:text-white mt-6">Bolinha de presença</h3>
         <ul>
           <li><span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse mr-1" /> &lt;1h → ativo agora</li>
           <li><span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 mr-1" /> hoje</li>
           <li><span className="inline-block w-2.5 h-2.5 rounded-full bg-amber-500 mr-1" /> última semana</li>
           <li><span className="inline-block w-2.5 h-2.5 rounded-full bg-[#b43a3d] mr-1" /> inativo há mais</li>
+          <li><span className="inline-block w-2.5 h-2.5 rounded-full bg-amber-500 mr-1" /> 🌴 em férias hoje</li>
         </ul>
+      </Section>
+
+      {/* 8. MODO FÉRIAS */}
+      <Section
+        id="ferias"
+        title="Modo Férias"
+        subtitle="Períodos de ausência com redirecionamento opcional de tarefas."
+      >
+        <p>
+          Em <Link href="/ferias" className="text-[#0f88a8] dark:text-[#38bdf8] font-semibold">Férias da Equipe</Link>,
+          qualquer colaborador pode cadastrar a própria ausência (férias, licença, atestado, afastamento).
+          Admin pode cadastrar pra qualquer um.
+        </p>
+
+        <h3 className="text-base font-bold text-[#063955] dark:text-white mt-6">O que acontece no score</h3>
+        <p>Quando alguém está dentro de um período de ausência:</p>
+        <ul>
+          <li>Tarefas com <code>data_vencimento</code> dentro do período <strong>não contam pro score dele</strong></li>
+          <li>Os dias úteis do período são <strong>descontados</strong> do "Uso do App" (não é penalizado por não logar de férias)</li>
+          <li>No Monitor, aparece badge <strong>🌴 férias</strong> e bolinha amarela "Em férias"</li>
+        </ul>
+
+        <h3 className="text-base font-bold text-[#063955] dark:text-white mt-6 flex items-center gap-2">
+          <UserCheck size={18} className="text-emerald-600" /> Substituto (redirecionamento)
+        </h3>
+        <p>
+          Ao cadastrar a ausência, é possível indicar um <strong>substituto</strong>. Nesse caso, as tarefas
+          do ausente <strong>são contadas no score do substituto</strong> durante o período — refletindo o
+          fato de que ele está cobrindo o trabalho.
+        </p>
+        <Aviso>
+          O <strong>responsável original</strong> da rotina (na planilha) não muda. O substituto só recebe
+          o crédito do score temporariamente. Quando a ausência termina, tudo volta ao normal automaticamente
+          (a partir do dia seguinte ao <code>data_fim</code>).
+        </Aviso>
+
+        <h3 className="text-base font-bold text-[#063955] dark:text-white mt-6">Calendário visual</h3>
+        <p>
+          A página <code>/ferias</code> mostra um calendário grid (linhas = pessoas, colunas = dias do mês)
+          com células coloridas indicando ausências. Cor por motivo:
+        </p>
+        <ul>
+          <li><span className="inline-block w-3 h-3 rounded bg-amber-500 align-middle mr-1" /> férias</li>
+          <li><span className="inline-block w-3 h-3 rounded bg-violet-500 align-middle mr-1" /> licença</li>
+          <li><span className="inline-block w-3 h-3 rounded bg-rose-500 align-middle mr-1" /> atestado</li>
+          <li><span className="inline-block w-3 h-3 rounded bg-slate-500 align-middle mr-1" /> afastamento</li>
+        </ul>
+
+        <h3 className="text-base font-bold text-[#063955] dark:text-white mt-6">Lembrete automático</h3>
+        <p>
+          Toda vez que o <strong>admin abre o app</strong>, o sistema checa se alguém volta de férias amanhã
+          (ou seja, <code>data_fim = hoje</code>). Se sim, envia um email com a lista pro próprio admin.
+          1x por dia (cache local).
+        </p>
       </Section>
 
       {/* 8. PERMISSÕES */}
@@ -269,11 +350,14 @@ export function Conteudo() {
               <Permissao acao="Ver suas próprias tarefas no Kanban" m={true} a={true} />
               <Permissao acao="Concluir / atualizar status / comentar" m={true} a={true} />
               <Permissao acao="Criar tarefa Ad Hoc" m={true} a={true} />
+              <Permissao acao="Ver calendário de férias da equipe" m={true} a={true} />
+              <Permissao acao="Cadastrar / remover a PRÓPRIA ausência" m={true} a={true} />
               <Permissao acao="Ver TODAS as tarefas (visão global)" m={false} a={true} />
               <Permissao acao="Importar/exportar planilha" m={false} a={true} />
               <Permissao acao="Executar Sincronização Mensal" m={false} a={true} />
               <Permissao acao="Apagar atividades (zona de perigo)" m={false} a={true} />
               <Permissao acao="Acessar Monitor da Equipe" m={false} a={true} />
+              <Permissao acao="Cadastrar ausência DE OUTROS" m={false} a={true} />
               <Permissao acao="Configurar workflows / acessos / auditoria" m={false} a={true} />
             </tbody>
           </table>
@@ -332,6 +416,29 @@ export function Conteudo() {
           <p className="mt-3 text-sm">
             Acessa <Link href="/acessos" className="text-[#0f88a8] dark:text-[#38bdf8] font-semibold">Gestão de Acessos</Link>
             {' '}(só admin atual vê), e troca o nível no select. Não dá pra mudar seu próprio nível.
+          </p>
+        </details>
+
+        <details className="border border-slate-100 dark:border-slate-800 rounded-xl p-4 mb-3 group">
+          <summary className="font-semibold cursor-pointer text-[#063955] dark:text-white">
+            Cadastrei minha férias mas o calendário não me mostra.
+          </summary>
+          <p className="mt-3 text-sm">
+            Seu email do login precisa estar exatamente igual ao email cadastrado na aba ListBox
+            (coluna "e-mail"). Se for diferente (ex: <code>joao@x.com</code> vs <code>joao.silva@x.com</code>),
+            o sistema não associa. Solução: admin ajusta o email em <code>responsaveis</code> ou
+            re-importa a planilha com o email correto.
+          </p>
+        </details>
+
+        <details className="border border-slate-100 dark:border-slate-800 rounded-xl p-4 mb-3 group">
+          <summary className="font-semibold cursor-pointer text-[#063955] dark:text-white">
+            Cadastrei substituto mas as tarefas continuam aparecendo pra mim no Kanban.
+          </summary>
+          <p className="mt-3 text-sm">
+            O Kanban ainda mostra as tarefas com o responsável <strong>original</strong> da rotina —
+            o substituto só recebe o crédito do score. Se quiser que o substituto VEJA as tarefas no
+            Kanban dele também, abra cada tarefa e adicione ele na lista "Envolvidos" do drawer.
           </p>
         </details>
       </Section>
@@ -427,7 +534,7 @@ function Permissao({ acao, m, a }: { acao: string; m: boolean; a: boolean }) {
   )
 }
 
-function Inline({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
+function Inline({ icon, children }: { icon?: React.ReactNode; children: React.ReactNode }) {
   return (
     <span className="inline-flex items-center gap-1 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-[12px] font-semibold text-slate-700 dark:text-slate-200 mx-0.5">
       {icon}{children}

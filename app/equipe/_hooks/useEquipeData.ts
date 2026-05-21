@@ -7,7 +7,7 @@ import {
   iso, startOfMonth, startOfNextMonth, diasUteisNoIntervalo, diasUteisDistintos,
 } from '../_lib/datas'
 import { computeScore, DEFAULT_WEIGHTS, type Metrics, type ScoreBreakdown, type ScoreWeights } from '../_lib/score'
-import { type Ausencia, ausenciaHoje, ausente, diasUteisAusentes, indexAusencias } from '../_lib/ausencias'
+import { type Ausencia, ausenciaHoje, ausente, diasUteisAusentes, indexAusencias, substitutoNaData } from '../_lib/ausencias'
 
 export type ColaboradorRow = {
   responsavel_id: string
@@ -85,7 +85,7 @@ export function useEquipeData({ mesAlvo, anoAlvo, enabled, filtroPlanner = 'Todo
             .gte('created_at', inicio.toISOString())
             .lt('created_at', fim.toISOString()),
           supabase.from('score_config').select('peso_conclusao, peso_volume, peso_pontualidade, peso_aderencia, peso_uso').eq('id', 1).maybeSingle(),
-          supabase.from('ausencias').select('id, responsavel_id, data_inicio, data_fim, motivo, observacao, created_at')
+          supabase.from('ausencias').select('id, responsavel_id, data_inicio, data_fim, motivo, observacao, substituto_id, created_at')
             .lte('data_inicio', iso(fim))   // começou antes do fim do mês
             .gte('data_fim', iso(inicio)),   // termina depois do início do mês
         ])
@@ -176,11 +176,18 @@ export function useEquipeData({ mesAlvo, anoAlvo, enabled, filtroPlanner = 'Todo
 
           for (const r of resps) {
             if (!r.id) continue
-            // Se o responsável estava AUSENTE na data de vencimento, a tarefa
-            // não conta pro score dele (não foi atribuição justa).
-            if (venc && ausente(r.id as string, venc, ausenciasIdx)) continue
 
-            const agg = ensure(r.id as string)
+            // Decide PRA QUEM essa tarefa conta:
+            //   - Se o responsável NÃO está ausente → pra ele mesmo
+            //   - Se está ausente E tem substituto → pro substituto (cobertura)
+            //   - Se está ausente E SEM substituto → não conta pra ninguém
+            let alvoId: string | null = r.id as string
+            if (venc && ausente(r.id as string, venc, ausenciasIdx)) {
+              alvoId = substitutoNaData(r.id as string, venc, ausenciasIdx)
+            }
+            if (!alvoId) continue
+
+            const agg = ensure(alvoId)
             agg.total++
             if (isConcluida) {
               agg.concluidas++

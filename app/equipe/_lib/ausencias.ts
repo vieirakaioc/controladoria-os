@@ -7,6 +7,8 @@ export type Ausencia = {
   data_fim: string      // 'YYYY-MM-DD'
   motivo: string | null
   observacao: string | null
+  /** Se preenchido, as tarefas do ausente vão pro score deste substituto. */
+  substituto_id: string | null
   created_at: string
 }
 
@@ -57,6 +59,21 @@ export function diasUteisAusentes(
     cur.setDate(cur.getDate() + 1)
   }
   return count
+}
+
+/**
+ * Se o responsável está ausente na data e tem um substituto designado,
+ * retorna o ID desse substituto. Senão retorna null.
+ */
+export function substitutoNaData(
+  respId: string,
+  dataIso: string,
+  idx: AusenciasByResp,
+): string | null {
+  const lista = idx.get(respId)
+  if (!lista || lista.length === 0) return null
+  const aus = lista.find(a => dataIso >= a.data_inicio && dataIso <= a.data_fim)
+  return aus?.substituto_id || null
 }
 
 /**

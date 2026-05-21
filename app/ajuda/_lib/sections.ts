@@ -11,6 +11,7 @@ export const SECTIONS: ManualSection[] = [
   { id: 'ciclo-mensal',    title: 'Ciclo Mensal' },
   { id: 'paginas',         title: 'Páginas do Sistema' },
   { id: 'monitor-score',   title: 'Monitor & Score' },
+  { id: 'ferias',          title: 'Modo Férias' },
   { id: 'permissoes',      title: 'Permissões' },
   { id: 'faq',             title: 'FAQ' },
 ]
