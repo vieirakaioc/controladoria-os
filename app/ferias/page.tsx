@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Toaster, toast } from 'react-hot-toast'
-import { Plane, Plus, Trash2, Calendar, UserCheck, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Plane, Plus, Trash2, Calendar, UserCheck, ChevronLeft, ChevronRight, Pencil } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { CalendarioFerias } from './_components/CalendarioFerias'
 import { NovaAusenciaModal } from './_components/NovaAusenciaModal'
@@ -41,6 +41,7 @@ export default function FeriasPage() {
 
   const [modalOpen, setModalOpen] = useState(false)
   const [modalRespFixoId, setModalRespFixoId] = useState<string | undefined>(undefined)
+  const [modalEditing, setModalEditing] = useState<Ausencia | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -112,8 +113,15 @@ export default function FeriasPage() {
     }
   }
 
-  // Pode remover se for admin OU se a ausência for própria
+  // Pode remover/editar se for admin OU se a ausência for própria
   const podeRemover = (a: Ausencia) => isAdmin || a.responsavel_id === meuResponsavelId
+  const podeEditar = podeRemover
+
+  const editar = (a: Ausencia) => {
+    setModalEditing(a)
+    setModalRespFixoId(undefined)
+    setModalOpen(true)
+  }
 
   // Filtra ausências que tocam o mês selecionado
   const ausenciasDoMes = useMemo(() => {
@@ -128,13 +136,13 @@ export default function FeriasPage() {
     [ausencias, meuResponsavelId],
   )
 
-  // Próximas (futuras + ativas hoje)
+  // Próximas (futuras + ativas hoje) — top 3 pra não poluir
   const proximas = useMemo(() => {
     const hojeIso = new Date().toISOString().slice(0, 10)
     return ausencias
       .filter(a => a.data_fim >= hojeIso)
       .sort((a, b) => a.data_inicio.localeCompare(b.data_inicio))
-      .slice(0, 5)
+      .slice(0, 3)
   }, [ausencias])
 
   const navMes = (dir: -1 | 1) => {
@@ -180,7 +188,7 @@ export default function FeriasPage() {
         <div className="flex flex-wrap gap-2">
           {meuResponsavelId && (
             <button
-              onClick={() => { setModalRespFixoId(meuResponsavelId); setModalOpen(true) }}
+              onClick={() => { setModalEditing(null); setModalRespFixoId(meuResponsavelId); setModalOpen(true) }}
               className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-5 py-2.5 rounded-xl font-semibold transition-colors shadow-sm"
             >
               <Plus size={16} /> Solicitar minha ausência
@@ -188,7 +196,7 @@ export default function FeriasPage() {
           )}
           {isAdmin && (
             <button
-              onClick={() => { setModalRespFixoId(undefined); setModalOpen(true) }}
+              onClick={() => { setModalEditing(null); setModalRespFixoId(undefined); setModalOpen(true) }}
               className="flex items-center gap-2 bg-[#063955] hover:bg-[#042436] text-white px-5 py-2.5 rounded-xl font-semibold transition-colors shadow-sm"
             >
               <Plus size={16} /> Nova ausência (qualquer)
@@ -197,44 +205,33 @@ export default function FeriasPage() {
         </div>
       </header>
 
-      {/* Minhas ausências + Próximas (lado a lado) */}
+      {/* Minhas ausências (hero) + Próximas (lado a lado) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-        {/* Card: minhas ausências */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-5">
-          <h3 className="text-xs font-bold text-[#063955] dark:text-white uppercase tracking-widest mb-3 flex items-center gap-2">
-            <UserCheck size={13} className="text-amber-500" /> Minhas Ausências
-          </h3>
-          {meuResponsavelId == null ? (
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Seu email não está cadastrado como responsável. Pede pro admin te adicionar.
-            </p>
-          ) : minhasAusencias.length === 0 ? (
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              Você não tem ausências cadastradas. Clica em "Solicitar minha ausência" pra adicionar.
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {minhasAusencias.slice(0, 5).map(a => (
-                <ItemAusencia key={a.id} a={a} respsById={respsById} onRemover={() => remover(a)} podeRemover={true} />
-              ))}
-              {minhasAusencias.length > 5 && (
-                <p className="text-[11px] text-slate-400 mt-1">+ {minhasAusencias.length - 5} mais no histórico</p>
-              )}
-            </div>
-          )}
-        </div>
+        {/* Card: Minhas Ausências (visual destacado) */}
+        <MinhasAusenciasCard
+          meuResponsavelId={meuResponsavelId}
+          minhas={minhasAusencias}
+          respsById={respsById}
+          onEditar={editar}
+          onRemover={remover}
+          onSolicitar={() => { setModalEditing(null); setModalRespFixoId(meuResponsavelId || undefined); setModalOpen(true) }}
+        />
 
-        {/* Card: próximas */}
+        {/* Card: Próximas da Equipe (top 3) */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-5">
           <h3 className="text-xs font-bold text-[#063955] dark:text-white uppercase tracking-widest mb-3 flex items-center gap-2">
-            <Calendar size={13} className="text-[#0f88a8]" /> Próximas Ausências da Equipe
+            <Calendar size={13} className="text-[#0f88a8]" /> Próximas da Equipe <span className="text-slate-300">(top 3)</span>
           </h3>
           {proximas.length === 0 ? (
             <p className="text-sm text-slate-500 dark:text-slate-400">Ninguém tem ausência futura cadastrada.</p>
           ) : (
             <div className="space-y-2">
               {proximas.map(a => (
-                <ItemAusencia key={a.id} a={a} respsById={respsById} onRemover={() => remover(a)} podeRemover={podeRemover(a)} />
+                <ItemAusencia
+                  key={a.id} a={a} respsById={respsById}
+                  onRemover={() => remover(a)} onEditar={() => editar(a)}
+                  podeRemover={podeRemover(a)} podeEditar={podeEditar(a)}
+                />
               ))}
             </div>
           )}
@@ -307,9 +304,14 @@ export default function FeriasPage() {
                       </td>
                       <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400 max-w-xs truncate" title={a.observacao || ''}>{a.observacao || '—'}</td>
                       <td className="px-4 py-3 text-right">
-                        <button onClick={() => remover(a)} className="text-slate-300 hover:text-[#b43a3d] dark:hover:text-[#f87171] transition-colors p-1" title="Remover">
-                          <Trash2 size={14} />
-                        </button>
+                        <div className="inline-flex items-center gap-1">
+                          <button onClick={() => editar(a)} className="text-slate-300 hover:text-[#0f88a8] dark:hover:text-[#38bdf8] transition-colors p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800" title="Editar">
+                            <Pencil size={14} />
+                          </button>
+                          <button onClick={() => remover(a)} className="text-slate-300 hover:text-[#b43a3d] dark:hover:text-[#f87171] transition-colors p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800" title="Remover">
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -325,8 +327,9 @@ export default function FeriasPage() {
           responsaveis={responsaveis}
           responsavelFixoId={modalRespFixoId}
           isAdmin={isAdmin}
-          onClose={() => setModalOpen(false)}
-          onSaved={() => { setModalOpen(false); carregar() }}
+          existing={modalEditing || undefined}
+          onClose={() => { setModalOpen(false); setModalEditing(null) }}
+          onSaved={() => { setModalOpen(false); setModalEditing(null); carregar() }}
         />
       )}
     </div>
@@ -335,10 +338,11 @@ export default function FeriasPage() {
 
 // ─── Helper de item compacto ───────────────────────────────────────────────
 function ItemAusencia({
-  a, respsById, onRemover, podeRemover,
+  a, respsById, onRemover, onEditar, podeRemover, podeEditar,
 }: {
   a: Ausencia; respsById: Map<string, Responsavel>;
-  onRemover: () => void; podeRemover: boolean;
+  onRemover: () => void; onEditar?: () => void;
+  podeRemover: boolean; podeEditar?: boolean;
 }) {
   const hojeIso = new Date().toISOString().slice(0, 10)
   const ativa = a.data_inicio <= hojeIso && hojeIso <= a.data_fim
@@ -352,7 +356,7 @@ function ItemAusencia({
       : 'bg-slate-50 dark:bg-slate-800/30 border-slate-100 dark:border-slate-700/50 opacity-60'
 
   return (
-    <div className={`flex items-start justify-between gap-3 p-3 rounded-xl border ${bg}`}>
+    <div className={`flex items-start justify-between gap-3 p-3 rounded-xl border ${bg} group`}>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 text-sm font-bold text-[#063955] dark:text-white">
           {a.responsaveis?.nome || 'Sem nome'}
@@ -367,14 +371,160 @@ function ItemAusencia({
           </div>
         )}
       </div>
-      {podeRemover && (
+      <div className="flex items-center gap-0.5 opacity-60 group-hover:opacity-100 transition-opacity">
+        {podeEditar && onEditar && (
+          <button
+            onClick={onEditar}
+            className="text-slate-400 hover:text-[#0f88a8] dark:hover:text-[#38bdf8] hover:bg-white dark:hover:bg-slate-800 transition-colors p-1.5 rounded-lg"
+            title="Editar"
+          >
+            <Pencil size={13} />
+          </button>
+        )}
+        {podeRemover && (
+          <button
+            onClick={onRemover}
+            className="text-slate-400 hover:text-[#b43a3d] dark:hover:text-[#f87171] hover:bg-white dark:hover:bg-slate-800 transition-colors p-1.5 rounded-lg"
+            title="Remover"
+          >
+            <Trash2 size={13} />
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─── Card de Minhas Ausências (visual destacado) ───────────────────────────
+function MinhasAusenciasCard({
+  meuResponsavelId, minhas, respsById, onEditar, onRemover, onSolicitar,
+}: {
+  meuResponsavelId: string | null
+  minhas: Ausencia[]
+  respsById: Map<string, Responsavel>
+  onEditar: (a: Ausencia) => void
+  onRemover: (a: Ausencia) => void
+  onSolicitar: () => void
+}) {
+  const hojeIso = new Date().toISOString().slice(0, 10)
+  const ativa = minhas.find(a => a.data_inicio <= hojeIso && hojeIso <= a.data_fim)
+  const proxima = !ativa ? minhas
+    .filter(a => a.data_inicio > hojeIso)
+    .sort((a, b) => a.data_inicio.localeCompare(b.data_inicio))[0] : null
+  const destaque = ativa || proxima
+  const outras = minhas.filter(a => a.id !== destaque?.id).slice(0, 3)
+
+  // Stats: dias totais programados no ano atual (apenas dias úteis dos períodos)
+  const anoAtual = new Date().getFullYear()
+  const diasTotais = minhas
+    .filter(a => a.data_inicio.startsWith(String(anoAtual)) || a.data_fim.startsWith(String(anoAtual)))
+    .reduce((s, a) => {
+      const i = new Date(a.data_inicio + 'T00:00:00')
+      const f = new Date(a.data_fim + 'T00:00:00')
+      const diff = Math.round((f.getTime() - i.getTime()) / 86400000) + 1
+      return s + diff
+    }, 0)
+
+  if (meuResponsavelId == null) {
+    return (
+      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-5">
+        <h3 className="text-xs font-bold text-[#063955] dark:text-white uppercase tracking-widest mb-3 flex items-center gap-2">
+          <UserCheck size={13} className="text-amber-500" /> Minhas Ausências
+        </h3>
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          Seu email do login não corresponde a nenhum responsável cadastrado. Peça pro admin te adicionar em <code>responsaveis</code>.
+        </p>
+      </div>
+    )
+  }
+
+  if (minhas.length === 0) {
+    return (
+      <div className="bg-gradient-to-br from-amber-50 via-white to-amber-50/30 dark:from-amber-500/10 dark:via-slate-900 dark:to-amber-500/5 border border-amber-200 dark:border-amber-500/30 rounded-2xl shadow-sm p-6">
+        <h3 className="text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+          <Plane size={13} /> Minhas Ausências
+        </h3>
+        <p className="text-sm text-slate-700 dark:text-slate-200 mt-3 mb-4">
+          Você ainda não tem nenhuma ausência cadastrada. Quando precisar tirar um período de férias, licença ou atestado, é só registrar aqui.
+        </p>
         <button
-          onClick={onRemover}
-          className="text-slate-300 hover:text-[#b43a3d] dark:hover:text-[#f87171] transition-colors p-1"
-          title="Remover"
+          onClick={onSolicitar}
+          className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors shadow-sm"
         >
-          <Trash2 size={14} />
+          <Plus size={14} /> Cadastrar agora
         </button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="bg-gradient-to-br from-amber-50 via-white to-amber-50/30 dark:from-amber-500/10 dark:via-slate-900 dark:to-amber-500/5 border border-amber-200 dark:border-amber-500/30 rounded-2xl shadow-sm p-5">
+      <div className="flex items-start justify-between mb-3">
+        <h3 className="text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-widest flex items-center gap-2">
+          <Plane size={13} /> Minhas Ausências
+        </h3>
+        <div className="text-right">
+          <div className="text-[10px] uppercase font-bold tracking-wider text-slate-500 dark:text-slate-400">{anoAtual}</div>
+          <div className="text-sm font-bold text-[#063955] dark:text-white tabular-nums">{diasTotais} dia{diasTotais === 1 ? '' : 's'}</div>
+        </div>
+      </div>
+
+      {/* Destaque (ativa ou próxima) */}
+      {destaque && (
+        <div className="bg-white dark:bg-slate-900 rounded-xl border border-amber-200 dark:border-amber-500/30 p-3 mb-3 group">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <span className={`text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded ${ativa ? 'bg-amber-500 text-white' : 'bg-sky-100 text-sky-700 dark:bg-sky-500/20 dark:text-sky-300'}`}>
+                  {ativa ? 'Em curso' : 'Próxima'}
+                </span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">{destaque.motivo || 'ausência'}</span>
+              </div>
+              <div className="text-base font-bold text-[#063955] dark:text-white tabular-nums">
+                {fmtBR(destaque.data_inicio)} → {fmtBR(destaque.data_fim)}
+              </div>
+              {destaque.substituto_id && (
+                <div className="text-[11px] text-emerald-700 dark:text-emerald-400 mt-1 flex items-center gap-1">
+                  <UserCheck size={11} /> Substituto: {respsById.get(destaque.substituto_id)?.nome || '?'}
+                </div>
+              )}
+            </div>
+            <div className="flex items-center gap-0.5 opacity-60 group-hover:opacity-100 transition-opacity">
+              <button onClick={() => onEditar(destaque)} className="text-slate-400 hover:text-[#0f88a8] hover:bg-slate-100 dark:hover:bg-slate-800 p-1.5 rounded-lg transition-colors" title="Editar">
+                <Pencil size={13} />
+              </button>
+              <button onClick={() => onRemover(destaque)} className="text-slate-400 hover:text-[#b43a3d] hover:bg-slate-100 dark:hover:bg-slate-800 p-1.5 rounded-lg transition-colors" title="Remover">
+                <Trash2 size={13} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Outras (compactas) */}
+      {outras.length > 0 && (
+        <div className="space-y-1.5">
+          <div className="text-[10px] uppercase font-bold tracking-widest text-slate-500 dark:text-slate-400 px-1">Outros períodos</div>
+          {outras.map(a => (
+            <div key={a.id} className="bg-white/60 dark:bg-slate-900/60 rounded-lg px-3 py-2 flex items-center justify-between gap-2 group hover:bg-white dark:hover:bg-slate-900 transition-colors">
+              <div className="flex-1 text-xs tabular-nums text-slate-600 dark:text-slate-300">
+                {fmtBR(a.data_inicio)} → {fmtBR(a.data_fim)}{' '}
+                <span className="text-slate-400">· {a.motivo || 'ausência'}</span>
+              </div>
+              <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button onClick={() => onEditar(a)} className="text-slate-400 hover:text-[#0f88a8] p-1 rounded transition-colors" title="Editar">
+                  <Pencil size={12} />
+                </button>
+                <button onClick={() => onRemover(a)} className="text-slate-400 hover:text-[#b43a3d] p-1 rounded transition-colors" title="Remover">
+                  <Trash2 size={12} />
+                </button>
+              </div>
+            </div>
+          ))}
+          {minhas.length > 1 + outras.length && (
+            <div className="text-[10px] text-slate-400 px-1 pt-1">+ {minhas.length - 1 - outras.length} no histórico</div>
+          )}
+        </div>
       )}
     </div>
   )

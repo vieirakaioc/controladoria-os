@@ -1,17 +1,28 @@
 'use client'
 
 import { useState } from 'react'
-import { Plane, UserCheck } from 'lucide-react'
+import { Plane, UserCheck, Pencil } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { supabase } from '@/lib/supabase'
 
 type Responsavel = { id: string; nome: string; email: string | null }
+type AusenciaEdit = {
+  id: string
+  responsavel_id: string
+  data_inicio: string
+  data_fim: string
+  motivo: string | null
+  observacao: string | null
+  substituto_id: string | null
+}
 
 type Props = {
   responsaveis: Responsavel[]
   /** Se preenchido, fixa o responsável (modo "minha ausência" pro membro). */
   responsavelFixoId?: string
   isAdmin: boolean
+  /** Se preenchido, abre em modo EDIT (UPDATE em vez de INSERT). */
+  existing?: AusenciaEdit
   onClose: () => void
   onSaved: () => void
 }
@@ -19,14 +30,15 @@ type Props = {
 const MOTIVOS = ['férias', 'licença', 'atestado', 'afastamento', 'outro']
 
 export function NovaAusenciaModal({
-  responsaveis, responsavelFixoId, isAdmin, onClose, onSaved,
+  responsaveis, responsavelFixoId, isAdmin, existing, onClose, onSaved,
 }: Props) {
-  const [respId, setRespId] = useState(responsavelFixoId || '')
-  const [dataInicio, setDataInicio] = useState(new Date().toISOString().slice(0, 10))
-  const [dataFim, setDataFim] = useState('')
-  const [motivo, setMotivo] = useState('férias')
-  const [substitutoId, setSubstitutoId] = useState('')
-  const [obs, setObs] = useState('')
+  const isEdit = !!existing
+  const [respId, setRespId] = useState(existing?.responsavel_id || responsavelFixoId || '')
+  const [dataInicio, setDataInicio] = useState(existing?.data_inicio || new Date().toISOString().slice(0, 10))
+  const [dataFim, setDataFim] = useState(existing?.data_fim || '')
+  const [motivo, setMotivo] = useState(existing?.motivo || 'férias')
+  const [substitutoId, setSubstitutoId] = useState(existing?.substituto_id || '')
+  const [obs, setObs] = useState(existing?.observacao || '')
   const [salvando, setSalvando] = useState(false)
 
   const salvar = async () => {
@@ -44,20 +56,26 @@ export function NovaAusenciaModal({
     }
 
     setSalvando(true)
-    const toastId = toast.loading('A registrar ausência...')
+    const toastId = toast.loading(isEdit ? 'A atualizar ausência...' : 'A registrar ausência...')
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      const { error } = await supabase.from('ausencias').insert({
+      const payload = {
         responsavel_id: respId,
         data_inicio: dataInicio,
         data_fim: dataFim,
         motivo: motivo || 'férias',
         observacao: obs || null,
         substituto_id: substitutoId || null,
-        created_by: user?.id ?? null,
-      })
-      if (error) throw error
-      toast.success('Ausência registrada!', { id: toastId })
+      }
+
+      let res
+      if (isEdit && existing) {
+        res = await supabase.from('ausencias').update(payload).eq('id', existing.id)
+      } else {
+        const { data: authData } = await supabase.auth.getUser()
+        res = await supabase.from('ausencias').insert({ ...payload, created_by: authData?.user?.id ?? null })
+      }
+      if (res.error) throw res.error
+      toast.success(isEdit ? 'Atualizada!' : 'Ausência registrada!', { id: toastId })
       onSaved()
     } catch (e: any) {
       toast.error(`Erro: ${e?.message || 'falha'}`, { id: toastId })
@@ -74,9 +92,12 @@ export function NovaAusenciaModal({
       <div className="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-100 dark:border-slate-800">
         <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-start bg-slate-50/50 dark:bg-slate-950/50">
           <div>
-            <span className="text-xs text-amber-600 dark:text-amber-400 font-semibold tracking-wide uppercase">Nova Ausência</span>
+            <span className="text-xs text-amber-600 dark:text-amber-400 font-semibold tracking-wide uppercase">
+              {isEdit ? 'Editar Ausência' : 'Nova Ausência'}
+            </span>
             <h2 className="text-xl text-slate-900 dark:text-white font-semibold mt-1 flex items-center gap-2">
-              <Plane size={20} /> {respLockado ? 'Solicitar minha ausência' : 'Registrar período fora'}
+              {isEdit ? <Pencil size={20} /> : <Plane size={20} />}
+              {isEdit ? 'Editar período' : (respLockado ? 'Solicitar minha ausência' : 'Registrar período fora')}
             </h2>
           </div>
           <button onClick={onClose} disabled={salvando} className="text-slate-400 hover:text-[#063955] dark:hover:text-white p-2 disabled:opacity-50">✕</button>
@@ -186,7 +207,7 @@ export function NovaAusenciaModal({
             disabled={salvando || !respId || !dataInicio || !dataFim}
             className="bg-[#063955] hover:bg-[#042436] text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors shadow-sm disabled:opacity-50"
           >
-            {salvando ? 'A salvar...' : 'Registrar'}
+            {salvando ? 'A salvar...' : (isEdit ? 'Salvar alterações' : 'Registrar')}
           </button>
         </div>
       </div>
