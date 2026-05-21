@@ -7,6 +7,7 @@ import {
   iso, startOfMonth, startOfNextMonth, diasUteisNoIntervalo, diasUteisDistintos,
 } from '../_lib/datas'
 import { computeScore, DEFAULT_WEIGHTS, type Metrics, type ScoreBreakdown, type ScoreWeights } from '../_lib/score'
+import { type Ausencia, ausenciaHoje, ausente, diasUteisAusentes, indexAusencias } from '../_lib/ausencias'
 
 export type ColaboradorRow = {
   responsavel_id: string
@@ -16,6 +17,8 @@ export type ColaboradorRow = {
   lastActivity: string | null       // ISO ts da última atividade
   metrics: Metrics
   score: ScoreBreakdown
+  /** Ausência ativa hoje (se houver) — mostra badge "🌴 Em férias" no Monitor */
+  ausenciaAtiva: Ausencia | null
 }
 
 type Args = {
@@ -60,13 +63,14 @@ export function useEquipeData({ mesAlvo, anoAlvo, enabled, filtroPlanner = 'Todo
         const fim = startOfNextMonth(anoAlvo, mesAlvo)
         const diasUteisPeriodo = diasUteisNoIntervalo(inicio, fim)
 
-        // Roda as 5 queries em paralelo (inclui score_config dinâmico)
+        // Roda as 6 queries em paralelo (inclui ausencias)
         const [
           { data: respsData, error: errResps },
           { data: profilesData, error: errProfiles },
           { data: tarefasData, error: errTarefas },
           { data: activityData, error: errActivity },
           { data: scoreCfgData },
+          { data: ausenciasData },
         ] = await Promise.all([
           supabase.from('responsaveis').select('id, nome, email').order('nome'),
           supabase.from('profiles').select('id, full_name, role'),
@@ -81,6 +85,9 @@ export function useEquipeData({ mesAlvo, anoAlvo, enabled, filtroPlanner = 'Todo
             .gte('created_at', inicio.toISOString())
             .lt('created_at', fim.toISOString()),
           supabase.from('score_config').select('peso_conclusao, peso_volume, peso_pontualidade, peso_aderencia, peso_uso').eq('id', 1).maybeSingle(),
+          supabase.from('ausencias').select('id, responsavel_id, data_inicio, data_fim, motivo, observacao, created_at')
+            .lte('data_inicio', iso(fim))   // começou antes do fim do mês
+            .gte('data_fim', iso(inicio)),   // termina depois do início do mês
         ])
 
         // Lê pesos do banco se existir, senão usa default (45/25/15/10/5)
@@ -143,6 +150,9 @@ export function useEquipeData({ mesAlvo, anoAlvo, enabled, filtroPlanner = 'Todo
           return true
         })
 
+        // Indexa ausências por responsável pra lookup rápido
+        const ausenciasIdx = indexAusencias((ausenciasData || []) as Ausencia[])
+
         // Agrega tarefas por responsável (usando responsavel_id E responsaveis_lista)
         type AggTarefas = { total: number; concluidas: number; concluidasNoPrazo: number; atrasadas: number; pendentes: number }
         const tarefasByResp = new Map<string, AggTarefas>()
@@ -166,6 +176,10 @@ export function useEquipeData({ mesAlvo, anoAlvo, enabled, filtroPlanner = 'Todo
 
           for (const r of resps) {
             if (!r.id) continue
+            // Se o responsável estava AUSENTE na data de vencimento, a tarefa
+            // não conta pro score dele (não foi atribuição justa).
+            if (venc && ausente(r.id as string, venc, ausenciasIdx)) continue
+
             const agg = ensure(r.id as string)
             agg.total++
             if (isConcluida) {
@@ -201,6 +215,12 @@ export function useEquipeData({ mesAlvo, anoAlvo, enabled, filtroPlanner = 'Todo
           // Como proxy: identifica se "tem user_id" pela presença de atividade
           const user_id = null  // não temos sem cruzar auth.users; deixa null
 
+          // Subtrai os dias úteis em que a pessoa estava ausente do denominador
+          // do "Uso do App" — assim não conta como se ela "tivesse que entrar"
+          // estando de férias.
+          const diasAusente = diasUteisAusentes(resp.id, inicio, fim, ausenciasIdx)
+          const diasUteisAjustado = Math.max(0, diasUteisPeriodo - diasAusente)
+
           const metrics: Metrics = {
             totalAtribuidas: t.total,
             concluidas: t.concluidas,
@@ -208,7 +228,7 @@ export function useEquipeData({ mesAlvo, anoAlvo, enabled, filtroPlanner = 'Todo
             atrasadas: t.atrasadas,
             pendentes: t.pendentes,
             diasUteisAtivos,
-            diasUteisPeriodo,
+            diasUteisPeriodo: diasUteisAjustado,
             maxConcluidasNoPeriodo,
           }
 
@@ -220,6 +240,7 @@ export function useEquipeData({ mesAlvo, anoAlvo, enabled, filtroPlanner = 'Todo
             lastActivity: act?.lastTs ?? null,
             metrics,
             score: computeScore(metrics, pesos),
+            ausenciaAtiva: ausenciaHoje(resp.id, ausenciasIdx),
           }
         })
 

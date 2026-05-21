@@ -19,7 +19,8 @@ import {
   Key,
   Briefcase,
   Users,
-  BookOpen
+  BookOpen,
+  Plane
 } from 'lucide-react'
 
 const allNavItems = [
@@ -28,6 +29,7 @@ const allNavItems = [
   { name: 'Gestão de Projetos', href: '/projetos', icon: Briefcase, adminOnly: false },
   { name: 'Controle de Tarefas', href: '/tarefas', icon: CheckSquare, adminOnly: false },
   { name: 'Monitor da Equipe', href: '/equipe', icon: Users, adminOnly: true },
+  { name: 'Gestão de Férias', href: '/ferias', icon: Plane, adminOnly: true },
   { name: 'Workflows', href: '/workflows', icon: GitMerge, adminOnly: true },
   { name: 'Gestão de Acessos', href: '/acessos', icon: Key, adminOnly: true },
   { name: 'Auditoria', href: '/auditoria', icon: Shield, adminOnly: true },

@@ -363,12 +363,29 @@ export default function EquipePage() {
                     <tr key={c.responsavel_id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                       {/* Colaborador */}
                       <td className="px-4 py-5">
-                        <div className="font-bold text-[15px] text-[#063955] dark:text-white leading-tight">{c.nome}</div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <div className="font-bold text-[15px] text-[#063955] dark:text-white leading-tight">{c.nome}</div>
+                          {c.ausenciaAtiva && (
+                            <span
+                              className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded"
+                              title={`${c.ausenciaAtiva.motivo || 'ausente'} · ${c.ausenciaAtiva.data_inicio} → ${c.ausenciaAtiva.data_fim}`}
+                            >
+                              🌴 {c.ausenciaAtiva.motivo || 'Ausente'}
+                            </span>
+                          )}
+                        </div>
                         {c.email && <div className="text-xs text-slate-400 mt-0.5">{c.email}</div>}
                       </td>
                       {/* Último acesso */}
                       <td className="px-4 py-5">
-                        <PresencaDot lastActivity={c.lastActivity} />
+                        {c.ausenciaAtiva ? (
+                          <div className="flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full shrink-0 bg-amber-500" />
+                            <span className="text-sm font-medium text-amber-700 dark:text-amber-400">Em férias</span>
+                          </div>
+                        ) : (
+                          <PresencaDot lastActivity={c.lastActivity} />
+                        )}
                       </td>
                       {/* Tarefas */}
                       <td className="px-4 py-5 text-center">
