@@ -63,14 +63,27 @@ export default function FeriasPage() {
   const carregar = async (email?: string) => {
     setLoading(true)
     try {
-      const [{ data: ausData }, { data: respData }] = await Promise.all([
+      const [{ data: ausData, error: errAus }, { data: respData }] = await Promise.all([
+        // Sem embed — tem 2 FKs pra responsaveis (responsavel_id e substituto_id),
+        // o que confunde o PostgREST. Fazemos o lookup do nome em JS com respData.
         supabase.from('ausencias')
-          .select('id, responsavel_id, data_inicio, data_fim, motivo, observacao, substituto_id, created_at, responsaveis (nome, email)')
+          .select('id, responsavel_id, data_inicio, data_fim, motivo, observacao, substituto_id, created_at')
           .order('data_inicio', { ascending: false }),
         supabase.from('responsaveis').select('id, nome, email').order('nome'),
       ])
-      const aus = (ausData || []) as unknown as Ausencia[]
+      if (errAus) {
+        console.error('[ferias] erro ao ler ausencias:', errAus)
+        toast.error(`Erro ao carregar: ${errAus.message}`)
+        return
+      }
       const resps = (respData || []) as Responsavel[]
+      // Faz o join em JS: anexa { nome, email } do responsável em cada ausência
+      const respsById = new Map<string, Responsavel>()
+      resps.forEach(r => respsById.set(String(r.id), r))
+      const aus: Ausencia[] = (ausData || []).map((a: any) => {
+        const r = respsById.get(String(a.responsavel_id))
+        return { ...a, responsaveis: r ? { nome: r.nome, email: r.email } : null }
+      })
       setAusencias(aus)
       setResponsaveis(resps)
 
