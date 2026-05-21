@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { trackSession, trackPageView } from '@/lib/activityTracker'
 
 export default function RouteGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -22,6 +23,12 @@ export default function RouteGuard({ children }: { children: React.ReactNode }) 
       } else {
         // Tudo certo, permite ver o ecrã
         setAuthorized(true)
+
+        // Tracking: registra session_start (1x/dia) e o page_view atual
+        if (session && pathname !== '/login') {
+          trackSession()
+          trackPageView(pathname)
+        }
       }
     }
 
@@ -31,6 +38,10 @@ export default function RouteGuard({ children }: { children: React.ReactNode }) 
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       if (!session && pathname !== '/login') {
         router.replace('/login')
+      }
+      // Após login (SIGNED_IN), registra a sessão também
+      if (event === 'SIGNED_IN' && session) {
+        trackSession()
       }
     })
 

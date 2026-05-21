@@ -4,12 +4,12 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { 
-  LayoutDashboard, 
-  CheckSquare, 
-  GitMerge, 
-  User, 
-  LogOut, 
+import {
+  LayoutDashboard,
+  CheckSquare,
+  GitMerge,
+  User,
+  LogOut,
   Home,
   ChevronLeft,
   ChevronRight,
@@ -17,17 +17,21 @@ import {
   Bell,
   CheckCheck,
   Key,
-  Briefcase 
+  Briefcase,
+  Users,
+  BookOpen
 } from 'lucide-react'
 
 const allNavItems = [
   { name: 'Início (Sincronizar)', href: '/', icon: Home, adminOnly: true },
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, adminOnly: false }, 
+  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, adminOnly: false },
   { name: 'Gestão de Projetos', href: '/projetos', icon: Briefcase, adminOnly: false },
   { name: 'Controle de Tarefas', href: '/tarefas', icon: CheckSquare, adminOnly: false },
+  { name: 'Monitor da Equipe', href: '/equipe', icon: Users, adminOnly: true },
   { name: 'Workflows', href: '/workflows', icon: GitMerge, adminOnly: true },
   { name: 'Gestão de Acessos', href: '/acessos', icon: Key, adminOnly: true },
   { name: 'Auditoria', href: '/auditoria', icon: Shield, adminOnly: true },
+  { name: 'Manual', href: '/ajuda', icon: BookOpen, adminOnly: false },
   { name: 'Meu Perfil', href: '/profile', icon: User, adminOnly: false },
 ]
 
@@ -108,10 +112,49 @@ export default function Sidebar() {
     return () => subscription.unsubscribe()
   }, [pathname])
 
+  // ─── Realtime: substitui o polling de 30s por uma subscription ─────────
+  // Quando uma notificação nova chega (INSERT) ou é marcada como lida em outra
+  // aba (UPDATE), o badge atualiza na hora — sem precisar esperar o intervalo.
   useEffect(() => {
     if (!userEmail) return
-    const interval = setInterval(() => fetchNotificacoes(userEmail), 30000)
-    return () => clearInterval(interval)
+
+    const channel = supabase
+      .channel(`notif-${userEmail}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notificacoes',
+          filter: `user_email=eq.${userEmail}`,
+        },
+        (payload) => {
+          setNotificacoes(prev => {
+            // Evita duplicar se chegou via outro caminho (ex: refresh manual)
+            if (prev.some(n => n.id === (payload.new as any).id)) return prev
+            return [payload.new as any, ...prev].slice(0, 20)
+          })
+        },
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'notificacoes',
+          filter: `user_email=eq.${userEmail}`,
+        },
+        (payload) => {
+          setNotificacoes(prev =>
+            prev.map(n => (n.id === (payload.new as any).id ? (payload.new as any) : n)),
+          )
+        },
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [userEmail])
 
   // 💡 O DEEP LINKING BLINDADO

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import * as XLSX from 'xlsx'
 import { supabase } from '@/lib/supabase'
 import { Toaster, toast } from 'react-hot-toast'
-import { RefreshCw, Play, ShieldAlert, Download, Upload, Trash2 } from 'lucide-react'
+import { RefreshCw, Play, ShieldAlert, Download, Upload, Trash2, UserX } from 'lucide-react'
 
 const MESES = [
   { v: 0, n: 'Janeiro' }, { v: 1, n: 'Fevereiro' }, { v: 2, n: 'Março' }, { v: 3, n: 'Abril' },
@@ -37,6 +37,16 @@ export default function Home() {
   const [isAdmin, setIsAdmin] = useState(false)
   const [loadingAcesso, setLoadingAcesso] = useState(true)
   const [stats, setStats] = useState({ rotinasAtivas: 0, geradasNoMes: 0 })
+
+  // ─── Exclusão por responsável (Feature 1) ─────────────────────────────
+  type EscopoDel = 'todas' | 'adhoc' | 'base'
+  const [respsLista, setRespsLista] = useState<{ id: string; nome: string; email?: string }[]>([])
+  const [respDelOpen, setRespDelOpen] = useState(false)
+  const [respDelId, setRespDelId] = useState<string>('')
+  const [respDelEscopo, setRespDelEscopo] = useState<EscopoDel>('todas')
+  const [respDelPreview, setRespDelPreview] = useState<{ atividades: number; tarefas: number } | null>(null)
+  const [respDelLoading, setRespDelLoading] = useState(false)
+  const [respDelSaving, setRespDelSaving] = useState(false)
 
   useEffect(() => {
     const inicializar = async () => {
@@ -81,7 +91,7 @@ export default function Home() {
       const { data: dbAtividades, error: errAtv } = await supabase
         .from('atividades')
         .select(`
-          task_id, planner_name, nome_atividade, prioridade_nivel, prioridade_descricao, 
+          task_id, planner_name, nome_atividade, prioridade_nivel, prioridade_descricao,
           frequencia, classificacao, dia_da_semana, dia_util, status,
           setores!atividades_setor_id_fkey (nome),
           responsaveis!atividades_responsavel_id_fkey (nome)
@@ -90,6 +100,13 @@ export default function Home() {
 
       if (errAtv) throw errAtv
       setAtividades(dbAtividades || [])
+
+      // Lista de responsáveis pra UI de exclusão por pessoa
+      const { data: dbResps } = await supabase
+        .from('responsaveis')
+        .select('id, nome, email')
+        .order('nome', { ascending: true })
+      setRespsLista((dbResps || []) as any)
     } catch (error: any) {
       toast.error('Erro ao buscar dados da base.')
     } finally {
@@ -102,11 +119,15 @@ export default function Home() {
     const freq = (regra.frequencia || '').toLowerCase()
     const classif = (regra.classificacao || '').toLowerCase()
 
-    if (freq === 'semanal' && classif === 'fechamento') {
+    // ── DECENDIAL: 3 entregas por mês nos dias 1, 11 e 21 ─────────────────
+    // (mantém também o atalho histórico de "semanal + classificacao=fechamento"
+    //  que já fazia esse mesmo cálculo, pra não quebrar atividades antigas)
+    if (freq === 'decendial' || (freq === 'semanal' && classif === 'fechamento')) {
       const diasAlvo = [1, 11, 21]
       diasAlvo.forEach(d => {
         const dt = new Date(ano, mes, d)
         if (dt.getMonth() === mes) {
+          // Pula sábado/domingo/feriado pra próxima data útil
           while (dt.getDay() === 0 || dt.getDay() === 6 || feriados.includes(formataDataLocal(dt))) {
             dt.setDate(dt.getDate() + 1)
           }
@@ -177,7 +198,7 @@ export default function Home() {
 
   const mesesParaFrequencia = (freqRaw: string) => {
     const freq = (freqRaw || '').toLowerCase()
-    if (freq === 'mensal' || freq === 'diária' || freq === 'semanal') return 'todo_mes'
+    if (freq === 'mensal' || freq === 'diária' || freq === 'semanal' || freq === 'decendial') return 'todo_mes'
     if (freq === 'anual') return 'janeiro'
     if (freq === 'trimestral') return 'trim'
     if (freq === 'bimestral') return 'bim'
@@ -261,6 +282,14 @@ export default function Home() {
     const taskIds = (atvData || []).map(a => a.task_id)
     if (taskIds.length === 0) return
 
+    await deletarCascataPorTaskIds(taskIds)
+  }
+
+  // ─── Cascade delete reutilizável ──────────────────────────────────────
+  // Recebe uma lista de task_ids (atividades) e apaga em ordem:
+  //   tarefa_comentarios → tarefas_diarias → atividades
+  const deletarCascataPorTaskIds = async (taskIds: string[]) => {
+    if (taskIds.length === 0) return
     const chunkSize = 150
     let dailyIds: string[] = []
 
@@ -273,6 +302,96 @@ export default function Home() {
     for (let i = 0; i < dailyIds.length; i += chunkSize) await supabase.from('tarefa_comentarios').delete().in('tarefa_id', dailyIds.slice(i, i + chunkSize))
     for (let i = 0; i < taskIds.length; i += chunkSize) await supabase.from('tarefas_diarias').delete().in('atividade_id', taskIds.slice(i, i + chunkSize))
     for (let i = 0; i < taskIds.length; i += chunkSize) await supabase.from('atividades').delete().in('task_id', taskIds.slice(i, i + chunkSize))
+  }
+
+  // ─── Exclusão por responsável: helpers + handlers ─────────────────────
+  // Coleta os task_ids das atividades onde o responsável aparece, seja como
+  // FK direta (responsavel_id) ou dentro de responsaveis_lista (JSONB).
+  // O parâmetro `escopo` filtra adicionalmente por tipo de planner:
+  //   - 'todas': qualquer planner (Ad Hoc + base sincronizada)
+  //   - 'adhoc': só planner_name = 'Ad Hoc'
+  //   - 'base':  todos os outros planners (não-Ad-Hoc)
+  const taskIdsDoResponsavel = async (respId: string, escopo: EscopoDel): Promise<string[]> => {
+    const aplicaEscopo = (q: any) => {
+      if (escopo === 'adhoc') return q.eq('planner_name', 'Ad Hoc')
+      if (escopo === 'base') return q.or('planner_name.neq."Ad Hoc",planner_name.is.null')
+      return q
+    }
+    const [{ data: fkData }, { data: listaData }] = await Promise.all([
+      aplicaEscopo(supabase.from('atividades').select('task_id')).eq('responsavel_id', respId),
+      aplicaEscopo(supabase.from('atividades').select('task_id')).contains('responsaveis_lista', [{ id: respId }]),
+    ])
+    const all = new Set<string>()
+    ;(fkData || []).forEach((a: any) => all.add(a.task_id))
+    ;(listaData || []).forEach((a: any) => all.add(a.task_id))
+    return Array.from(all)
+  }
+
+  const carregarPreviewExclusaoResp = async (respId: string, escopo: EscopoDel) => {
+    if (!respId) { setRespDelPreview(null); return }
+    setRespDelLoading(true)
+    try {
+      const taskIds = await taskIdsDoResponsavel(respId, escopo)
+      if (taskIds.length === 0) {
+        setRespDelPreview({ atividades: 0, tarefas: 0 })
+        return
+      }
+      // Conta tarefas_diarias vinculadas (em chunks pra não estourar limite de IN)
+      const chunkSize = 150
+      let tarefas = 0
+      for (let i = 0; i < taskIds.length; i += chunkSize) {
+        const chunk = taskIds.slice(i, i + chunkSize)
+        const { count } = await supabase
+          .from('tarefas_diarias')
+          .select('id', { count: 'exact', head: true })
+          .in('atividade_id', chunk)
+        tarefas += count || 0
+      }
+      setRespDelPreview({ atividades: taskIds.length, tarefas })
+    } catch (e) {
+      toast.error('Não consegui calcular o preview da exclusão.')
+      setRespDelPreview(null)
+    } finally {
+      setRespDelLoading(false)
+    }
+  }
+
+  const apagarPorResponsavel = async () => {
+    if (!respDelId) return
+    const nome = respsLista.find(r => r.id === respDelId)?.nome || 'esse responsável'
+    const labelEscopo =
+      respDelEscopo === 'adhoc' ? 'apenas Ad Hocs'
+      : respDelEscopo === 'base' ? 'apenas Base Sincronizada'
+      : 'TODAS as atividades (Ad Hoc + Base)'
+
+    if (!window.confirm(
+      `⚠️ ATENÇÃO: apagará ${labelEscopo} de "${nome}" + todas as tarefas diárias e comentários vinculados.\n\nEsta ação NÃO pode ser desfeita. Deseja continuar?`
+    )) return
+    if (window.prompt(`Digite o nome "${nome}" para confirmar:`) !== nome) {
+      toast.error('Confirmação não bateu. Operação cancelada.')
+      return
+    }
+
+    setRespDelSaving(true)
+    const toastId = toast.loading(`A apagar atividades de ${nome}...`)
+    try {
+      const taskIds = await taskIdsDoResponsavel(respDelId, respDelEscopo)
+      if (taskIds.length === 0) {
+        toast.success('Esse responsável já não tinha atividades nesse escopo.', { id: toastId })
+      } else {
+        await deletarCascataPorTaskIds(taskIds)
+        toast.success(`${taskIds.length} atividade(s) de ${nome} apagada(s)!`, { id: toastId })
+      }
+      setRespDelOpen(false)
+      setRespDelId('')
+      setRespDelEscopo('todas')
+      setRespDelPreview(null)
+      fetchDados()
+    } catch (e: any) {
+      toast.error('Erro ao apagar atividades.', { id: toastId })
+    } finally {
+      setRespDelSaving(false)
+    }
   }
 
   const limparPlanilhaSincronizada = async () => {
@@ -307,24 +426,81 @@ export default function Home() {
     }
   }
 
-  const exportarParaExcel = () => {
-    const dadosExportacao = atividades.map((t) => ({
-      Task_ID: t.task_id,
-      'Planner Name': t.planner_name || '',
-      Setor: t.setores?.nome || '',
-      Atividade: t.nome_atividade || '',
-      Responsável: t.responsaveis?.nome || '',
-      Prioridade: t.prioridade_nivel || '',
-      'Prioridade_Descrição': t.prioridade_descricao || '',
-      Frequencia: t.frequencia || '',
-      Classificação: t.classificacao || '',
-      'Dia Da Semana': t.dia_da_semana || '',
-      'Dia Útil': t.dia_util || '',
-    }))
-    const worksheet = XLSX.utils.json_to_sheet(dadosExportacao)
-    const workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Lista')
-    XLSX.writeFile(workbook, `Exportacao_Tarefas_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.xlsx`)
+  // Exporta planilha completa com DUAS abas (formato que o import espera):
+  //   • Lista   → atividades
+  //   • ListBox → parâmetros (setores, responsáveis, prioridades, frequências, classificações, feriados)
+  const exportarParaExcel = async () => {
+    const toastId = toast.loading('A preparar planilha...')
+    try {
+      const [
+        { data: setoresData },
+        { data: respsData },
+        { data: priosData },
+        { data: freqsData },
+        { data: classifsData },
+        { data: feriadosData },
+      ] = await Promise.all([
+        supabase.from('setores').select('nome').order('nome'),
+        supabase.from('responsaveis').select('nome, email').order('nome'),
+        supabase.from('prioridades').select('nivel, descricao').order('nivel'),
+        supabase.from('frequencias').select('nome').order('nome'),
+        supabase.from('classificacoes').select('nome').order('nome'),
+        supabase.from('feriados').select('data, nome').order('data'),
+      ])
+
+      // ListBox: cada coluna pode ter um número diferente de linhas,
+      // alinhamos pelo maior; células faltantes ficam em branco.
+      const maxLen = Math.max(
+        setoresData?.length || 0,
+        respsData?.length || 0,
+        priosData?.length || 0,
+        freqsData?.length || 0,
+        classifsData?.length || 0,
+        feriadosData?.length || 0,
+        1,
+      )
+      const listBoxRows: any[] = []
+      for (let i = 0; i < maxLen; i++) {
+        listBoxRows.push({
+          Setor: setoresData?.[i]?.nome || '',
+          'Responsável': respsData?.[i]?.nome || '',
+          'e-mail': respsData?.[i]?.email || '',
+          Prioridade: priosData?.[i]?.nivel ?? '',
+          'Prioridade_Descrição': priosData?.[i]?.descricao || '',
+          Frequencia: freqsData?.[i]?.nome || '',
+          'Classificação': classifsData?.[i]?.nome || '',
+          Feriado: feriadosData?.[i]?.data || '',
+          'Nome do Feriado': feriadosData?.[i]?.nome || '',
+        })
+      }
+
+      // Lista: atividades (mesmo formato que o import lê em handleFileUpload)
+      const dadosExportacao = atividades.map((t) => ({
+        Task_ID: t.task_id,
+        'Planner Name': t.planner_name || '',
+        Setor: t.setores?.nome || '',
+        Atividade: t.nome_atividade || '',
+        'Responsável': t.responsaveis?.nome || '',
+        Prioridade: t.prioridade_nivel || '',
+        'Prioridade_Descrição': t.prioridade_descricao || '',
+        Frequencia: t.frequencia || '',
+        'Classificação': t.classificacao || '',
+        'Dia Da Semana': t.dia_da_semana || '',
+        'Dia Útil': t.dia_util || '',
+        Status: t.status || '',
+      }))
+
+      const wsLista = XLSX.utils.json_to_sheet(dadosExportacao)
+      const wsListBox = XLSX.utils.json_to_sheet(listBoxRows)
+      const workbook = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(workbook, wsLista, 'Lista')
+      XLSX.utils.book_append_sheet(workbook, wsListBox, 'ListBox')
+      XLSX.writeFile(workbook, `Exportacao_Tarefas_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.xlsx`)
+
+      toast.success('Planilha exportada! Pode editar e re-importar.', { id: toastId })
+    } catch (e: any) {
+      toast.error('Erro ao exportar planilha.', { id: toastId })
+    }
   }
 
   const parseNumber = (val: any) => {
@@ -561,9 +737,16 @@ export default function Home() {
           <h3 className="text-base font-bold text-[#063955] dark:text-white">Manutenção de Dados (Zona de Perigo)</h3>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Limpe o banco em caso de erro na importação da planilha ou acúmulo de Ad Hocs antigos.</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <button onClick={limparAdHoc} disabled={fazendoUpload} className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-[#efc486] dark:border-amber-500/50 text-[#063955] dark:text-amber-400 hover:bg-[#efc486]/20 dark:hover:bg-amber-500/10 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50">
             <Trash2 size={16} className="text-[#efc486] dark:text-amber-400" /> Limpar Ad Hocs
+          </button>
+          <button
+            onClick={() => { setRespDelOpen(true); setRespDelId(''); setRespDelEscopo('todas'); setRespDelPreview(null) }}
+            disabled={fazendoUpload}
+            className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-[#0f88a8] dark:border-[#38bdf8]/50 text-[#0f88a8] dark:text-[#38bdf8] hover:bg-[#0f88a8]/10 dark:hover:bg-[#38bdf8]/10 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50"
+          >
+            <UserX size={16} /> Apagar por Responsável
           </button>
           <button onClick={limparPlanilhaSincronizada} disabled={fazendoUpload} className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-[#b43a3d] dark:border-[#f87171]/50 text-[#b43a3d] dark:text-[#f87171] hover:bg-[#b43a3d]/10 dark:hover:bg-[#f87171]/10 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50">
             <Trash2 size={16} /> Apagar Base Sincronizada
@@ -614,6 +797,147 @@ export default function Home() {
           {!carregandoDados && atividades.length === 0 && <div className="p-12 text-center text-slate-500 dark:text-slate-400">Nenhuma atividade base cadastrada. Sincronize um ficheiro Excel.</div>}
         </div>
       </main>
+
+      {/* MODAL: Apagar por Responsável */}
+      {respDelOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+          <div
+            className="absolute inset-0 bg-[#031D2D]/60 dark:bg-black/80 backdrop-blur-md transition-opacity"
+            onClick={() => !respDelSaving && setRespDelOpen(false)}
+          />
+          <div className="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-100 dark:border-slate-800 animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-start bg-slate-50/50 dark:bg-slate-950/50">
+              <div>
+                <span className="text-xs text-[#b43a3d] dark:text-[#f87171] font-semibold tracking-wide uppercase">Zona de Perigo</span>
+                <h2 className="text-xl text-slate-900 dark:text-white font-semibold mt-1 flex items-center gap-2">
+                  <UserX size={20} /> Apagar atividades por responsável
+                </h2>
+              </div>
+              <button
+                onClick={() => !respDelSaving && setRespDelOpen(false)}
+                disabled={respDelSaving}
+                className="text-slate-400 hover:text-[#063955] dark:hover:text-white p-2 disabled:opacity-50"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5">
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Selecione um responsável. Vou apagar todas as <strong>rotinas matrizes</strong> dele,
+                junto com as <strong>tarefas diárias</strong> geradas e seus <strong>comentários</strong>.
+                Atividades onde a pessoa aparece junto com outros responsáveis também serão removidas integralmente.
+              </p>
+
+              <div>
+                <label className="text-xs text-slate-500 dark:text-slate-400 font-medium block mb-1">
+                  Responsável
+                </label>
+                <select
+                  value={respDelId}
+                  onChange={(e) => {
+                    setRespDelId(e.target.value)
+                    if (e.target.value) carregarPreviewExclusaoResp(e.target.value, respDelEscopo)
+                    else setRespDelPreview(null)
+                  }}
+                  disabled={respDelSaving}
+                  className="w-full bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-xl px-3 py-3 text-sm outline-none focus:border-[#0f88a8] disabled:opacity-50"
+                >
+                  <option value="" className="dark:bg-slate-900">— Selecione —</option>
+                  {respsLista.map(r => (
+                    <option key={r.id} value={r.id} className="dark:bg-slate-900">
+                      {r.nome}{r.email ? ` (${r.email})` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Escopo: todas / só Ad Hoc / só Base sincronizada */}
+              <div>
+                <label className="text-xs text-slate-500 dark:text-slate-400 font-medium block mb-2">
+                  Escopo da exclusão
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {([
+                    { v: 'todas', label: 'Todas',           desc: 'Ad Hoc + Base' },
+                    { v: 'adhoc', label: 'Só Ad Hoc',       desc: 'Tarefas pontuais' },
+                    { v: 'base',  label: 'Só Base',         desc: 'Rotinas sincronizadas' },
+                  ] as { v: EscopoDel; label: string; desc: string }[]).map(opt => (
+                    <button
+                      key={opt.v}
+                      type="button"
+                      disabled={respDelSaving}
+                      onClick={() => {
+                        setRespDelEscopo(opt.v)
+                        if (respDelId) carregarPreviewExclusaoResp(respDelId, opt.v)
+                      }}
+                      className={`p-3 rounded-xl border text-left transition-colors disabled:opacity-50 ${
+                        respDelEscopo === opt.v
+                          ? 'border-[#0f88a8] bg-[#0f88a8]/10 dark:bg-[#38bdf8]/10'
+                          : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                      }`}
+                    >
+                      <div className={`text-sm font-semibold ${respDelEscopo === opt.v ? 'text-[#0f88a8] dark:text-[#38bdf8]' : 'text-slate-700 dark:text-slate-200'}`}>
+                        {opt.label}
+                      </div>
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">{opt.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {respDelId && (
+                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-100 dark:border-slate-700/50">
+                  {respDelLoading ? (
+                    <div className="text-sm text-slate-500 dark:text-slate-400 animate-pulse">A calcular impacto...</div>
+                  ) : respDelPreview ? (
+                    respDelPreview.atividades === 0 ? (
+                      <div className="text-sm text-slate-600 dark:text-slate-300">
+                        Esse responsável <strong>não tem atividades cadastradas</strong>. Nada a apagar.
+                      </div>
+                    ) : (
+                      <div className="space-y-1 text-sm">
+                        <div className="text-slate-700 dark:text-slate-200">
+                          Serão apagadas:
+                        </div>
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className="bg-[#b43a3d] text-white font-bold text-xs px-2 py-0.5 rounded">
+                            {respDelPreview.atividades}
+                          </span>
+                          <span className="text-slate-600 dark:text-slate-300">atividade(s) matriz</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="bg-[#b43a3d] text-white font-bold text-xs px-2 py-0.5 rounded">
+                            {respDelPreview.tarefas}
+                          </span>
+                          <span className="text-slate-600 dark:text-slate-300">tarefa(s) diária(s) + comentários</span>
+                        </div>
+                      </div>
+                    )
+                  ) : null}
+                </div>
+              )}
+            </div>
+
+            <div className="p-5 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2 bg-slate-50 dark:bg-slate-950">
+              <button
+                onClick={() => setRespDelOpen(false)}
+                disabled={respDelSaving}
+                className="px-5 py-3 rounded-xl text-sm font-semibold text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={apagarPorResponsavel}
+                disabled={respDelSaving || !respDelId || !respDelPreview || respDelPreview.atividades === 0}
+                className="bg-[#b43a3d] hover:bg-[#9a2f31] text-white px-5 py-3 rounded-xl text-sm font-semibold transition-colors shadow-sm disabled:opacity-50"
+              >
+                {respDelSaving ? 'A apagar...' : 'Apagar Atividades'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

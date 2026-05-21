@@ -72,8 +72,15 @@ export default function LoginPage() {
         return
       }
 
+      // Usa a origem atual (funciona em localhost, staging e produção sem hardcode).
+      // Fallback para NEXT_PUBLIC_SITE_URL caso a função rode num contexto sem window.
+      const origin =
+        typeof window !== 'undefined'
+          ? window.location.origin
+          : process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') || ''
+
       const { error } = await supabase.auth.resetPasswordForEmail(emailNormalizado, {
-        redirectTo: 'https://controladoria-os.vercel.app/profile',
+        redirectTo: `${origin}/profile`,
       })
 
       if (error) {

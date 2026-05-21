@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { toPng } from 'html-to-image'
 import jsPDF from 'jspdf'
 import { Toaster, toast } from 'react-hot-toast'
-import { FileText, Info } from 'lucide-react'
+import { FileText, Info, Activity, AlertTriangle, TrendingUp, Zap } from 'lucide-react'
 import { useTheme } from 'next-themes'
 
 const MESES = [
@@ -81,9 +81,9 @@ function InfoTooltip({ text }: { text: string }) {
   )
 }
 
-function Section({ title, subtitle, right, info, children }: { title: string; subtitle?: string; right?: React.ReactNode; info?: string; children: React.ReactNode }) {
+function Section({ title, subtitle, right, info, children, className = '' }: { title: string; subtitle?: string; right?: React.ReactNode; info?: string; children: React.ReactNode; className?: string }) {
   return (
-    <div className="relative hover:z-20 bg-white dark:bg-slate-900 border border-slate-100/50 dark:border-slate-800/50 rounded-2xl shadow-sm hover:shadow-xl dark:hover:shadow-slate-900/50 transition-all duration-500 flex flex-col h-full">
+    <div className={`relative hover:z-20 bg-white dark:bg-slate-900 border border-slate-100/50 dark:border-slate-800/50 rounded-2xl shadow-sm hover:shadow-xl dark:hover:shadow-slate-900/50 transition-all duration-500 flex flex-col h-full ${className}`}>
       <div className="p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/20 dark:bg-slate-950/20 flex items-start justify-between gap-4 shrink-0 rounded-t-2xl">
         <div>
           <div className="flex items-center gap-2">
@@ -96,6 +96,115 @@ function Section({ title, subtitle, right, info, children }: { title: string; su
       </div>
       <div className="p-5 flex-1 relative">
         {children}
+      </div>
+    </div>
+  )
+}
+
+// ─── Hero "Saúde da Operação" ─────────────────────────────────────────────
+// Card grande com semáforo + diagnóstico automático em uma frase.
+type SaudeNivel = 'ok' | 'atencao' | 'critico'
+function HealthHero({ metrics, isDark }: { metrics: any; isDark: boolean }) {
+  // Lógica do semáforo:
+  //   crítico  → +30% das tarefas em atraso OU eficiência <40%
+  //   atenção  → +10% em atraso OU eficiência <70%
+  //   ok       → resto
+  const pctAtraso = metrics.total > 0 ? (metrics.overdue / metrics.total) * 100 : 0
+  const eficiencia = metrics.pct
+
+  let nivel: SaudeNivel = 'ok'
+  if (pctAtraso > 30 || eficiencia < 40) nivel = 'critico'
+  else if (pctAtraso > 10 || eficiencia < 70) nivel = 'atencao'
+
+  const cfg = {
+    ok:      { label: 'Operação saudável', bg: 'from-emerald-50 to-white dark:from-emerald-500/10 dark:to-slate-900', border: 'border-emerald-200 dark:border-emerald-500/30', dot: 'bg-emerald-500', text: 'text-emerald-700 dark:text-emerald-400', icon: <Activity size={28} /> },
+    atencao: { label: 'Requer atenção',    bg: 'from-amber-50 to-white dark:from-amber-500/10 dark:to-slate-900',   border: 'border-amber-200 dark:border-amber-500/30',     dot: 'bg-amber-500',   text: 'text-amber-700 dark:text-amber-400',     icon: <AlertTriangle size={28} /> },
+    critico: { label: 'Situação crítica',  bg: 'from-rose-50 to-white dark:from-rose-500/10 dark:to-slate-900',     border: 'border-rose-200 dark:border-rose-500/30',       dot: 'bg-rose-500 animate-pulse',  text: 'text-rose-700 dark:text-rose-400',       icon: <AlertTriangle size={28} /> },
+  }[nivel]
+
+  // Diagnóstico em uma frase
+  const diagnostico = (() => {
+    if (metrics.total === 0) return 'Sem tarefas no período selecionado.'
+    if (nivel === 'ok')       return `${metrics.pct}% de eficiência, ${metrics.overdue} atrasada(s) de ${metrics.total}. Equipa no ritmo certo.`
+    if (nivel === 'atencao')  return `${metrics.overdue} atrasada(s) (${pctAtraso.toFixed(0)}% do total) e eficiência em ${metrics.pct}%. Vale puxar o foco.`
+    return `Risco alto: ${metrics.overdue} atrasada(s) (${pctAtraso.toFixed(0)}% do total) e eficiência só em ${metrics.pct}%. Ação imediata.`
+  })()
+
+  return (
+    <div className={`mb-6 bg-gradient-to-br ${cfg.bg} border ${cfg.border} rounded-2xl p-6 shadow-sm flex items-center gap-5`}>
+      <div className={`relative flex items-center justify-center w-16 h-16 rounded-2xl bg-white dark:bg-slate-900 shadow-sm border ${cfg.border} ${cfg.text}`}>
+        {cfg.icon}
+        <span className={`absolute -top-1 -right-1 w-4 h-4 rounded-full ${cfg.dot} ring-2 ring-white dark:ring-slate-900`} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-1">
+          <span className={`text-xs uppercase font-bold tracking-widest ${cfg.text}`}>Saúde da Operação</span>
+          <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded ${cfg.text} ${cfg.border} border bg-white/60 dark:bg-slate-900/60`}>
+            {cfg.label}
+          </span>
+        </div>
+        <p className="text-sm text-slate-700 dark:text-slate-200 font-medium leading-snug">{diagnostico}</p>
+      </div>
+    </div>
+  )
+}
+
+// ─── Insights Críticos: alertas automáticos ───────────────────────────────
+type Insight = { tipo: 'warn' | 'danger' | 'ok'; texto: string }
+
+function InsightsCard({ rows, overdueByPerson, bySector, isDark }: any) {
+  const insights: Insight[] = []
+
+  // 1. Top responsável atrasado
+  const piorResp = overdueByPerson[0]
+  if (piorResp && piorResp.value >= 3) {
+    insights.push({
+      tipo: piorResp.value >= 5 ? 'danger' : 'warn',
+      texto: `${piorResp.label} tem ${piorResp.value} tarefa(s) atrasada(s).`,
+    })
+  }
+
+  // 2. Sobrecarga: setor concentra muitas tarefas
+  const totalGeral = rows.length
+  const piorSetor = bySector[0]
+  if (totalGeral > 0 && piorSetor && piorSetor.value / totalGeral > 0.35) {
+    insights.push({
+      tipo: 'warn',
+      texto: `${((piorSetor.value / totalGeral) * 100).toFixed(0)}% das tarefas estão concentradas em ${piorSetor.label}.`,
+    })
+  }
+
+  // 3. Sem responsável definido
+  const semResp = rows.filter((r: any) => getResponsaveis(r.atividades).length === 0).length
+  if (semResp > 0) {
+    insights.push({
+      tipo: 'warn',
+      texto: `${semResp} tarefa(s) sem responsável definido.`,
+    })
+  }
+
+  // Se nenhuma alerta foi disparada → bom sinal
+  if (insights.length === 0) {
+    insights.push({ tipo: 'ok', texto: 'Sem alertas no momento. Continue assim! 🎯' })
+  }
+
+  return (
+    <div className="mb-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
+      <h3 className="text-xs font-bold text-[#063955] dark:text-white uppercase tracking-widest mb-3 flex items-center gap-2">
+        <Zap size={14} className="text-amber-500" /> Insights críticos
+      </h3>
+      <div className="space-y-2">
+        {insights.slice(0, 4).map((ins, i) => {
+          const cor =
+            ins.tipo === 'danger' ? 'border-l-rose-500 bg-rose-50 dark:bg-rose-500/10 text-rose-800 dark:text-rose-200'
+            : ins.tipo === 'warn' ? 'border-l-amber-500 bg-amber-50 dark:bg-amber-500/10 text-amber-900 dark:text-amber-200'
+            : 'border-l-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-200'
+          return (
+            <div key={i} className={`border-l-4 ${cor} px-3 py-2 rounded text-sm font-medium`}>
+              {ins.texto}
+            </div>
+          )
+        })}
       </div>
     </div>
   )
@@ -401,6 +510,7 @@ export default function DashboardPage() {
   const [rows, setRows] = useState<Row[]>([])
   const [loading, setLoading] = useState(true)
   const [gerandoPdf, setGerandoPdf] = useState(false)
+  const [tab, setTab] = useState<'resumo' | 'detalhes'>('resumo')
   
   const [profilesMap, setProfilesMap] = useState<Record<string, string>>({})
 
@@ -855,16 +965,66 @@ export default function DashboardPage() {
       </header>
 
       <div id="dashboard-content" className="bg-slate-50 dark:bg-slate-950 p-2 transition-colors relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-8">
+        {/* Hero: semáforo + diagnóstico em uma frase */}
+        <HealthHero metrics={metrics} isDark={isDark} />
+
+        {/* Insights críticos: até 4 alertas automatizados */}
+        {userRole === 'admin' && (
+          <InsightsCard rows={rows} overdueByPerson={overdueByPerson} bySector={bySector} isDark={isDark} />
+        )}
+
+        {/* 4 KPIs (escolhidos pelo usuário) */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <KPI title="Total Volume" value={metrics.total} isDark={isDark} info="Número total de tarefas atribuídas no período selecionado." />
           <KPI title="Concluídas" value={metrics.done} accent="text-slate-800 dark:text-white" isDark={isDark} />
-          <KPI title="Em Atraso" value={metrics.overdue} accent="text-[#A68A63] dark:text-[#E2B276]" isDark={isDark} info="Tarefas pendentes cuja data limite já foi ultrapassada." />
-          <KPI title="Para Hoje" value={metrics.dueToday} accent="text-slate-800 dark:text-white" isDark={isDark} />
-          <KPI title="Próx. 7 Dias" value={metrics.next7Count} isDark={isDark} />
-          <KPI title="Eficiência" value={`${metrics.pct}%`} accent="text-slate-800 dark:text-white" isDark={isDark} info="Rácio entre as tarefas já concluídas e o volume total atribuído." />
+          <KPI title="Em Atraso" value={metrics.overdue} accent="text-rose-700 dark:text-rose-400" isDark={isDark} info="Tarefas pendentes cuja data limite já foi ultrapassada." />
+          <KPI title="Eficiência" value={`${metrics.pct}%`} accent="text-emerald-700 dark:text-emerald-400" isDark={isDark} info="Rácio entre as tarefas já concluídas e o volume total atribuído." />
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+        {/* Tab switcher */}
+        <div className="flex gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl mb-6 w-fit">
+          <button
+            onClick={() => setTab('resumo')}
+            className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${tab === 'resumo' ? 'bg-white dark:bg-slate-700 shadow-sm text-[#063955] dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+          >
+            Resumo
+          </button>
+          <button
+            onClick={() => setTab('detalhes')}
+            className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${tab === 'detalhes' ? 'bg-white dark:bg-slate-700 shadow-sm text-[#063955] dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+          >
+            Detalhes
+          </button>
+        </div>
+
+        {tab === 'resumo' ? (
+          /* RESUMO: só os 2 gráficos mais importantes */
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+            <Section
+              title="Produtividade Diária"
+              subtitle="Tarefas concluídas no período"
+              info="Volume de tarefas terminadas dia a dia. Picos altos indicam dias de maior esforço da equipa."
+              right={loading ? <span className="text-xs font-medium text-slate-400 animate-pulse">A carregar…</span> : null}
+              className="xl:col-span-2"
+            >
+              <LineChart points={donePerDay} colors={colors} />
+            </Section>
+
+            <Section
+              title="Entregas por Pessoa"
+              subtitle="Pontualidade individual"
+              info="Compara entregas no prazo (verde) com atrasadas (cinza) por colaborador."
+            >
+              {deliveriesByPerson.length > 0 ? (
+                <DoubleBarList items={deliveriesByPerson} profilesMap={profilesMap} colors={colors} />
+              ) : (
+                <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-100/50 dark:bg-slate-800/50 rounded-xl p-6">Ainda não há tarefas concluídas neste período.</div>
+              )}
+            </Section>
+          </div>
+        ) : (
+          /* DETALHES: tudo */
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
           <Section 
             title="Produtividade Diária" 
             subtitle="Tarefas concluídas no período" 
@@ -975,7 +1135,8 @@ export default function DashboardPage() {
               </Section>
             </>
           )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   )
