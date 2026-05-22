@@ -618,10 +618,67 @@ export default function Home() {
           }
         })
 
+        // ─── Detecta atividades NOVAS antes do upsert ─────────────────────
+        // (são as task_ids do arquivo que ainda não existem no banco)
+        const taskIdsArquivo = atividadesParaSalvar.map(a => a.task_id).filter(Boolean)
+        let novasAtividades: typeof atividadesParaSalvar = []
+        if (taskIdsArquivo.length > 0) {
+          const chunkSize = 200
+          const existentes = new Set<string>()
+          for (let i = 0; i < taskIdsArquivo.length; i += chunkSize) {
+            const chunk = taskIdsArquivo.slice(i, i + chunkSize)
+            const { data: ex } = await supabase
+              .from('atividades').select('task_id').in('task_id', chunk)
+            ;(ex || []).forEach((a: any) => existentes.add(a.task_id))
+          }
+          novasAtividades = atividadesParaSalvar.filter(a => !existentes.has(a.task_id))
+        }
+
         const { error: upsertError } = await supabase.from('atividades').upsert(atividadesParaSalvar, { onConflict: 'task_id' })
         if (upsertError) throw new Error(upsertError.message)
 
-        toast.success('Planilha sincronizada com sucesso!', { id: toastId })
+        // ─── Notificações: 1 email por responsável c/ resumo das novas ────
+        if (novasAtividades.length > 0 && dbResponsaveis) {
+          // Agrupa as novas por responsável (responsavel_id → lista)
+          const porResp = new Map<string, typeof novasAtividades>()
+          for (const a of novasAtividades) {
+            if (!a.responsavel_id) continue
+            const key = String(a.responsavel_id)
+            if (!porResp.has(key)) porResp.set(key, [])
+            porResp.get(key)!.push(a)
+          }
+
+          // Pra cada responsável com email, dispara email em background
+          for (const [respId, atvs] of porResp) {
+            const resp = dbResponsaveis.find((r: any) => String(r.id) === respId)
+            if (!resp?.email) continue
+
+            const linhasHtml = atvs.map(a => {
+              const freq = a.frequencia ? `<em style="opacity:.7">${a.frequencia}</em>` : ''
+              return `<li><strong>${a.nome_atividade}</strong> ${freq ? '· ' + freq : ''}</li>`
+            }).join('')
+
+            // Sem await → não bloqueia o fluxo; falhas são log only
+            fetch('/api/notify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                to: resp.email,
+                subject: `[Portal] ${atvs.length} nova(s) atividade(s) atribuída(s) a você`,
+                taskName: 'Sincronização de Atividades',
+                action: `criadas e atribuídas a você`,
+                userName: resp.nome,
+                observacoes: `As seguintes atividades foram cadastradas e você é o responsável:<br/><br/><ul>${linhasHtml}</ul><br/>Os cartões vão aparecer no Kanban quando o admin executar a Sincronização Mensal.`,
+              }),
+            }).catch(err => console.warn('[import] email falhou pra', resp.email, err))
+          }
+        }
+
+        const totalNovos = novasAtividades.length
+        const msg = totalNovos > 0
+          ? `Planilha sincronizada! ${totalNovos} nova(s) atividade(s) — emails enviados aos responsáveis.`
+          : 'Planilha sincronizada com sucesso!'
+        toast.success(msg, { id: toastId })
         fetchDados()
       } catch (err: any) {
         toast.error('Erro na importação.', { id: toastId })

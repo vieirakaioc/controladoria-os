@@ -197,6 +197,28 @@ export function useTarefaMutations({
       let emailObs = drawerObs || ''
       if (drawerAnexo) emailObs += `<br/><br/>📎 <strong>Anexo adicionado:</strong> <a href="${drawerAnexo}">Ver Ficheiro</a>`
       sendEmailNotification(selected.id, 'atualizada com novas observações/anexos', emailObs)
+
+      // ─── Notifica responsáveis NOVOS que foram adicionados na lista ───
+      // Compara drawerResps (após edit) com a original (antes do save)
+      const originalResps = getResponsaveis(selected.atividades)
+      const addedResps = drawerResps.filter(
+        nr => !originalResps.some(or => or.id === nr.id)
+      )
+      for (const r of addedResps) {
+        if (!r.email) continue
+        fetch('/api/notify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: r.email,
+            subject: `[Portal] Você foi adicionado à atividade "${drawerNome}"`,
+            taskName: drawerNome,
+            action: 'agora está sob sua responsabilidade',
+            userName,
+            observacoes: `${userName} te adicionou como responsável nesta atividade. Acesse o portal pra ver os detalhes.`,
+          }),
+        }).catch(err => console.warn('[salvarDrawer] email reassign falhou:', err))
+      }
     } catch {
       toast.error('Erro ao guardar os detalhes.', { id: toastId })
     } finally {
