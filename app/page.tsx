@@ -798,11 +798,48 @@ export default function Home() {
           }
         }
 
+        // ─── Detecta atividades ÓRFÃS (modo espelho) ───────────────────────
+        // São atividades base no banco que NÃO vieram nessa planilha. Pergunta
+        // se quer apagar pra deixar a base idêntica ao arquivo. Ad Hocs ficam
+        // sempre intactas — elas não vivem na planilha.
+        const taskIdsArquivoSet = new Set(atividadesParaSalvar.map(a => a.task_id))
+        const { data: todasBase } = await supabase
+          .from('atividades').select('task_id, nome_atividade, planner_name, responsaveis (nome)')
+          .or('planner_name.neq."Ad Hoc",planner_name.is.null')
+        const orfas = (todasBase || []).filter((a: any) => !taskIdsArquivoSet.has(a.task_id))
+
         const totalNovos = novasAtividades.length
-        const msg = totalNovos > 0
-          ? `Planilha sincronizada! ${totalNovos} nova(s) atividade(s) — emails enviados aos responsáveis.`
+        let msg = totalNovos > 0
+          ? `Planilha sincronizada! ${totalNovos} nova(s) atividade(s).`
           : 'Planilha sincronizada com sucesso!'
         toast.success(msg, { id: toastId })
+
+        // Se tem órfãs, pergunta se apaga (fora do toast pra não bloquear UI)
+        if (orfas.length > 0) {
+          const exemplos = orfas.slice(0, 5)
+            .map((a: any) => `  • ${a.nome_atividade}${a.responsaveis?.nome ? ` (${a.responsaveis.nome})` : ''}`)
+            .join('\n')
+          const sufixo = orfas.length > 5 ? `\n  ...e mais ${orfas.length - 5}` : ''
+
+          const confirmar = window.confirm(
+            `🪞 MODO ESPELHO — ATIVIDADES ÓRFÃS\n\n` +
+            `${orfas.length} atividade(s) da base existem no banco mas NÃO estão nesta planilha:\n\n` +
+            `${exemplos}${sufixo}\n\n` +
+            `Quer APAGAR essas atividades (e suas tarefas diárias) pra deixar a base idêntica à planilha?\n\n` +
+            `[OK] = apagar  |  [Cancelar] = manter`
+          )
+          if (confirmar) {
+            const tid = toast.loading(`A apagar ${orfas.length} atividade(s) órfã(s)...`)
+            try {
+              const orfasIds = orfas.map((a: any) => a.task_id)
+              await deletarCascataPorTaskIds(orfasIds)
+              toast.success(`${orfas.length} atividade(s) órfã(s) removida(s)!`, { id: tid })
+            } catch {
+              toast.error('Erro ao apagar órfãs (base parcialmente espelhada).', { id: tid })
+            }
+          }
+        }
+
         fetchDados()
       } catch (err: any) {
         toast.error('Erro na importação.', { id: toastId })
