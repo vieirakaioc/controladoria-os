@@ -40,13 +40,25 @@ export default function Home() {
 
   // ─── Exclusão por responsável (Feature 1) ─────────────────────────────
   type EscopoDel = 'todas' | 'adhoc' | 'base'
+  /** -1 = "Todos" (apaga matriz + tudo). 0..11 = mês específico (só tarefas_diarias) */
+  type MesDel = number
   const [respsLista, setRespsLista] = useState<{ id: string; nome: string; email?: string }[]>([])
   const [respDelOpen, setRespDelOpen] = useState(false)
   const [respDelId, setRespDelId] = useState<string>('')
   const [respDelEscopo, setRespDelEscopo] = useState<EscopoDel>('todas')
+  const [respDelMes, setRespDelMes] = useState<MesDel>(-1)
+  const [respDelAno, setRespDelAno] = useState<number>(new Date().getFullYear())
   const [respDelPreview, setRespDelPreview] = useState<{ atividades: number; tarefas: number } | null>(null)
   const [respDelLoading, setRespDelLoading] = useState(false)
   const [respDelSaving, setRespDelSaving] = useState(false)
+
+  // ─── Exclusão da base sincronizada (modal próprio com escolha de mês) ──
+  const [baseDelOpen, setBaseDelOpen] = useState(false)
+  const [baseDelMes, setBaseDelMes] = useState<MesDel>(-1)
+  const [baseDelAno, setBaseDelAno] = useState<number>(new Date().getFullYear())
+  const [baseDelPreview, setBaseDelPreview] = useState<{ atividades: number; tarefas: number } | null>(null)
+  const [baseDelLoading, setBaseDelLoading] = useState(false)
+  const [baseDelSaving, setBaseDelSaving] = useState(false)
 
   useEffect(() => {
     const inicializar = async () => {
@@ -285,6 +297,37 @@ export default function Home() {
     await deletarCascataPorTaskIds(taskIds)
   }
 
+  // ─── Helper: range ISO (yyyy-mm-dd) de um mês específico ──────────────
+  const mesRange = (mes: number, ano: number): { inicio: string; fim: string } => {
+    const ini = new Date(ano, mes, 1)
+    const fim = new Date(ano, mes + 1, 1)
+    const iso = (d: Date) => d.toISOString().slice(0, 10)
+    return { inicio: iso(ini), fim: iso(fim) }
+  }
+
+  // ─── Apaga só tarefas_diarias do mês (+ comentários), mantém matriz ───
+  // Usado pra limpar um mês específico sem afetar outros.
+  const deletarTarefasDoMes = async (taskIds: string[], mes: number, ano: number) => {
+    if (taskIds.length === 0) return
+    const chunkSize = 150
+    const { inicio, fim } = mesRange(mes, ano)
+    let dailyIds: string[] = []
+    for (let i = 0; i < taskIds.length; i += chunkSize) {
+      const chunk = taskIds.slice(i, i + chunkSize)
+      const { data: tdData } = await supabase
+        .from('tarefas_diarias').select('id')
+        .in('atividade_id', chunk)
+        .gte('data_vencimento', inicio).lt('data_vencimento', fim)
+      if (tdData) dailyIds = dailyIds.concat(tdData.map((d: any) => d.id))
+    }
+    for (let i = 0; i < dailyIds.length; i += chunkSize) {
+      await supabase.from('tarefa_comentarios').delete().in('tarefa_id', dailyIds.slice(i, i + chunkSize))
+    }
+    for (let i = 0; i < dailyIds.length; i += chunkSize) {
+      await supabase.from('tarefas_diarias').delete().in('id', dailyIds.slice(i, i + chunkSize))
+    }
+  }
+
   // ─── Cascade delete reutilizável ──────────────────────────────────────
   // Recebe uma lista de task_ids (atividades) e apaga em ordem:
   //   tarefa_comentarios → tarefas_diarias → atividades
@@ -327,7 +370,7 @@ export default function Home() {
     return Array.from(all)
   }
 
-  const carregarPreviewExclusaoResp = async (respId: string, escopo: EscopoDel) => {
+  const carregarPreviewExclusaoResp = async (respId: string, escopo: EscopoDel, mes: MesDel, ano: number) => {
     if (!respId) { setRespDelPreview(null); return }
     setRespDelLoading(true)
     try {
@@ -336,18 +379,19 @@ export default function Home() {
         setRespDelPreview({ atividades: 0, tarefas: 0 })
         return
       }
-      // Conta tarefas_diarias vinculadas (em chunks pra não estourar limite de IN)
       const chunkSize = 150
       let tarefas = 0
+      const filtraMes = mes >= 0
+      const { inicio, fim } = filtraMes ? mesRange(mes, ano) : { inicio: '', fim: '' }
       for (let i = 0; i < taskIds.length; i += chunkSize) {
         const chunk = taskIds.slice(i, i + chunkSize)
-        const { count } = await supabase
-          .from('tarefas_diarias')
-          .select('id', { count: 'exact', head: true })
-          .in('atividade_id', chunk)
+        let q = supabase.from('tarefas_diarias').select('id', { count: 'exact', head: true }).in('atividade_id', chunk)
+        if (filtraMes) q = q.gte('data_vencimento', inicio).lt('data_vencimento', fim)
+        const { count } = await q
         tarefas += count || 0
       }
-      setRespDelPreview({ atividades: taskIds.length, tarefas })
+      // Quando filtrando por mês, NÃO apagamos atividades matrizes → mostra 0
+      setRespDelPreview({ atividades: filtraMes ? 0 : taskIds.length, tarefas })
     } catch (e) {
       toast.error('Não consegui calcular o preview da exclusão.')
       setRespDelPreview(null)
@@ -360,37 +404,117 @@ export default function Home() {
     if (!respDelId) return
     const nome = respsLista.find(r => r.id === respDelId)?.nome || 'esse responsável'
     const labelEscopo =
-      respDelEscopo === 'adhoc' ? 'apenas Ad Hocs'
-      : respDelEscopo === 'base' ? 'apenas Base Sincronizada'
-      : 'TODAS as atividades (Ad Hoc + Base)'
+      respDelEscopo === 'adhoc' ? 'Ad Hocs'
+      : respDelEscopo === 'base' ? 'Base Sincronizada'
+      : 'todas (Ad Hoc + Base)'
+    const filtraMes = respDelMes >= 0
+    const labelMes = filtraMes ? `${MESES[respDelMes].n}/${respDelAno}` : 'TODOS os meses'
+    const acao = filtraMes
+      ? `apagará as tarefas diárias de ${nome} no mês ${labelMes} (escopo: ${labelEscopo}). As rotinas matrizes ficam preservadas.`
+      : `apagará ${labelEscopo === 'todas (Ad Hoc + Base)' ? 'TODAS as' : labelEscopo + ' de'} atividades de "${nome}" + todas as tarefas diárias e comentários vinculados.`
 
-    if (!window.confirm(
-      `⚠️ ATENÇÃO: apagará ${labelEscopo} de "${nome}" + todas as tarefas diárias e comentários vinculados.\n\nEsta ação NÃO pode ser desfeita. Deseja continuar?`
-    )) return
+    if (!window.confirm(`⚠️ ATENÇÃO: ${acao}\n\nEsta ação NÃO pode ser desfeita. Deseja continuar?`)) return
     if (window.prompt(`Digite o nome "${nome}" para confirmar:`) !== nome) {
       toast.error('Confirmação não bateu. Operação cancelada.')
       return
     }
 
     setRespDelSaving(true)
-    const toastId = toast.loading(`A apagar atividades de ${nome}...`)
+    const toastId = toast.loading(`A apagar tarefas de ${nome}...`)
     try {
       const taskIds = await taskIdsDoResponsavel(respDelId, respDelEscopo)
       if (taskIds.length === 0) {
         toast.success('Esse responsável já não tinha atividades nesse escopo.', { id: toastId })
+      } else if (filtraMes) {
+        // Mês específico: apaga só tarefas_diarias do mês; matrizes preservadas
+        await deletarTarefasDoMes(taskIds, respDelMes, respDelAno)
+        toast.success(`Tarefas de ${labelMes} apagadas pra ${nome}.`, { id: toastId })
       } else {
+        // Sem filtro de mês: cascade completo
         await deletarCascataPorTaskIds(taskIds)
         toast.success(`${taskIds.length} atividade(s) de ${nome} apagada(s)!`, { id: toastId })
       }
       setRespDelOpen(false)
       setRespDelId('')
       setRespDelEscopo('todas')
+      setRespDelMes(-1)
       setRespDelPreview(null)
       fetchDados()
     } catch (e: any) {
       toast.error('Erro ao apagar atividades.', { id: toastId })
     } finally {
       setRespDelSaving(false)
+    }
+  }
+
+  // ─── Apagar Base Sincronizada (com opção de mês) ──────────────────────
+  const carregarPreviewBaseDel = async (mes: MesDel, ano: number) => {
+    setBaseDelLoading(true)
+    try {
+      // Pega todos os task_ids da base (não-Ad Hoc)
+      const { data: atvData } = await supabase
+        .from('atividades').select('task_id')
+        .or('planner_name.neq."Ad Hoc",planner_name.is.null')
+      const taskIds = (atvData || []).map((a: any) => a.task_id)
+      if (taskIds.length === 0) {
+        setBaseDelPreview({ atividades: 0, tarefas: 0 })
+        return
+      }
+      const chunkSize = 150
+      let tarefas = 0
+      const filtraMes = mes >= 0
+      const { inicio, fim } = filtraMes ? mesRange(mes, ano) : { inicio: '', fim: '' }
+      for (let i = 0; i < taskIds.length; i += chunkSize) {
+        const chunk = taskIds.slice(i, i + chunkSize)
+        let q = supabase.from('tarefas_diarias').select('id', { count: 'exact', head: true }).in('atividade_id', chunk)
+        if (filtraMes) q = q.gte('data_vencimento', inicio).lt('data_vencimento', fim)
+        const { count } = await q
+        tarefas += count || 0
+      }
+      setBaseDelPreview({ atividades: filtraMes ? 0 : taskIds.length, tarefas })
+    } catch {
+      setBaseDelPreview(null)
+    } finally {
+      setBaseDelLoading(false)
+    }
+  }
+
+  const apagarBaseComMes = async () => {
+    const filtraMes = baseDelMes >= 0
+    const labelMes = filtraMes ? `${MESES[baseDelMes].n}/${baseDelAno}` : 'TODOS os meses (matriz inteira)'
+    const acao = filtraMes
+      ? `Apagará as tarefas diárias da Base Sincronizada no mês ${labelMes}. As rotinas matrizes ficam preservadas.`
+      : `Apagará TODAS as rotinas base e seus cartões. Ad Hocs ficam intactas.`
+
+    if (!window.confirm(`⚠️ ATENÇÃO: ${acao}\n\nEsta ação NÃO pode ser desfeita. Deseja continuar?`)) return
+    if (window.prompt('Digite APAGAR para confirmar:') !== 'APAGAR') {
+      toast.error('Confirmação não bateu. Operação cancelada.')
+      return
+    }
+
+    setBaseDelSaving(true)
+    const toastId = toast.loading('A limpar...')
+    try {
+      if (filtraMes) {
+        // Pega task_ids da base e apaga só tarefas_diarias do mês
+        const { data: atvData } = await supabase
+          .from('atividades').select('task_id')
+          .or('planner_name.neq."Ad Hoc",planner_name.is.null')
+        const taskIds = (atvData || []).map((a: any) => a.task_id)
+        await deletarTarefasDoMes(taskIds, baseDelMes, baseDelAno)
+        toast.success(`Tarefas de ${labelMes} (base) apagadas.`, { id: toastId })
+      } else {
+        await apagarPorPlanner(false)
+        toast.success('Planilha base limpa!', { id: toastId })
+      }
+      setBaseDelOpen(false)
+      setBaseDelMes(-1)
+      setBaseDelPreview(null)
+      fetchDados()
+    } catch (e: any) {
+      toast.error('Erro ao limpar.', { id: toastId })
+    } finally {
+      setBaseDelSaving(false)
     }
   }
 
@@ -805,7 +929,11 @@ export default function Home() {
           >
             <UserX size={16} /> Apagar por Responsável
           </button>
-          <button onClick={limparPlanilhaSincronizada} disabled={fazendoUpload} className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-[#b43a3d] dark:border-[#f87171]/50 text-[#b43a3d] dark:text-[#f87171] hover:bg-[#b43a3d]/10 dark:hover:bg-[#f87171]/10 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50">
+          <button
+            onClick={() => { setBaseDelOpen(true); setBaseDelMes(-1); setBaseDelPreview(null); carregarPreviewBaseDel(-1, baseDelAno) }}
+            disabled={fazendoUpload}
+            className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-[#b43a3d] dark:border-[#f87171]/50 text-[#b43a3d] dark:text-[#f87171] hover:bg-[#b43a3d]/10 dark:hover:bg-[#f87171]/10 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50"
+          >
             <Trash2 size={16} /> Apagar Base Sincronizada
           </button>
         </div>
@@ -894,7 +1022,7 @@ export default function Home() {
                   value={respDelId}
                   onChange={(e) => {
                     setRespDelId(e.target.value)
-                    if (e.target.value) carregarPreviewExclusaoResp(e.target.value, respDelEscopo)
+                    if (e.target.value) carregarPreviewExclusaoResp(e.target.value, respDelEscopo, respDelMes, respDelAno)
                     else setRespDelPreview(null)
                   }}
                   disabled={respDelSaving}
@@ -926,7 +1054,7 @@ export default function Home() {
                       disabled={respDelSaving}
                       onClick={() => {
                         setRespDelEscopo(opt.v)
-                        if (respDelId) carregarPreviewExclusaoResp(respDelId, opt.v)
+                        if (respDelId) carregarPreviewExclusaoResp(respDelId, opt.v, respDelMes, respDelAno)
                       }}
                       className={`p-3 rounded-xl border text-left transition-colors disabled:opacity-50 ${
                         respDelEscopo === opt.v
@@ -943,31 +1071,67 @@ export default function Home() {
                 </div>
               </div>
 
+              {/* Mês / Ano (opcional) */}
+              <div>
+                <label className="text-xs text-slate-500 dark:text-slate-400 font-medium block mb-2">
+                  Filtrar por mês <span className="text-slate-400">(opcional — sem filtro apaga matriz inteira)</span>
+                </label>
+                <div className="flex gap-2 items-center">
+                  <select
+                    value={respDelMes}
+                    onChange={(e) => {
+                      const m = Number(e.target.value)
+                      setRespDelMes(m)
+                      if (respDelId) carregarPreviewExclusaoResp(respDelId, respDelEscopo, m, respDelAno)
+                    }}
+                    disabled={respDelSaving}
+                    className="flex-1 bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#0f88a8] disabled:opacity-50"
+                  >
+                    <option value={-1} className="dark:bg-slate-900">Todos os meses (apaga matriz)</option>
+                    {MESES.map(m => <option key={m.v} value={m.v} className="dark:bg-slate-900">{m.n}</option>)}
+                  </select>
+                  <input
+                    type="number"
+                    value={respDelAno}
+                    onChange={(e) => {
+                      const a = Number(e.target.value)
+                      setRespDelAno(a)
+                      if (respDelId && respDelMes >= 0) carregarPreviewExclusaoResp(respDelId, respDelEscopo, respDelMes, a)
+                    }}
+                    disabled={respDelSaving || respDelMes < 0}
+                    className="w-24 bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#0f88a8] disabled:opacity-50"
+                  />
+                </div>
+                {respDelMes >= 0 && (
+                  <p className="text-[11px] text-emerald-700 dark:text-emerald-400 mt-1.5">
+                    🛡️ Modo seguro: apaga só as tarefas de {MESES[respDelMes].n}/{respDelAno}. Rotinas matrizes ficam preservadas pros outros meses.
+                  </p>
+                )}
+              </div>
+
               {respDelId && (
                 <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-100 dark:border-slate-700/50">
                   {respDelLoading ? (
                     <div className="text-sm text-slate-500 dark:text-slate-400 animate-pulse">A calcular impacto...</div>
                   ) : respDelPreview ? (
-                    respDelPreview.atividades === 0 ? (
+                    respDelPreview.tarefas === 0 && respDelPreview.atividades === 0 ? (
                       <div className="text-sm text-slate-600 dark:text-slate-300">
-                        Esse responsável <strong>não tem atividades cadastradas</strong>. Nada a apagar.
+                        Nada a apagar nesse recorte.
                       </div>
                     ) : (
                       <div className="space-y-1 text-sm">
-                        <div className="text-slate-700 dark:text-slate-200">
-                          Serão apagadas:
-                        </div>
-                        <div className="flex items-center gap-2 mt-2">
-                          <span className="bg-[#b43a3d] text-white font-bold text-xs px-2 py-0.5 rounded">
-                            {respDelPreview.atividades}
-                          </span>
-                          <span className="text-slate-600 dark:text-slate-300">atividade(s) matriz</span>
-                        </div>
+                        <div className="text-slate-700 dark:text-slate-200">Serão apagadas:</div>
+                        {respDelPreview.atividades > 0 && (
+                          <div className="flex items-center gap-2 mt-2">
+                            <span className="bg-[#b43a3d] text-white font-bold text-xs px-2 py-0.5 rounded">{respDelPreview.atividades}</span>
+                            <span className="text-slate-600 dark:text-slate-300">rotina(s) matriz</span>
+                          </div>
+                        )}
                         <div className="flex items-center gap-2">
-                          <span className="bg-[#b43a3d] text-white font-bold text-xs px-2 py-0.5 rounded">
-                            {respDelPreview.tarefas}
+                          <span className="bg-[#b43a3d] text-white font-bold text-xs px-2 py-0.5 rounded">{respDelPreview.tarefas}</span>
+                          <span className="text-slate-600 dark:text-slate-300">
+                            tarefa(s) diária(s) + comentários{respDelMes >= 0 ? ` de ${MESES[respDelMes].n}/${respDelAno}` : ''}
                           </span>
-                          <span className="text-slate-600 dark:text-slate-300">tarefa(s) diária(s) + comentários</span>
                         </div>
                       </div>
                     )
@@ -986,10 +1150,123 @@ export default function Home() {
               </button>
               <button
                 onClick={apagarPorResponsavel}
-                disabled={respDelSaving || !respDelId || !respDelPreview || respDelPreview.atividades === 0}
+                disabled={respDelSaving || !respDelId || !respDelPreview || (respDelPreview.atividades === 0 && respDelPreview.tarefas === 0)}
                 className="bg-[#b43a3d] hover:bg-[#9a2f31] text-white px-5 py-3 rounded-xl text-sm font-semibold transition-colors shadow-sm disabled:opacity-50"
               >
                 {respDelSaving ? 'A apagar...' : 'Apagar Atividades'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: Apagar Base Sincronizada (com filtro de mês) */}
+      {baseDelOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+          <div
+            className="absolute inset-0 bg-[#031D2D]/60 dark:bg-black/80 backdrop-blur-md transition-opacity"
+            onClick={() => !baseDelSaving && setBaseDelOpen(false)}
+          />
+          <div className="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-100 dark:border-slate-800 animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-start bg-slate-50/50 dark:bg-slate-950/50">
+              <div>
+                <span className="text-xs text-[#b43a3d] dark:text-[#f87171] font-semibold tracking-wide uppercase">Zona de Perigo</span>
+                <h2 className="text-xl text-slate-900 dark:text-white font-semibold mt-1 flex items-center gap-2">
+                  <Trash2 size={20} /> Apagar Base Sincronizada
+                </h2>
+              </div>
+              <button onClick={() => !baseDelSaving && setBaseDelOpen(false)} disabled={baseDelSaving} className="text-slate-400 hover:text-[#063955] dark:hover:text-white p-2 disabled:opacity-50">✕</button>
+            </div>
+
+            <div className="p-6 space-y-5">
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Apaga as rotinas matrizes (não-Ad Hoc) ou apenas as tarefas geradas em um mês específico.
+                Tarefas Ad Hoc <strong>nunca</strong> são afetadas por essa ação.
+              </p>
+
+              <div>
+                <label className="text-xs text-slate-500 dark:text-slate-400 font-medium block mb-2">
+                  Filtrar por mês <span className="text-slate-400">(opcional)</span>
+                </label>
+                <div className="flex gap-2 items-center">
+                  <select
+                    value={baseDelMes}
+                    onChange={(e) => {
+                      const m = Number(e.target.value)
+                      setBaseDelMes(m)
+                      carregarPreviewBaseDel(m, baseDelAno)
+                    }}
+                    disabled={baseDelSaving}
+                    className="flex-1 bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#0f88a8] disabled:opacity-50"
+                  >
+                    <option value={-1} className="dark:bg-slate-900">Todos os meses (apaga matriz)</option>
+                    {MESES.map(m => <option key={m.v} value={m.v} className="dark:bg-slate-900">{m.n}</option>)}
+                  </select>
+                  <input
+                    type="number"
+                    value={baseDelAno}
+                    onChange={(e) => {
+                      const a = Number(e.target.value)
+                      setBaseDelAno(a)
+                      if (baseDelMes >= 0) carregarPreviewBaseDel(baseDelMes, a)
+                    }}
+                    disabled={baseDelSaving || baseDelMes < 0}
+                    className="w-24 bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#0f88a8] disabled:opacity-50"
+                  />
+                </div>
+                {baseDelMes >= 0 && (
+                  <p className="text-[11px] text-emerald-700 dark:text-emerald-400 mt-1.5">
+                    🛡️ Modo seguro: apaga só os cartões do Kanban de {MESES[baseDelMes].n}/{baseDelAno}. As rotinas ficam preservadas.
+                  </p>
+                )}
+                {baseDelMes < 0 && (
+                  <p className="text-[11px] text-amber-700 dark:text-amber-400 mt-1.5">
+                    ⚠️ Modo destrutivo: apaga TODAS as rotinas base + cartões. Você precisará reimportar a planilha pra recriar.
+                  </p>
+                )}
+              </div>
+
+              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-100 dark:border-slate-700/50">
+                {baseDelLoading ? (
+                  <div className="text-sm text-slate-500 dark:text-slate-400 animate-pulse">A calcular impacto...</div>
+                ) : baseDelPreview ? (
+                  baseDelPreview.tarefas === 0 && baseDelPreview.atividades === 0 ? (
+                    <div className="text-sm text-slate-600 dark:text-slate-300">Nada a apagar nesse recorte.</div>
+                  ) : (
+                    <div className="space-y-1 text-sm">
+                      <div className="text-slate-700 dark:text-slate-200">Serão apagadas:</div>
+                      {baseDelPreview.atividades > 0 && (
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className="bg-[#b43a3d] text-white font-bold text-xs px-2 py-0.5 rounded">{baseDelPreview.atividades}</span>
+                          <span className="text-slate-600 dark:text-slate-300">rotina(s) matriz</span>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2">
+                        <span className="bg-[#b43a3d] text-white font-bold text-xs px-2 py-0.5 rounded">{baseDelPreview.tarefas}</span>
+                        <span className="text-slate-600 dark:text-slate-300">
+                          tarefa(s) diária(s) + comentários{baseDelMes >= 0 ? ` de ${MESES[baseDelMes].n}/${baseDelAno}` : ''}
+                        </span>
+                      </div>
+                    </div>
+                  )
+                ) : null}
+              </div>
+            </div>
+
+            <div className="p-5 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2 bg-slate-50 dark:bg-slate-950">
+              <button
+                onClick={() => setBaseDelOpen(false)}
+                disabled={baseDelSaving}
+                className="px-5 py-3 rounded-xl text-sm font-semibold text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={apagarBaseComMes}
+                disabled={baseDelSaving || !baseDelPreview || (baseDelPreview.atividades === 0 && baseDelPreview.tarefas === 0)}
+                className="bg-[#b43a3d] hover:bg-[#9a2f31] text-white px-5 py-3 rounded-xl text-sm font-semibold transition-colors shadow-sm disabled:opacity-50"
+              >
+                {baseDelSaving ? 'A apagar...' : 'Apagar Base'}
               </button>
             </div>
           </div>
