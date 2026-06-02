@@ -128,8 +128,10 @@ export default function Home() {
 
   const calcularDatasVencimento = (regra: any, mes: number, ano: number) => {
     const datas: string[] = []
-    const freq = (regra.frequencia || '').toLowerCase()
-    const classif = (regra.classificacao || '').toLowerCase()
+    // Normaliza acentos/case: "Diária" / "diaria" / "DIÁRIA" viram "diaria"
+    const norm = (s: string) => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
+    const freq = norm(regra.frequencia)
+    const classif = norm(regra.classificacao)
 
     // ── DECENDIAL: 3 entregas por mês nos dias 1, 11 e 21 ─────────────────
     // (mantém também o atalho histórico de "semanal + classificacao=fechamento"
@@ -149,25 +151,27 @@ export default function Home() {
       return datas
     }
 
-    if (freq === 'semanal' && regra.dia_da_semana) {
+    if (freq === 'semanal') {
       const mapaDias: { [key: string]: number } = { dom: 0, seg: 1, ter: 2, qua: 3, qui: 4, sex: 5, sab: 6 }
-      const chave = String(regra.dia_da_semana).toLowerCase().substring(0, 3)
-      const diaAlvoSemana = mapaDias[chave]
-      
-      if (diaAlvoSemana !== undefined) {
-        for (let d = 1; d <= 31; d++) {
-          const dt = new Date(ano, mes, d)
-          if (dt.getMonth() !== mes) break 
-          if (dt.getDay() === diaAlvoSemana) {
-            let dtReal = new Date(dt)
-            while (dtReal.getDay() === 0 || dtReal.getDay() === 6 || feriados.includes(formataDataLocal(dtReal))) {
-              dtReal.setDate(dtReal.getDate() + 1)
-            }
-            datas.push(formataDataLocal(dtReal))
+      // FALLBACK: se dia_da_semana não foi informado, assume Segunda-feira
+      const chave = regra.dia_da_semana
+        ? String(regra.dia_da_semana).toLowerCase().substring(0, 3)
+        : 'seg'
+      const diaAlvoSemana = mapaDias[chave] ?? 1 // 1 = segunda, default seguro
+
+      for (let d = 1; d <= 31; d++) {
+        const dt = new Date(ano, mes, d)
+        if (dt.getMonth() !== mes) break
+        if (dt.getDay() === diaAlvoSemana) {
+          let dtReal = new Date(dt)
+          // Se cair em feriado, joga pro próximo dia útil
+          while (dtReal.getDay() === 0 || dtReal.getDay() === 6 || feriados.includes(formataDataLocal(dtReal))) {
+            dtReal.setDate(dtReal.getDate() + 1)
           }
+          datas.push(formataDataLocal(dtReal))
         }
-        return datas
       }
+      return datas
     }
 
     if (regra.dia_da_semana) {
@@ -208,9 +212,13 @@ export default function Home() {
     return datas
   }
 
+  // Normaliza: remove acentos, lowercase, trim → "Diária" / "diaria" / "DIÁRIA" viram "diaria"
+  const normFreq = (raw: string) =>
+    (raw || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
+
   const mesesParaFrequencia = (freqRaw: string) => {
-    const freq = (freqRaw || '').toLowerCase()
-    if (freq === 'mensal' || freq === 'diária' || freq === 'semanal' || freq === 'decendial') return 'todo_mes'
+    const freq = normFreq(freqRaw)
+    if (['mensal', 'diaria', 'semanal', 'decendial'].includes(freq)) return 'todo_mes'
     if (freq === 'anual') return 'janeiro'
     if (freq === 'trimestral') return 'trim'
     if (freq === 'bimestral') return 'bim'
@@ -241,13 +249,15 @@ export default function Home() {
       const cardsParaUpsert: any[] = []
 
       atividades.forEach((regra) => {
-        // Pula atividades INATIVAS — preserva histórico mas não gera novos cartões
-        const st = (regra.status || 'Ativo').toLowerCase()
-        if (st !== 'ativo') return
-        if (!deveRodarNoMes(regra.frequencia, mesAlvo)) return
-        const freq = (regra.frequencia || '').toLowerCase()
+        // Pula APENAS atividades EXPLICITAMENTE inativas.
+        const st = (regra.status || '').toLowerCase().trim()
+        if (st === 'inativo') return
 
-        if (freq === 'diária') {
+        if (!deveRodarNoMes(regra.frequencia, mesAlvo)) return
+        // Normaliza acento: "Diária" / "diaria" / "DIARIA" → "diaria"
+        const freq = (regra.frequencia || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
+
+        if (freq === 'diaria') {
           for (let d = 1; d <= 31; d++) {
             const dt = new Date(anoAlvo, mesAlvo, d)
             if (dt.getMonth() !== mesAlvo) break
@@ -832,12 +842,15 @@ export default function Home() {
           const sufixo = orfasAtivas.length > 5 ? `\n  ...e mais ${orfasAtivas.length - 5}` : ''
 
           const confirmar = window.confirm(
-            `📋 ATIVIDADES ATIVAS QUE NÃO VIERAM NESTA PLANILHA\n\n` +
-            `${orfasAtivas.length} atividade(s) ativa(s) no banco NÃO estão neste arquivo:\n\n` +
+            `📋 ATIVIDADES DE IMPORTS ANTERIORES\n\n` +
+            `Existem ${orfasAtivas.length} atividade(s) cadastrada(s) no banco que NÃO vieram nesta planilha ` +
+            `(provavelmente foram importadas anteriormente):\n\n` +
             `${exemplos}${sufixo}\n\n` +
-            `INATIVAR essas atividades? Elas vão parar de gerar novos cartões, mas o histórico de tarefas anteriores é mantido. ` +
-            `Pra reativar, basta voltar a colocá-las na próxima planilha.\n\n` +
-            `[OK] = inativar  |  [Cancelar] = manter ativas`
+            `O que fazer com elas?\n\n` +
+            `[OK] = INATIVAR — param de gerar novos cartões mas histórico fica preservado. Pra reativar, ` +
+            `basta voltar a colocá-las numa planilha futura.\n\n` +
+            `[Cancelar] = MANTER ATIVAS — continuam gerando cartões. Escolha isto se elas ainda são rotinas válidas ` +
+            `e você só não as incluiu nesta planilha por engano.`
           )
           if (confirmar) {
             const tid = toast.loading(`A inativar ${orfasAtivas.length} atividade(s)...`)
