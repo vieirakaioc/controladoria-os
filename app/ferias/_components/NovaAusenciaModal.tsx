@@ -14,6 +14,7 @@ type AusenciaEdit = {
   motivo: string | null
   observacao: string | null
   substituto_id: string | null
+  aprovacao_status: string | null
 }
 
 type Props = {
@@ -28,6 +29,7 @@ type Props = {
 }
 
 const MOTIVOS = ['férias', 'licença', 'atestado', 'afastamento', 'outro']
+const APROVACAO_OPCOES = ['Não solicitada', 'Solicitada', 'Aprovada', 'Recusada']
 
 export function NovaAusenciaModal({
   responsaveis, responsavelFixoId, isAdmin, existing, onClose, onSaved,
@@ -38,6 +40,7 @@ export function NovaAusenciaModal({
   const [dataFim, setDataFim] = useState(existing?.data_fim || '')
   const [motivo, setMotivo] = useState(existing?.motivo || 'férias')
   const [substitutoId, setSubstitutoId] = useState(existing?.substituto_id || '')
+  const [aprovacaoStatus, setAprovacaoStatus] = useState(existing?.aprovacao_status || 'Não solicitada')
   const [obs, setObs] = useState(existing?.observacao || '')
   const [salvando, setSalvando] = useState(false)
 
@@ -65,6 +68,7 @@ export function NovaAusenciaModal({
         motivo: motivo || 'férias',
         observacao: obs || null,
         substituto_id: substitutoId || null,
+        aprovacao_status: aprovacaoStatus || 'Não solicitada',
       }
 
       let res
@@ -178,6 +182,23 @@ export function NovaAusenciaModal({
             </select>
             <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
               Se preenchido, as tarefas vencendo nesse período contam pro score do substituto.
+            </p>
+          </div>
+
+          <div>
+            <label className="text-xs text-slate-500 dark:text-slate-400 font-medium block mb-1">
+              Status no Sênior (sistema da empresa)
+            </label>
+            <select
+              value={aprovacaoStatus}
+              onChange={e => setAprovacaoStatus(e.target.value)}
+              disabled={salvando}
+              className="w-full bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-xl px-3 py-3 text-sm outline-none focus:border-[#0f88a8] disabled:opacity-50"
+            >
+              {APROVACAO_OPCOES.map(o => <option key={o} value={o} className="dark:bg-slate-900">{o}</option>)}
+            </select>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+              Acompanha o pedido no Sênior. Atualiza pra "Aprovada" quando o RH liberar oficialmente.
             </p>
           </div>
 

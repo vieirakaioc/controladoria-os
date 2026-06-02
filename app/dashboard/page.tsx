@@ -105,16 +105,23 @@ function Section({ title, subtitle, right, info, children, className = '' }: { t
 // Card grande com semáforo + diagnóstico automático em uma frase.
 type SaudeNivel = 'ok' | 'atencao' | 'critico'
 function HealthHero({ metrics, isDark }: { metrics: any; isDark: boolean }) {
-  // Lógica do semáforo:
-  //   crítico  → +30% das tarefas em atraso OU eficiência <40%
-  //   atenção  → +10% em atraso OU eficiência <70%
+  // Lógica do semáforo (corrigida pra não disparar crítico no INÍCIO do mês):
+  //   crítico  → +30% das tarefas em atraso
+  //   atenção  → +10% em atraso, OU (já houve vencidas/concluídas E eficiência <50%)
   //   ok       → resto
+  //
+  // Eficiência baixa sozinha não é crítico — pode ser só mês começando. Só
+  // entra na conta DEPOIS que algo já venceu/concluiu.
   const pctAtraso = metrics.total > 0 ? (metrics.overdue / metrics.total) * 100 : 0
   const eficiencia = metrics.pct
+  const cicloIniciado = (metrics.overdue + metrics.done) > 0  // alguém já entregou ou atrasou
 
   let nivel: SaudeNivel = 'ok'
-  if (pctAtraso > 30 || eficiencia < 40) nivel = 'critico'
-  else if (pctAtraso > 10 || eficiencia < 70) nivel = 'atencao'
+  if (metrics.total > 0) {
+    if (pctAtraso > 30) nivel = 'critico'
+    else if (pctAtraso > 10) nivel = 'atencao'
+    else if (cicloIniciado && eficiencia < 50) nivel = 'atencao'
+  }
 
   const cfg = {
     ok:      { label: 'Operação saudável', bg: 'from-emerald-50 to-white dark:from-emerald-500/10 dark:to-slate-900', border: 'border-emerald-200 dark:border-emerald-500/30', dot: 'bg-emerald-500', text: 'text-emerald-700 dark:text-emerald-400', icon: <Activity size={28} /> },
@@ -125,6 +132,9 @@ function HealthHero({ metrics, isDark }: { metrics: any; isDark: boolean }) {
   // Diagnóstico em uma frase
   const diagnostico = (() => {
     if (metrics.total === 0) return 'Sem tarefas no período selecionado.'
+    if (!cicloIniciado) {
+      return `${metrics.total} tarefa(s) planejada(s) pro período. Nada vencido ainda — aguardando primeiras conclusões.`
+    }
     if (nivel === 'ok')       return `${metrics.pct}% de eficiência, ${metrics.overdue} atrasada(s) de ${metrics.total}. Equipa no ritmo certo.`
     if (nivel === 'atencao')  return `${metrics.overdue} atrasada(s) (${pctAtraso.toFixed(0)}% do total) e eficiência em ${metrics.pct}%. Vale puxar o foco.`
     return `Risco alto: ${metrics.overdue} atrasada(s) (${pctAtraso.toFixed(0)}% do total) e eficiência só em ${metrics.pct}%. Ação imediata.`

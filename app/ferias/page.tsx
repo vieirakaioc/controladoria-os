@@ -17,6 +17,7 @@ type Ausencia = {
   motivo: string | null
   observacao: string | null
   substituto_id: string | null
+  aprovacao_status: string | null
   created_at: string
   responsaveis?: { nome: string; email: string | null } | null
 }
@@ -68,7 +69,7 @@ export default function FeriasPage() {
         // Sem embed — tem 2 FKs pra responsaveis (responsavel_id e substituto_id),
         // o que confunde o PostgREST. Fazemos o lookup do nome em JS com respData.
         supabase.from('ausencias')
-          .select('id, responsavel_id, data_inicio, data_fim, motivo, observacao, substituto_id, created_at')
+          .select('id, responsavel_id, data_inicio, data_fim, motivo, observacao, substituto_id, aprovacao_status, created_at')
           .order('data_inicio', { ascending: true }),
         supabase.from('responsaveis').select('id, nome, email').order('nome'),
       ])
@@ -286,6 +287,7 @@ export default function FeriasPage() {
                     <th className="px-4 py-3 font-semibold">Fim</th>
                     <th className="px-4 py-3 font-semibold">Motivo</th>
                     <th className="px-4 py-3 font-semibold">Substituto</th>
+                    <th className="px-4 py-3 font-semibold">Sênior</th>
                     <th className="px-4 py-3 font-semibold">Observação</th>
                     <th className="px-4 py-3 font-semibold text-right">Ações</th>
                   </tr>
@@ -302,6 +304,7 @@ export default function FeriasPage() {
                       <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                         {a.substituto_id ? (respsById.get(a.substituto_id)?.nome || '?') : <span className="text-slate-300">—</span>}
                       </td>
+                      <td className="px-4 py-3"><BadgeAprovacao status={a.aprovacao_status} /></td>
                       <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400 max-w-xs truncate" title={a.observacao || ''}>{a.observacao || '—'}</td>
                       <td className="px-4 py-3 text-right">
                         <div className="inline-flex items-center gap-1">
@@ -337,6 +340,28 @@ export default function FeriasPage() {
 }
 
 // ─── Helper de item compacto ───────────────────────────────────────────────
+// ─── Badge de status de aprovação no Sênior ──────────────────────────────
+const APROVACAO_CONFIG: Record<string, { cls: string; icone: string }> = {
+  'Aprovada':       { cls: 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300', icone: '✓' },
+  'Solicitada':     { cls: 'bg-[#0f88a8]/10 dark:bg-[#38bdf8]/15 text-[#0f88a8] dark:text-[#38bdf8]',      icone: '⌛' },
+  'Recusada':       { cls: 'bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300',              icone: '✕' },
+  'Não solicitada': { cls: 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400',             icone: '○' },
+}
+
+function BadgeAprovacao({ status }: { status: string | null | undefined }) {
+  const s = (status || 'Não solicitada').trim()
+  const cfg = APROVACAO_CONFIG[s] || { cls: 'bg-slate-100 dark:bg-slate-800 text-slate-500', icone: '?' }
+  return (
+    <span
+      className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${cfg.cls}`}
+      title={`Sênior: ${s}`}
+    >
+      <span>{cfg.icone}</span>
+      <span>{s}</span>
+    </span>
+  )
+}
+
 function ItemAusencia({
   a, respsById, onRemover, onEditar, podeRemover, podeEditar,
 }: {
@@ -365,11 +390,14 @@ function ItemAusencia({
         <div className="text-xs text-slate-600 dark:text-slate-300 mt-0.5 tabular-nums">
           {fmtBR(a.data_inicio)} → {fmtBR(a.data_fim)} · <span className="font-medium">{a.motivo || 'ausência'}</span>
         </div>
-        {subst && (
-          <div className="text-[11px] text-emerald-700 dark:text-emerald-400 mt-1 flex items-center gap-1">
-            <UserCheck size={11} /> Substituto: {subst}
-          </div>
-        )}
+        <div className="flex items-center gap-1.5 flex-wrap mt-1">
+          <BadgeAprovacao status={a.aprovacao_status} />
+          {subst && (
+            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700 dark:text-emerald-400">
+              <UserCheck size={10} /> Subst: {subst}
+            </span>
+          )}
+        </div>
       </div>
       <div className="flex items-center gap-0.5 opacity-60 group-hover:opacity-100 transition-opacity">
         {podeEditar && onEditar && (
@@ -483,11 +511,14 @@ function MinhasAusenciasCard({
               <div className="text-base font-bold text-[#063955] dark:text-white tabular-nums">
                 {fmtBR(destaque.data_inicio)} → {fmtBR(destaque.data_fim)}
               </div>
-              {destaque.substituto_id && (
-                <div className="text-[11px] text-emerald-700 dark:text-emerald-400 mt-1 flex items-center gap-1">
-                  <UserCheck size={11} /> Substituto: {respsById.get(destaque.substituto_id)?.nome || '?'}
-                </div>
-              )}
+              <div className="flex items-center gap-2 flex-wrap mt-1">
+                <BadgeAprovacao status={destaque.aprovacao_status} />
+                {destaque.substituto_id && (
+                  <span className="text-[11px] text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
+                    <UserCheck size={11} /> Substituto: {respsById.get(destaque.substituto_id)?.nome || '?'}
+                  </span>
+                )}
+              </div>
             </div>
             <div className="flex items-center gap-0.5 opacity-60 group-hover:opacity-100 transition-opacity">
               <button onClick={() => onEditar(destaque)} className="text-slate-400 hover:text-[#0f88a8] hover:bg-slate-100 dark:hover:bg-slate-800 p-1.5 rounded-lg transition-colors" title="Editar">
