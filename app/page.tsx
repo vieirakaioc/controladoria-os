@@ -241,6 +241,9 @@ export default function Home() {
       const cardsParaUpsert: any[] = []
 
       atividades.forEach((regra) => {
+        // Pula atividades INATIVAS — preserva histórico mas não gera novos cartões
+        const st = (regra.status || 'Ativo').toLowerCase()
+        if (st !== 'ativo') return
         if (!deveRodarNoMes(regra.frequencia, mesAlvo)) return
         const freq = (regra.frequencia || '').toLowerCase()
 
@@ -798,44 +801,57 @@ export default function Home() {
           }
         }
 
-        // ─── Detecta atividades ÓRFÃS (modo espelho) ───────────────────────
-        // São atividades base no banco que NÃO vieram nessa planilha. Pergunta
-        // se quer apagar pra deixar a base idêntica ao arquivo. Ad Hocs ficam
-        // sempre intactas — elas não vivem na planilha.
+        // ─── Detecta atividades ÓRFÃS (não vieram nesta planilha) ─────────
+        // Pergunta se quer INATIVAR essas atividades — assim:
+        //   • histórico de tarefas antigas é PRESERVADO
+        //   • essas matrizes param de gerar cartões em novos meses
+        //   • voltar a atividade na próxima planilha reativa (status='Ativo')
+        // Ad Hocs ficam intactas sempre.
         const taskIdsArquivoSet = new Set(atividadesParaSalvar.map(a => a.task_id))
         const { data: todasBase } = await supabase
-          .from('atividades').select('task_id, nome_atividade, planner_name, responsaveis (nome)')
+          .from('atividades').select('task_id, nome_atividade, planner_name, status, responsaveis (nome)')
           .or('planner_name.neq."Ad Hoc",planner_name.is.null')
-        const orfas = (todasBase || []).filter((a: any) => !taskIdsArquivoSet.has(a.task_id))
+        // Considera órfã APENAS quem está atualmente Ativo (não pede pra inativar
+        // o que já está inativo)
+        const orfasAtivas = (todasBase || []).filter((a: any) =>
+          !taskIdsArquivoSet.has(a.task_id) &&
+          (a.status || 'Ativo').toLowerCase() === 'ativo'
+        )
 
         const totalNovos = novasAtividades.length
-        let msg = totalNovos > 0
+        const msg = totalNovos > 0
           ? `Planilha sincronizada! ${totalNovos} nova(s) atividade(s).`
           : 'Planilha sincronizada com sucesso!'
         toast.success(msg, { id: toastId })
 
-        // Se tem órfãs, pergunta se apaga (fora do toast pra não bloquear UI)
-        if (orfas.length > 0) {
-          const exemplos = orfas.slice(0, 5)
+        // Pergunta sobre inativação (não destrutivo — preserva histórico)
+        if (orfasAtivas.length > 0) {
+          const exemplos = orfasAtivas.slice(0, 5)
             .map((a: any) => `  • ${a.nome_atividade}${a.responsaveis?.nome ? ` (${a.responsaveis.nome})` : ''}`)
             .join('\n')
-          const sufixo = orfas.length > 5 ? `\n  ...e mais ${orfas.length - 5}` : ''
+          const sufixo = orfasAtivas.length > 5 ? `\n  ...e mais ${orfasAtivas.length - 5}` : ''
 
           const confirmar = window.confirm(
-            `🪞 MODO ESPELHO — ATIVIDADES ÓRFÃS\n\n` +
-            `${orfas.length} atividade(s) da base existem no banco mas NÃO estão nesta planilha:\n\n` +
+            `📋 ATIVIDADES ATIVAS QUE NÃO VIERAM NESTA PLANILHA\n\n` +
+            `${orfasAtivas.length} atividade(s) ativa(s) no banco NÃO estão neste arquivo:\n\n` +
             `${exemplos}${sufixo}\n\n` +
-            `Quer APAGAR essas atividades (e suas tarefas diárias) pra deixar a base idêntica à planilha?\n\n` +
-            `[OK] = apagar  |  [Cancelar] = manter`
+            `INATIVAR essas atividades? Elas vão parar de gerar novos cartões, mas o histórico de tarefas anteriores é mantido. ` +
+            `Pra reativar, basta voltar a colocá-las na próxima planilha.\n\n` +
+            `[OK] = inativar  |  [Cancelar] = manter ativas`
           )
           if (confirmar) {
-            const tid = toast.loading(`A apagar ${orfas.length} atividade(s) órfã(s)...`)
+            const tid = toast.loading(`A inativar ${orfasAtivas.length} atividade(s)...`)
             try {
-              const orfasIds = orfas.map((a: any) => a.task_id)
-              await deletarCascataPorTaskIds(orfasIds)
-              toast.success(`${orfas.length} atividade(s) órfã(s) removida(s)!`, { id: tid })
+              const orfasIds = orfasAtivas.map((a: any) => a.task_id)
+              const chunkSize = 200
+              for (let i = 0; i < orfasIds.length; i += chunkSize) {
+                await supabase.from('atividades')
+                  .update({ status: 'Inativo' })
+                  .in('task_id', orfasIds.slice(i, i + chunkSize))
+              }
+              toast.success(`${orfasAtivas.length} atividade(s) inativada(s). Histórico preservado.`, { id: tid })
             } catch {
-              toast.error('Erro ao apagar órfãs (base parcialmente espelhada).', { id: tid })
+              toast.error('Erro ao inativar (parcialmente concluído).', { id: tid })
             }
           }
         }
