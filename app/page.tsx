@@ -735,19 +735,51 @@ export default function Home() {
         const abaAtividades = workbook.Sheets[nomeAbaAtividades]
         const rowsAtv: any[] = XLSX.utils.sheet_to_json(abaAtividades, { defval: null, raw: false, dateNF: 'yyyy-mm-dd' })
 
+        // ─── Smart dedup: busca atividades existentes pra reaproveitar task_ids ───
+        // Pra linhas SEM Task_ID, em vez de gerar UUID novo direto (que criaria
+        // duplicatas a cada import), procura no banco uma atividade com mesmo
+        // nome + responsável + planner + frequência. Se achar, REUSA o task_id.
+        const { data: atividadesExistentes } = await supabase
+          .from('atividades')
+          .select('task_id, nome_atividade, responsavel_id, planner_name, frequencia')
+
+        // Index pra lookup rápido: chave = "nome|respId|planner|freq" (tudo lower/trim)
+        const chave = (nome: string, respId: any, planner: string, freq: string) =>
+          `${(nome || '').trim().toLowerCase()}|${respId ?? ''}|${(planner || '').trim().toLowerCase()}|${(freq || '').trim().toLowerCase()}`
+        const indexExistente = new Map<string, string>()
+        for (const a of (atividadesExistentes || [])) {
+          indexExistente.set(
+            chave(a.nome_atividade, a.responsavel_id, a.planner_name, a.frequencia),
+            a.task_id,
+          )
+        }
+
         const atividadesParaSalvar = rowsAtv.map((linha) => {
           const s = dbSetores?.find((x: any) => x.nome && x.nome.trim() === (linha['Setor'] ? `${linha['Setor']}`.trim() : null))
           const r = dbResponsaveis?.find((x: any) => x.nome && x.nome.trim() === (linha['Responsável'] ? `${linha['Responsável']}`.trim() : null))
 
+          const nome = linha['Atividade'] ? `${linha['Atividade']}`.trim() : 'Sem Nome'
+          const planner = linha['Planner Name'] ? `${linha['Planner Name']}`.trim() : null
+          const freq = linha['Frequencia'] ? `${linha['Frequencia']}`.trim() : null
+
+          // 1º Task_ID informado na planilha (preferência)
+          // 2º Match por nome+resp+planner+freq (smart dedup)
+          // 3º UUID novo (atividade realmente nova)
+          let taskId = linha['Task_ID'] ? `${linha['Task_ID']}`.trim() : ''
+          if (!taskId) {
+            const match = indexExistente.get(chave(nome, r?.id, planner || '', freq || ''))
+            taskId = match || crypto.randomUUID()
+          }
+
           return {
-            task_id: linha['Task_ID'] ? `${linha['Task_ID']}`.trim() : crypto.randomUUID(),
-            planner_name: linha['Planner Name'] ? `${linha['Planner Name']}`.trim() : null,
+            task_id: taskId,
+            planner_name: planner,
             setor_id: s?.id || null,
-            nome_atividade: linha['Atividade'] ? `${linha['Atividade']}`.trim() : 'Sem Nome',
+            nome_atividade: nome,
             responsavel_id: r?.id || null,
             prioridade_nivel: parseNumber(linha['Prioridade']),
             prioridade_descricao: linha['Prioridade_Descrição'] ? `${linha['Prioridade_Descrição']}`.trim() : null,
-            frequencia: linha['Frequencia'] ? `${linha['Frequencia']}`.trim() : null,
+            frequencia: freq,
             classificacao: linha['Classificação'] ? `${linha['Classificação']}`.trim() : null,
             dia_da_semana: linha['Dia Da Semana'] ? `${linha['Dia Da Semana']}`.trim() : null,
             dia_util: parseNumber(linha['Dia Util'] !== undefined ? linha['Dia Util'] : linha['Dia Útil']),
