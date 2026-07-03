@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Toaster, toast } from 'react-hot-toast'
-import { Briefcase, Plus, Calendar, CheckCircle2, Clock, ChevronDown, ChevronUp, UserCircle } from 'lucide-react'
+import { Briefcase, Plus, Calendar, CheckCircle2, Clock, ChevronDown, ChevronUp, UserCircle, Pencil, Trash2 } from 'lucide-react'
 
 type Projeto = {
   id: string
@@ -47,12 +47,14 @@ export default function ProjetosPage() {
   // 💡 NOVO ESTADO: Controla qual projeto está com o Drill-down aberto
   const [expandedProjId, setExpandedProjId] = useState<string | null>(null)
 
-  // Estado do Modal
+  // Estado do Modal (create + edit)
   const [modalOpen, setModalOpen] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [novoNome, setNovoNome] = useState('')
   const [novaDesc, setNovaDesc] = useState('')
   const [novoInicio, setNovoInicio] = useState(new Date().toISOString().slice(0, 10))
   const [novoFim, setNovoFim] = useState('')
+  const [novoStatus, setNovoStatus] = useState('Em Andamento')
   const [salvando, setSalvando] = useState(false)
 
   useEffect(() => {
@@ -106,10 +108,28 @@ export default function ProjetosPage() {
     }
   }
 
-  const criarProjeto = async () => {
+  const abrirEdicao = (p: Projeto) => {
+    setEditingId(p.id)
+    setNovoNome(p.nome || '')
+    setNovaDesc(p.descricao || '')
+    setNovoInicio(p.data_inicio ? p.data_inicio.slice(0, 10) : '')
+    setNovoFim(p.data_fim_prevista ? p.data_fim_prevista.slice(0, 10) : '')
+    setNovoStatus(p.status || 'Em Andamento')
+    setModalOpen(true)
+  }
+
+  const abrirCriacao = () => {
+    setEditingId(null)
+    setNovoNome(''); setNovaDesc('')
+    setNovoInicio(new Date().toISOString().slice(0, 10))
+    setNovoFim(''); setNovoStatus('Em Andamento')
+    setModalOpen(true)
+  }
+
+  const salvarProjeto = async () => {
     if (!novoNome.trim()) return toast.error('O nome do projeto é obrigatório.')
     setSalvando(true)
-    const toastId = toast.loading('A criar projeto...')
+    const toastId = toast.loading(editingId ? 'A atualizar projeto...' : 'A criar projeto...')
 
     try {
       const payload = {
@@ -117,20 +137,44 @@ export default function ProjetosPage() {
         descricao: novaDesc,
         data_inicio: novoInicio || null,
         data_fim_prevista: novoFim || null,
-        status: 'Em Andamento'
+        status: novoStatus || 'Em Andamento',
       }
 
-      const { error } = await supabase.from('projetos').insert([payload])
+      const { error } = editingId
+        ? await supabase.from('projetos').update(payload).eq('id', editingId)
+        : await supabase.from('projetos').insert([payload])
       if (error) throw error
 
-      toast.success('Projeto criado com sucesso!', { id: toastId })
-      setModalOpen(false)
+      toast.success(editingId ? 'Projeto atualizado!' : 'Projeto criado!', { id: toastId })
+      setModalOpen(false); setEditingId(null)
       setNovoNome(''); setNovaDesc(''); setNovoFim('')
       carregarProjetos()
-    } catch (error) {
-      toast.error('Erro ao criar projeto.', { id: toastId })
+    } catch (error: any) {
+      toast.error(`Erro: ${error?.message || 'falha'}`, { id: toastId })
     } finally {
       setSalvando(false)
+    }
+  }
+
+  const apagarProjeto = async (p: Projeto) => {
+    const total = p.estatisticas?.total_tarefas || 0
+    const msg = total > 0
+      ? `Apagar "${p.nome}"?\n\n${total} tarefa(s) estão vinculadas — elas NÃO serão apagadas, só serão desassociadas do projeto (projeto_id vira null).\n\nContinuar?`
+      : `Apagar "${p.nome}"?\n\nNão pode ser desfeito.`
+    if (!window.confirm(msg)) return
+
+    const toastId = toast.loading('A apagar...')
+    try {
+      // Desassocia tarefas primeiro (atividades.projeto_id → null)
+      if (total > 0) {
+        await supabase.from('atividades').update({ projeto_id: null }).eq('projeto_id', p.id)
+      }
+      const { error } = await supabase.from('projetos').delete().eq('id', p.id)
+      if (error) throw error
+      toast.success('Projeto apagado!', { id: toastId })
+      carregarProjetos()
+    } catch (error: any) {
+      toast.error(`Erro: ${error?.message || 'falha'}`, { id: toastId })
     }
   }
 
@@ -156,7 +200,7 @@ export default function ProjetosPage() {
         </div>
 
         {isAdmin && (
-          <button onClick={() => setModalOpen(true)} className="flex items-center gap-2 bg-[#031D2D] hover:bg-[#063955] text-[#E5D6A7] px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-md">
+          <button onClick={abrirCriacao} className="flex items-center gap-2 bg-[#031D2D] hover:bg-[#063955] text-[#E5D6A7] px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-md">
             <Plus size={18} /> Novo Projeto
           </button>
         )}
@@ -173,11 +217,31 @@ export default function ProjetosPage() {
               <div key={proj.id} className="bg-white dark:bg-slate-900 border border-slate-100/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col relative overflow-hidden group">
                 <div className={`absolute top-0 left-0 w-full h-1.5 ${proj.status === 'Concluído' ? 'bg-[#5A755C]' : 'bg-[#C7A77B]'}`}></div>
                 
-                <div className="flex justify-between items-start mb-4 pt-2">
-                  <h3 className="text-xl font-bold text-slate-900 dark:text-white leading-tight pr-4 tracking-tight">{proj.nome}</h3>
-                  <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md whitespace-nowrap ${proj.status === 'Concluído' ? 'bg-[#5A755C]/10 text-[#5A755C]' : 'bg-[#C7A77B]/10 text-[#C7A77B]'}`}>
-                    {proj.status}
-                  </span>
+                <div className="flex justify-between items-start mb-4 pt-2 gap-3">
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white leading-tight tracking-tight flex-1 min-w-0">{proj.nome}</h3>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md whitespace-nowrap ${proj.status === 'Concluído' ? 'bg-[#5A755C]/10 text-[#5A755C]' : 'bg-[#C7A77B]/10 text-[#C7A77B]'}`}>
+                      {proj.status}
+                    </span>
+                    {isAdmin && (
+                      <>
+                        <button
+                          onClick={() => abrirEdicao(proj)}
+                          className="text-slate-400 hover:text-[#0f88a8] dark:hover:text-[#38bdf8] hover:bg-slate-100 dark:hover:bg-slate-800 p-1.5 rounded-lg transition-colors"
+                          title="Editar projeto"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                        <button
+                          onClick={() => apagarProjeto(proj)}
+                          className="text-slate-400 hover:text-[#b43a3d] dark:hover:text-[#f87171] hover:bg-slate-100 dark:hover:bg-slate-800 p-1.5 rounded-lg transition-colors"
+                          title="Apagar projeto"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
                 
                 <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 line-clamp-2 min-h-[40px]">{proj.descricao || 'Sem descrição'}</p>
@@ -278,8 +342,8 @@ export default function ProjetosPage() {
         <div className="fixed inset-0 bg-[#031D2D]/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-950/50">
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white">Criar Novo Projeto</h2>
-              <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-slate-600 bg-white dark:bg-slate-800 rounded-full p-1 border border-slate-200 dark:border-slate-700 transition-colors">✕</button>
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white">{editingId ? 'Editar Projeto' : 'Criar Novo Projeto'}</h2>
+              <button onClick={() => { setModalOpen(false); setEditingId(null) }} className="text-slate-400 hover:text-slate-600 bg-white dark:bg-slate-800 rounded-full p-1 border border-slate-200 dark:border-slate-700 transition-colors">✕</button>
             </div>
             <div className="p-6 space-y-5">
               <div>
@@ -300,11 +364,24 @@ export default function ProjetosPage() {
                   <input type="date" value={novoFim} onChange={e => setNovoFim(e.target.value)} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 rounded-xl px-4 py-3 outline-none focus:border-[#C7A77B] text-slate-800 dark:text-white font-medium transition-colors" />
                 </div>
               </div>
+              <div>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Status</label>
+                <select
+                  value={novoStatus}
+                  onChange={e => setNovoStatus(e.target.value)}
+                  className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 rounded-xl px-4 py-3 outline-none focus:border-[#C7A77B] text-slate-800 dark:text-white font-medium transition-colors"
+                >
+                  <option value="Em Andamento" className="dark:bg-slate-900">Em Andamento</option>
+                  <option value="Concluído" className="dark:bg-slate-900">Concluído</option>
+                  <option value="Pausado" className="dark:bg-slate-900">Pausado</option>
+                  <option value="Cancelado" className="dark:bg-slate-900">Cancelado</option>
+                </select>
+              </div>
             </div>
             <div className="p-6 bg-slate-50/50 dark:bg-slate-950/50 flex justify-end gap-3 border-t border-slate-100 dark:border-slate-800">
-              <button onClick={() => setModalOpen(false)} className="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-200 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">Cancelar</button>
-              <button onClick={criarProjeto} disabled={salvando} className="bg-[#C7A77B] hover:bg-[#A68A63] text-[#031D2D] px-6 py-2.5 rounded-xl text-sm font-bold shadow-md transition-colors disabled:opacity-50 tracking-tight">
-                {salvando ? 'A processar...' : 'Salvar Projeto'}
+              <button onClick={() => { setModalOpen(false); setEditingId(null) }} className="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-200 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">Cancelar</button>
+              <button onClick={salvarProjeto} disabled={salvando} className="bg-[#C7A77B] hover:bg-[#A68A63] text-[#031D2D] px-6 py-2.5 rounded-xl text-sm font-bold shadow-md transition-colors disabled:opacity-50 tracking-tight">
+                {salvando ? 'A processar...' : (editingId ? 'Salvar Alterações' : 'Salvar Projeto')}
               </button>
             </div>
           </div>
