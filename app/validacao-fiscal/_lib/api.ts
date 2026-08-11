@@ -41,7 +41,8 @@ type LinhaTarefa = {
   emissao: string | null
   dados: LinhaPlanilha | null
   status: StatusTarefa
-  responsavel_id: string | null
+  // responsaveis.id é bigint: o PostgREST devolve número, não texto.
+  responsavel_id: string | number | null
   responsavel_nome: string | null
   observacao_correcao: string | null
   prazo: string
@@ -65,7 +66,9 @@ function mapear(linha: LinhaTarefa): TarefaFiscal {
     emissao: linha.emissao,
     dados: linha.dados ?? {},
     status: linha.status,
-    responsavelId: linha.responsavel_id,
+    // Normaliza para texto aqui, na fronteira: o <select> do painel e o filtro
+    // da matriz comparam com string, e 12 !== '12' silenciaria a atribuição.
+    responsavelId: linha.responsavel_id === null ? null : String(linha.responsavel_id),
     responsavelNome: linha.responsavel_nome,
     observacaoCorrecao: linha.observacao_correcao,
     prazo: linha.prazo,
@@ -144,7 +147,12 @@ export async function listarResponsaveis(): Promise<Responsavel[]> {
     .order('nome')
 
   if (error) throw error
-  return (data ?? []) as Responsavel[]
+
+  return (data ?? []).map((r) => ({
+    id: String(r.id),
+    nome: r.nome,
+    email: r.email,
+  }))
 }
 
 export type ResultadoImportacao = {

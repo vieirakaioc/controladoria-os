@@ -54,7 +54,8 @@ create table if not exists public.validacao_fiscal_tarefas (
   dados               jsonb       not null default '{}'::jsonb,
   status              text        not null default 'pendente'
                         check (status in ('pendente', 'em_andamento', 'concluida')),
-  responsavel_id      uuid        references public.responsaveis (id) on delete set null,
+  -- bigint, não uuid: é o tipo de responsaveis.id neste banco.
+  responsavel_id      bigint      references public.responsaveis (id) on delete set null,
   responsavel_nome    text,
   observacao_correcao text,
   prazo               date        not null,
