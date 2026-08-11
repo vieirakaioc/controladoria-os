@@ -22,7 +22,8 @@ import {
   Briefcase,
   Users,
   BookOpen,
-  Plane
+  Plane,
+  ScanLine
 } from 'lucide-react'
 
 const allNavItems = [
@@ -30,6 +31,7 @@ const allNavItems = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, adminOnly: false },
   { name: 'Gestão de Projetos', href: '/projetos', icon: Briefcase, adminOnly: false },
   { name: 'Controle de Tarefas', href: '/tarefas', icon: CheckSquare, adminOnly: false },
+  { name: 'Validação Fiscal', href: '/validacao-fiscal', icon: ScanLine, adminOnly: false },
   { name: 'Monitor da Equipe', href: '/equipe', icon: Users, adminOnly: true },
   { name: 'Férias da Equipe', href: '/ferias', icon: Plane, adminOnly: false },
   { name: 'Workflows', href: '/workflows', icon: GitMerge, adminOnly: true },
@@ -236,7 +238,9 @@ export default function Sidebar() {
 
       <nav className="flex-1 pt-6 space-y-2 px-3 overflow-y-auto custom-scrollbar">
         {navItems.map((item) => {
-          const isActive = pathname === item.href
+          // startsWith para o item seguir destacado nas sub-rotas (ex:
+          // /validacao-fiscal/matriz). '/' continua exato, senão casaria tudo.
+          const isActive = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href)
           const Icon = item.icon
           return (
             <Link 
