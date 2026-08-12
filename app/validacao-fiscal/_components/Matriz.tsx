@@ -333,7 +333,7 @@ export function Matriz({
                   scope="col"
                   className={`${CONGELADA} sticky left-0 top-0 z-30 border-b border-slate-200 bg-slate-50 px-4 py-3 text-left ${ROTULO_TH}`}
                 >
-                  Tarefa e prazo
+                  Nº · tarefa e prazo
                 </th>
 
                 {['Responsável', 'Observação / motivo', ...layout.colunasMatriz].map(
@@ -380,6 +380,12 @@ export function Matriz({
                     <td
                       className={`${CONGELADA} sticky left-0 z-10 px-4 py-3 align-top ${faixa} group-hover:bg-[#eef7fa]`}
                     >
+                      {/* Numeração pela ordem em tela: é assim que a pessoa
+                          conta a lista enquanto trabalha ("estou na 12"). */}
+                      <span className="mb-1.5 block text-[11px] font-bold tabular-nums text-slate-400">
+                        {formatarInteiro(linha + 1)}
+                      </span>
+
                       <button
                         type="button"
                         onClick={() => setEmEdicao(tarefa)}
