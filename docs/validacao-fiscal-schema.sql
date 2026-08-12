@@ -113,19 +113,38 @@ create trigger vf_tarefas_touch
 -- ─── 4. RLS ─────────────────────────────────────────────────────────────────
 -- Depende de public.current_user_is_admin() (criada em rls-reset-v2.sql).
 --
--- Regra: qualquer pessoa logada LÊ tudo e RESPONDE a tarefa (é o trabalho
--- dela). Só admin IMPORTA planilha e apaga lote — importar cria dezenas de
--- itens com prazo para o time inteiro.
+-- Regra: o módulo é restrito. Só admin e as pessoas listadas abaixo enxergam
+-- e respondem as correções fiscais — o resto da equipe não vê nada, nem que
+-- as tabelas existem. Importar planilha e apagar lote seguem só para admin.
 
 alter table public.validacao_fiscal_lotes   enable row level security;
 alter table public.validacao_fiscal_tarefas enable row level security;
 
--- Lotes: leitura para autenticados, escrita só admin.
+-- ─── Quem tem acesso ao módulo ──────────────────────────────────────────────
+-- Para liberar mais alguém, acrescente o e-mail na lista do `in (...)` e rode
+-- este arquivo de novo. A comparação é pelo e-mail do login (JWT), não pelo
+-- cadastro de responsáveis: uma tarefa pode estar atribuída a quem nem usa o
+-- sistema, e isso não pode virar permissão de leitura.
+create or replace function public.vf_pode_ver()
+returns boolean
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select public.current_user_is_admin()
+      or lower(coalesce(auth.jwt() ->> 'email', '')) in (
+           'fernando.carvalho@comber.com.br'
+         );
+$$;
+grant execute on function public.vf_pode_ver() to authenticated;
+
+-- Lotes: leitura restrita, escrita só admin.
 drop policy if exists "vf_lotes_select" on public.validacao_fiscal_lotes;
 create policy "vf_lotes_select"
   on public.validacao_fiscal_lotes for select
   to authenticated
-  using (true);
+  using (public.vf_pode_ver());
 
 drop policy if exists "vf_lotes_write_admin" on public.validacao_fiscal_lotes;
 create policy "vf_lotes_write_admin"
@@ -134,12 +153,12 @@ create policy "vf_lotes_write_admin"
   using (public.current_user_is_admin())
   with check (public.current_user_is_admin());
 
--- Tarefas: leitura para autenticados.
+-- Tarefas: leitura restrita a admin e à lista do módulo.
 drop policy if exists "vf_tarefas_select" on public.validacao_fiscal_tarefas;
 create policy "vf_tarefas_select"
   on public.validacao_fiscal_tarefas for select
   to authenticated
-  using (true);
+  using (public.vf_pode_ver());
 
 -- Criação (importação): só admin.
 drop policy if exists "vf_tarefas_insert_admin" on public.validacao_fiscal_tarefas;
@@ -148,14 +167,14 @@ create policy "vf_tarefas_insert_admin"
   to authenticated
   with check (public.current_user_is_admin());
 
--- Resposta: qualquer autenticado. As colunas que descrevem a divergência não
+-- Resposta: quem enxerga o módulo. As colunas que descrevem a divergência não
 -- são editáveis pela tela; o que muda é status, responsável e observação.
 drop policy if exists "vf_tarefas_update" on public.validacao_fiscal_tarefas;
 create policy "vf_tarefas_update"
   on public.validacao_fiscal_tarefas for update
   to authenticated
-  using (true)
-  with check (true);
+  using (public.vf_pode_ver())
+  with check (public.vf_pode_ver());
 
 drop policy if exists "vf_tarefas_delete_admin" on public.validacao_fiscal_tarefas;
 create policy "vf_tarefas_delete_admin"

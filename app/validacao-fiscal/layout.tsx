@@ -2,7 +2,11 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ScanLine } from 'lucide-react'
+import { Lock, ScanLine } from 'lucide-react'
+
+import { useAuthGate } from '@/app/tarefas/_hooks/useAuthGate'
+
+import { podeVerValidacaoFiscal } from './_lib/acesso'
 
 const ABAS = [
   { href: '/validacao-fiscal', rotulo: 'Dashboard' },
@@ -12,6 +16,31 @@ const ABAS = [
 
 export default function LayoutValidacaoFiscal({ children }: { children: React.ReactNode }) {
   const caminho = usePathname()
+  const { userRole, userEmail, authLoaded } = useAuthGate()
+
+  const liberado = podeVerValidacaoFiscal(userRole, userEmail)
+
+  // Tela em branco enquanto o papel não chegou, para não piscar o conteúdo
+  // para quem não pode vê-lo. Quem barra de verdade é o RLS; isto é a camada
+  // que evita mostrar um módulo vazio e confuso.
+  if (!authLoaded) return <div className="p-6" />
+
+  if (!liberado) {
+    return (
+      <div className="p-6">
+        <div className="mx-auto flex max-w-xl flex-col items-center gap-4 rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+          <div className="rounded-xl bg-slate-100 p-3 text-slate-400">
+            <Lock size={22} />
+          </div>
+          <h1 className="text-xl font-bold text-[#063955]">Acesso restrito</h1>
+          <p className="text-sm leading-relaxed text-slate-500">
+            A Validação Fiscal é usada apenas pela controladoria responsável pelas correções. Fale
+            com um administrador se precisar acompanhar este módulo.
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="p-6 space-y-6">

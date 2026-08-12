@@ -11,7 +11,8 @@ import {
   salvarLote,
   type ResultadoImportacao,
 } from '../_lib/api'
-import { EMAIL_RESPONSAVEL_PADRAO, avisarNovasTarefas } from '../_lib/avisos'
+import { EMAIL_RESPONSAVEL_PADRAO } from '../_lib/acesso'
+import { avisarNovasTarefas } from '../_lib/avisos'
 import { PlanilhaInvalida, lerPlanilha } from '../_lib/parser'
 import { PRAZO_DIAS_UTEIS, calcularPrazo, formatarData } from '../_lib/prazo'
 import { ROTULO_ORIGEM } from '../_lib/types'

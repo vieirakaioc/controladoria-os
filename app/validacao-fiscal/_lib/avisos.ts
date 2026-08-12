@@ -11,9 +11,6 @@ import { estaFinalizada, type TarefaFiscal } from './types'
  * complemento, não o registro. O registro é o banco.
  */
 
-/** Quem recebe as tarefas por padrão quando uma planilha é importada. */
-export const EMAIL_RESPONSAVEL_PADRAO = 'fernando.carvalho@comber.com.br'
-
 type Envio = {
   to: string
   subject: string
