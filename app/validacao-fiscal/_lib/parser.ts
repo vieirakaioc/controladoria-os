@@ -1,6 +1,12 @@
 import * as XLSX from 'xlsx'
 
-import { LAYOUTS, normalizarCabecalho, type LayoutPlanilha } from './planilhas'
+import {
+  LAYOUTS,
+  canonizarCabecalho,
+  nomesAceitos,
+  normalizarCabecalho,
+  type LayoutPlanilha,
+} from './planilhas'
 import type { LinhaPlanilha, Origem, TarefaLida } from './types'
 
 /**
@@ -81,12 +87,12 @@ function valorCelula(celula: XLSX.CellObject | undefined): string | number | nul
   return texto === '' ? null : texto
 }
 
-function lerCabecalhos(aba: XLSX.WorkSheet, faixa: XLSX.Range): string[] {
+function lerCabecalhos(aba: XLSX.WorkSheet, faixa: XLSX.Range, linha: number): string[] {
   const cabecalhos: string[] = []
   const vistos = new Map<string, number>()
 
   for (let coluna = faixa.s.c; coluna <= faixa.e.c; coluna++) {
-    const endereco = XLSX.utils.encode_cell({ r: faixa.s.r, c: coluna })
+    const endereco = XLSX.utils.encode_cell({ r: linha, c: coluna })
     const bruto = valorCelula(aba[endereco] as XLSX.CellObject | undefined)
     let nome = bruto === null ? `Coluna ${coluna + 1}` : String(bruto)
 
@@ -105,9 +111,59 @@ function detectarLayout(cabecalhos: string[]): LayoutPlanilha | null {
   const presentes = new Set(cabecalhos.filter(Boolean).map(normalizarCabecalho))
   return (
     LAYOUTS.find((layout) =>
-      layout.assinatura.every((coluna) => presentes.has(normalizarCabecalho(coluna))),
+      layout.assinatura.every((coluna) =>
+        nomesAceitos(layout, coluna).some((nome) => presentes.has(nome)),
+      ),
     ) ?? null
   )
+}
+
+/**
+ * Até onde procurar o cabeçalho. Exportações costumam trazer título, filtros
+ * ou linhas em branco antes da grade, e exigir cabeçalho na linha 1 recusaria
+ * arquivos que têm exatamente a estrutura certa.
+ */
+const LINHAS_ATE_CABECALHO = 25
+
+type Cabecalho = { linha: number; cabecalhos: string[]; layout: LayoutPlanilha }
+
+function localizarCabecalho(aba: XLSX.WorkSheet, faixa: XLSX.Range): Cabecalho | null {
+  const limite = Math.min(faixa.e.r, faixa.s.r + LINHAS_ATE_CABECALHO)
+
+  for (let linha = faixa.s.r; linha <= limite; linha++) {
+    const cabecalhos = lerCabecalhos(aba, faixa, linha)
+    const layout = detectarLayout(cabecalhos)
+    if (layout) return { linha, cabecalhos, layout }
+  }
+
+  return null
+}
+
+/** O que faltou para a aba ser reconhecida, para a mensagem de erro dizer algo útil. */
+function diagnosticar(aba: XLSX.WorkSheet, faixa: XLSX.Range): string {
+  const limite = Math.min(faixa.e.r, faixa.s.r + LINHAS_ATE_CABECALHO)
+  let melhor: { layout: LayoutPlanilha; faltando: string[] } | null = null
+
+  for (let linha = faixa.s.r; linha <= limite; linha++) {
+    const presentes = new Set(
+      lerCabecalhos(aba, faixa, linha).filter(Boolean).map(normalizarCabecalho),
+    )
+
+    for (const layout of LAYOUTS) {
+      const faltando = layout.assinatura.filter(
+        (coluna) => !nomesAceitos(layout, coluna).some((nome) => presentes.has(nome)),
+      )
+      if (!melhor || faltando.length < melhor.faltando.length) melhor = { layout, faltando }
+    }
+  }
+
+  if (!melhor || melhor.faltando.length === melhor.layout.assinatura.length) {
+    return 'nenhuma coluna conhecida foi encontrada'
+  }
+
+  return `parece "${melhor.layout.rotulo}", mas falta a coluna ${melhor.faltando
+    .map((c) => `"${c}"`)
+    .join(', ')}`
 }
 
 /** Localiza o valor de uma coluna tolerando variação de acento e caixa. */
@@ -155,8 +211,8 @@ function montarTarefa(origem: Origem, aba: string, linha: LinhaPlanilha): Tarefa
     // relatório é salvo sem os valores calculados. Reproduzimos a conta da
     // própria planilha para a matriz não exibir a coluna toda vazia.
     if (campo(linha, 'DIFERENÇA') === null) {
-      const xml = numero(linha, 'VALOR_CTE_XML')
-      const senior = numero(linha, 'VALOR_CTE_SÊNIOR')
+      const xml = numero(linha, 'VALOR XML')
+      const senior = numero(linha, 'VALOR SÊNIOR')
       if (xml !== null && senior !== null) {
         linha['DIFERENÇA'] = Number((xml - senior).toFixed(2))
       }
@@ -173,7 +229,7 @@ function montarTarefa(origem: Origem, aba: string, linha: LinhaPlanilha): Tarefa
         texto(linha, 'OBSERVAÇÃO') || texto(linha, 'STATUS') || 'Sem classificação',
       emitente: texto(linha, 'EMITENTE'),
       filial: '',
-      valor: numero(linha, 'VALOR_CTE_XML'),
+      valor: numero(linha, 'VALOR XML'),
       emissao: null,
       dados: linha,
     }
@@ -215,27 +271,38 @@ export function lerPlanilha(buffer: ArrayBuffer): LeituraAba[] {
   }
 
   const leituras: LeituraAba[] = []
+  const recusadas: string[] = []
 
   for (const nomeAba of workbook.SheetNames) {
     const aba = workbook.Sheets[nomeAba]
     if (!aba || !aba['!ref']) continue
 
     const faixa = XLSX.utils.decode_range(aba['!ref'])
-    const cabecalhos = lerCabecalhos(aba, faixa)
-    const layout = detectarLayout(cabecalhos)
-    if (!layout) continue
+    const achado = localizarCabecalho(aba, faixa)
+
+    if (!achado) {
+      recusadas.push(`"${nomeAba}": ${diagnosticar(aba, faixa)}`)
+      continue
+    }
+
+    const { cabecalhos, layout } = achado
 
     const obrigatorias = new Set(layout.colunasMatriz.map(normalizarCabecalho))
     const tarefas: TarefaLida[] = []
     let ignoradas = 0
 
-    for (let r = faixa.s.r + 1; r <= faixa.e.r; r++) {
+    for (let r = achado.linha + 1; r <= faixa.e.r; r++) {
       const linha: LinhaPlanilha = {}
       let temConteudo = false
 
       for (let c = faixa.s.c; c <= faixa.e.c; c++) {
-        const cabecalho = cabecalhos[c - faixa.s.c]
-        if (!cabecalho) continue
+        const bruto = cabecalhos[c - faixa.s.c]
+        if (!bruto) continue
+
+        // Grava sempre com o nome canônico: duas versões do mesmo relatório
+        // precisam produzir a mesma linha, senão a matriz fica com colunas
+        // vazias e a deduplicação deixa de reconhecer o que já veio antes.
+        const cabecalho = canonizarCabecalho(layout, bruto)
 
         const endereco = XLSX.utils.encode_cell({ r, c })
         const valor = valorCelula(aba[endereco] as XLSX.CellObject | undefined)
@@ -261,7 +328,12 @@ export function lerPlanilha(buffer: ArrayBuffer): LeituraAba[] {
 
   if (leituras.length === 0) {
     throw new PlanilhaInvalida(
-      'Nenhuma aba reconhecida. A importação aceita o relatório de divergências CT-e e a planilha de situações da logística.',
+      'Nenhuma aba reconhecida. O arquivo é identificado pelos cabeçalhos, não pelo nome — ' +
+        'pode renomear à vontade, mas os títulos das colunas precisam bater. ' +
+        (recusadas.length > 0
+          ? `O que encontrei: ${recusadas.join('; ')}.`
+          : 'A planilha veio sem nenhuma aba com conteúdo.') +
+        ' Se preferir, baixe o modelo na tela de importação e cole os dados nele.',
     )
   }
 

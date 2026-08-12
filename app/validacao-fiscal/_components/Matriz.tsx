@@ -7,7 +7,7 @@ import { atribuirEmLote, descreverErro } from '../_lib/api'
 import { CORES } from '../_lib/cores'
 import { formatarCelula, formatarInteiro } from '../_lib/formato'
 import { formatarData, situacaoPrazo, textoPrazo } from '../_lib/prazo'
-import { layoutDe } from '../_lib/planilhas'
+import { layoutDe, valorDaColuna } from '../_lib/planilhas'
 import { estaFinalizada, ROTULO_ORIGEM, type Responsavel, type TarefaFiscal } from '../_lib/types'
 import { ChipPrazo, Painel } from './Ui'
 import { PainelResposta } from './PainelResposta'
@@ -455,7 +455,7 @@ export function Matriz({
                     </td>
 
                     {layout.colunasMatriz.map((coluna) => {
-                      const bruto = tarefa.dados[coluna]
+                      const bruto = valorDaColuna(layout, tarefa.dados, coluna)
                       const numerica = layout.colunasNumericas.includes(coluna)
                       const codigo = layout.colunasCodigo.includes(coluna)
                       const larga = layout.colunasLargas.includes(coluna)

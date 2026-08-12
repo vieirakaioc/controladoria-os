@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react'
 import Link from 'next/link'
-import { AlertCircle, CheckCircle2, FileSpreadsheet, Loader2, Upload } from 'lucide-react'
+import { AlertCircle, CheckCircle2, Download, FileSpreadsheet, Loader2, Upload } from 'lucide-react'
 
 import { CORES } from '../_lib/cores'
 import {
@@ -13,7 +13,9 @@ import {
 } from '../_lib/api'
 import { EMAIL_RESPONSAVEL_PADRAO } from '../_lib/acesso'
 import { avisarNovasTarefas } from '../_lib/avisos'
+import { baixarModelo } from '../_lib/modelo'
 import { PlanilhaInvalida, lerPlanilha } from '../_lib/parser'
+import { LAYOUTS } from '../_lib/planilhas'
 import { PRAZO_DIAS_UTEIS, calcularPrazo, formatarData } from '../_lib/prazo'
 import { ROTULO_ORIGEM } from '../_lib/types'
 import { Painel } from './Ui'
@@ -151,6 +153,27 @@ export function FormularioImportacao({
                 renomear à vontade na exportação do Sênior.
               </span>
             </label>
+
+            <div className="mt-3 flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+              <span className="text-xs text-slate-500 leading-relaxed">
+                Deu erro de estrutura? Baixe o modelo, cole os dados nele e envie — os cabeçalhos já
+                vêm exatamente como a importação espera.
+              </span>
+
+              <div className="ml-auto flex flex-wrap gap-2">
+                {LAYOUTS.map((layout) => (
+                  <button
+                    key={layout.origem}
+                    type="button"
+                    onClick={() => baixarModelo(layout.origem)}
+                    className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 transition-colors hover:border-[#0f88a8] hover:text-[#0f88a8]"
+                  >
+                    <Download size={13} />
+                    Modelo {layout.rotulo}
+                  </button>
+                ))}
+              </div>
+            </div>
 
             <input
               ref={entrada}

@@ -88,7 +88,7 @@ export type TarefaLida = {
 export type Responsavel = { id: string; nome: string; email?: string | null }
 
 export const ROTULO_ORIGEM: Record<Origem, string> = {
-  cte_divergencias: 'Divergências CT-e',
+  cte_divergencias: 'Divergências fiscais',
   situacoes_logistica: 'Situações Logística',
 }
 
