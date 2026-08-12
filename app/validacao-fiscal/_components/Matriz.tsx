@@ -1,8 +1,10 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { Check, PencilLine, Search, ShieldCheck } from 'lucide-react'
+import { AlertCircle, Check, Loader2, PencilLine, Search, ShieldCheck, UserPlus } from 'lucide-react'
 
+import { atribuirEmLote, descreverErro } from '../_lib/api'
+import { CORES } from '../_lib/cores'
 import { formatarCelula, formatarInteiro } from '../_lib/formato'
 import { formatarData, situacaoPrazo, textoPrazo } from '../_lib/prazo'
 import { layoutDe } from '../_lib/planilhas'
@@ -63,6 +65,10 @@ export function Matriz({
   const [filtroResponsavel, setFiltroResponsavel] = useState('todos')
   const [busca, setBusca] = useState('')
   const [emEdicao, setEmEdicao] = useState<TarefaFiscal | null>(null)
+  const [donoEmLote, setDonoEmLote] = useState('')
+  const [confirmandoLote, setConfirmandoLote] = useState(false)
+  const [atribuindo, setAtribuindo] = useState(false)
+  const [erroLote, setErroLote] = useState<string | null>(null)
 
   const grupos = useMemo(() => {
     const mapa = new Map<string, { chave: string; rotulo: string; tarefas: TarefaFiscal[] }>()
@@ -122,6 +128,27 @@ export function Matriz({
       return true
     })
   }, [grupo, filtroPrazo, filtroResponsavel, busca, hoje])
+
+  const escolhidoParaLote = responsaveis.find((r) => r.id === donoEmLote) ?? null
+
+  /** Atribui de uma vez as tarefas que estão na tela (aba + filtros ativos). */
+  const atribuirVisiveis = async () => {
+    setErroLote(null)
+    setAtribuindo(true)
+    try {
+      const atualizadas = await atribuirEmLote(
+        visiveis.map((t) => t.id),
+        escolhidoParaLote,
+      )
+      atualizadas.forEach(aoAtualizar)
+      setConfirmandoLote(false)
+      setDonoEmLote('')
+    } catch (falha) {
+      setErroLote(descreverErro(falha))
+    } finally {
+      setAtribuindo(false)
+    }
+  }
 
   if (!grupo) {
     return (
@@ -212,6 +239,83 @@ export function Matriz({
           <span className="ml-auto text-sm text-slate-500">
             {formatarInteiro(visiveis.length)} de {formatarInteiro(grupo.tarefas.length)} tarefas
           </span>
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-slate-100 pt-3">
+          <span className="text-sm font-semibold text-[#063955]">Atribuir em lote</span>
+
+          <select
+            value={donoEmLote}
+            onChange={(e) => {
+              setDonoEmLote(e.target.value)
+              setConfirmandoLote(false)
+              setErroLote(null)
+            }}
+            aria-label="Responsável para as tarefas em tela"
+            className={CAMPO}
+          >
+            <option value="">Escolha a pessoa…</option>
+            {responsaveis.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.nome}
+              </option>
+            ))}
+          </select>
+
+          {confirmandoLote ? (
+            <>
+              <span className="text-sm text-slate-600">
+                Passar <strong>{formatarInteiro(visiveis.length)}</strong> tarefa(s) em tela para{' '}
+                <strong>{escolhidoParaLote?.nome}</strong>?
+              </span>
+
+              <button
+                type="button"
+                onClick={atribuirVisiveis}
+                disabled={atribuindo}
+                className="inline-flex items-center gap-2 rounded-xl bg-[#0f88a8] px-4 py-2 text-sm font-bold text-white transition-all hover:brightness-110 disabled:opacity-40"
+              >
+                {atribuindo ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />}
+                Confirmar
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setConfirmandoLote(false)}
+                disabled={atribuindo}
+                className="text-sm text-slate-500 transition-colors hover:text-[#063955] disabled:opacity-40"
+              >
+                Cancelar
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => setConfirmandoLote(true)}
+                disabled={!escolhidoParaLote || visiveis.length === 0}
+                className="inline-flex items-center gap-2 rounded-xl border border-[#0f88a8] px-4 py-2 text-sm font-bold text-[#0f88a8] transition-all hover:bg-[#0f88a8] hover:text-white disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-300 disabled:hover:bg-transparent"
+              >
+                <UserPlus size={15} />
+                Atribuir as {formatarInteiro(visiveis.length)} da tela
+              </button>
+
+              <span className="text-xs text-slate-400">
+                Vale para a aba e os filtros ativos — inclusive as que já têm dono.
+              </span>
+            </>
+          )}
+
+          {erroLote && (
+            <span
+              role="alert"
+              className="flex items-center gap-1.5 text-sm"
+              style={{ color: CORES.critico }}
+            >
+              <AlertCircle size={15} />
+              {erroLote}
+            </span>
+          )}
         </div>
       </Painel>
 

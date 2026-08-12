@@ -267,6 +267,39 @@ export async function salvarLote(params: {
   }
 }
 
+/**
+ * Atribui várias tarefas de uma vez.
+ *
+ * Vai em fatias porque o filtro `in` do PostgREST viaja na URL: com centenas
+ * de ids a requisição estoura o limite do servidor e falha inteira.
+ */
+const FATIA_ATRIBUICAO = 150
+
+export async function atribuirEmLote(
+  ids: string[],
+  responsavel: Responsavel | null,
+): Promise<TarefaFiscal[]> {
+  const atualizadas: TarefaFiscal[] = []
+
+  for (let inicio = 0; inicio < ids.length; inicio += FATIA_ATRIBUICAO) {
+    const fatia = ids.slice(inicio, inicio + FATIA_ATRIBUICAO)
+
+    const { data, error } = await supabase
+      .from(TAB_TAREFAS)
+      .update({
+        responsavel_id: responsavel?.id ?? null,
+        responsavel_nome: responsavel?.nome ?? null,
+      })
+      .in('id', fatia)
+      .select(CAMPOS)
+
+    if (error) throw error
+    atualizadas.push(...((data ?? []) as unknown as LinhaTarefa[]).map(mapear))
+  }
+
+  return atualizadas
+}
+
 /** Quantas tarefas o lote gerou e quantas já foram respondidas. */
 export async function resumoDoLote(loteId: string): Promise<{ total: number; respondidas: number }> {
   const { data, error } = await supabase
