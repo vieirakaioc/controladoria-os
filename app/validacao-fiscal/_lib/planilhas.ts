@@ -18,6 +18,10 @@ export type LayoutPlanilha = {
   colunasNumericas: string[]
   /** Colunas formatadas como moeda. */
   colunasMoeda: string[]
+  /** Texto corrido: ganha largura e quebra em duas linhas em vez de cortar. */
+  colunasLargas: string[]
+  /** Chaves longas (44 dígitos): fonte mono e só o fim, que é o que distingue. */
+  colunasCodigo: string[]
 }
 
 export const LAYOUTS: LayoutPlanilha[] = [
@@ -38,6 +42,8 @@ export const LAYOUTS: LayoutPlanilha[] = [
     ],
     colunasNumericas: ['Nº DOCUMENTO', 'VALOR_CTE_XML', 'VALOR_CTE_SÊNIOR', 'DIFERENÇA'],
     colunasMoeda: ['VALOR_CTE_XML', 'VALOR_CTE_SÊNIOR', 'DIFERENÇA'],
+    colunasLargas: ['EMITENTE', 'OBSERVAÇÃO'],
+    colunasCodigo: ['ARQUIVO'],
   },
   {
     origem: 'situacoes_logistica',
@@ -66,6 +72,15 @@ export const LAYOUTS: LayoutPlanilha[] = [
     ],
     colunasNumericas: ['Filial', 'Nº Nota Fiscal', 'Valor Bruto'],
     colunasMoeda: ['Valor Bruto'],
+    colunasLargas: [
+      'Fantasia',
+      'Desc. Situação NF-e',
+      'Descrição (Sit.)',
+      'Observação',
+      'Nome do Cliente',
+      'Nome do Representante',
+    ],
+    colunasCodigo: ['Chv.Aces.Nf-e'],
   },
 ]
 

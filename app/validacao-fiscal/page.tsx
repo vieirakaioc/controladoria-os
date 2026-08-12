@@ -4,6 +4,8 @@ import { useMemo } from 'react'
 import Link from 'next/link'
 import { ArrowUpRight } from 'lucide-react'
 
+import { useAuthGate } from '@/app/tarefas/_hooks/useAuthGate'
+
 import {
   AvisoErro,
   BarraDistribuicao,
@@ -20,7 +22,8 @@ import { PRAZO_DIAS_UTEIS, hoje } from './_lib/prazo'
 import { calcularResumo } from './_lib/resumo'
 
 export default function PaginaDashboard() {
-  const { tarefas, carregando, erro } = useValidacaoFiscal()
+  const { userName, userEmail } = useAuthGate()
+  const { tarefas, carregando, erro } = useValidacaoFiscal({ email: userEmail, nome: userName })
   const referencia = hoje()
 
   const resumo = useMemo(() => calcularResumo(tarefas, referencia), [tarefas, referencia])
@@ -113,19 +116,25 @@ export default function PaginaDashboard() {
             detalhe="Último dia para responder"
           />
           <Kpi
-            rotulo="Concluídas"
-            valor={formatarInteiro(resumo.concluidas)}
+            rotulo="Corrigidas"
+            valor={formatarInteiro(resumo.corrigidas)}
             tom="bom"
             detalhe={
               resumo.concluidasComAtraso > 0
-                ? `${resumo.concluidasComAtraso} fora do prazo`
+                ? `${resumo.concluidasComAtraso} encerrada(s) fora do prazo`
                 : 'Todas dentro do prazo'
             }
           />
           <Kpi
-            rotulo="Sem responsável"
-            valor={formatarInteiro(resumo.semResponsavel)}
-            detalhe="Tarefas abertas ainda não atribuídas"
+            rotulo="Sem correção"
+            valor={formatarInteiro(resumo.semCorrecao)}
+            detalhe="Conferidas e já estavam certas"
+          />
+          <Kpi
+            rotulo="Em andamento"
+            valor={formatarInteiro(resumo.emAndamento)}
+            tom={resumo.emAndamento > 0 ? 'atencao' : 'neutro'}
+            detalhe="Paradas com motivo registrado"
           />
           <Kpi
             rotulo="Valor em aberto"
@@ -148,7 +157,7 @@ export default function PaginaDashboard() {
       >
         <BarraDistribuicao
           segmentos={[
-            { rotulo: 'Concluídas', valor: resumo.concluidas, cor: CORES.concluido },
+            { rotulo: 'Encerradas', valor: resumo.concluidas, cor: CORES.concluido },
             { rotulo: 'No prazo', valor: resumo.noPrazo, cor: CORES.bom },
             { rotulo: 'Vencem hoje', valor: resumo.venceHoje, cor: CORES.atencao },
             { rotulo: 'Atrasadas', valor: resumo.atrasadas, cor: CORES.critico },

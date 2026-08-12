@@ -1,4 +1,4 @@
-import type { SituacaoPrazo, StatusTarefa } from './types'
+import { estaFinalizada, type SituacaoPrazo, type StatusTarefa } from './types'
 
 /** Prazo de resposta em dias úteis, contados da data de importação. */
 export const PRAZO_DIAS_UTEIS = 3
@@ -56,7 +56,7 @@ export function situacaoPrazo(
   concluidoEm: string | null,
   referencia: string = hoje(),
 ): SituacaoPrazo {
-  if (status === 'concluida') {
+  if (estaFinalizada(status)) {
     const dataConclusao = concluidoEm?.slice(0, 10) ?? referencia
     return dataConclusao > prazo ? 'concluida_com_atraso' : 'concluida_no_prazo'
   }

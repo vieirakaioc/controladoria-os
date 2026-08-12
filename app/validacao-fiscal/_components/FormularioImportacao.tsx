@@ -5,7 +5,13 @@ import Link from 'next/link'
 import { AlertCircle, CheckCircle2, FileSpreadsheet, Loader2, Upload } from 'lucide-react'
 
 import { CORES } from '../_lib/cores'
-import { descreverErro, salvarLote, type ResultadoImportacao } from '../_lib/api'
+import {
+  buscarResponsavelPorEmail,
+  descreverErro,
+  salvarLote,
+  type ResultadoImportacao,
+} from '../_lib/api'
+import { EMAIL_RESPONSAVEL_PADRAO, avisarNovasTarefas } from '../_lib/avisos'
 import { PlanilhaInvalida, lerPlanilha } from '../_lib/parser'
 import { PRAZO_DIAS_UTEIS, calcularPrazo, formatarData } from '../_lib/prazo'
 import { ROTULO_ORIGEM } from '../_lib/types'
@@ -43,6 +49,10 @@ export function FormularioImportacao({
     let ignoradas = 0
 
     try {
+      // Todas as tarefas novas nascem no nome do responsável padrão. Sem dono,
+      // a planilha vira uma lista que ninguém se sente encarregado de responder.
+      const responsavelPadrao = await buscarResponsavelPorEmail(EMAIL_RESPONSAVEL_PADRAO)
+
       for (const arquivo of arquivos) {
         if (arquivo.size > TAMANHO_MAXIMO) {
           setEstado({
@@ -65,6 +75,7 @@ export function FormularioImportacao({
               importadoPor: usuario || null,
               prazo,
               tarefas: leitura.tarefas,
+              responsavelPadrao,
             }),
           )
         }
@@ -80,6 +91,19 @@ export function FormularioImportacao({
 
       setEstado({ situacao: 'sucesso', resultados, ignoradas })
       aoImportar()
+
+      // Depois de mostrar o resultado: o aviso é complemento, e uma falha de
+      // SMTP não pode fazer parecer que a importação deu errado.
+      await avisarNovasTarefas({
+        destino: EMAIL_RESPONSAVEL_PADRAO,
+        quem: usuario || 'Controladoria',
+        prazo,
+        arquivos: resultados.map((r) => ({
+          arquivo: r.arquivo,
+          novas: r.novas,
+          duplicadas: r.duplicadas,
+        })),
+      })
     } catch (falha) {
       setEstado({
         situacao: 'erro',
@@ -248,6 +272,24 @@ export function FormularioImportacao({
               </li>
             ))}
           </ul>
+
+          {estado.resultados[0].responsavelPadrao ? (
+            <p className="mt-4 text-sm text-slate-600 leading-relaxed">
+              As tarefas novas ficaram com <strong>{estado.resultados[0].responsavelPadrao}</strong>,
+              que também recebeu o aviso por e-mail. A atribuição pode ser trocada linha a linha na
+              matriz.
+            </p>
+          ) : (
+            <p
+              className="mt-4 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm"
+              style={{ color: CORES.atencao }}
+            >
+              <AlertCircle size={16} className="mt-0.5 shrink-0" />
+              As tarefas ficaram sem responsável: não há ninguém com o e-mail{' '}
+              {EMAIL_RESPONSAVEL_PADRAO} no cadastro de responsáveis. O e-mail de aviso foi enviado
+              assim mesmo.
+            </p>
+          )}
 
           <p className="mt-4 text-xs text-slate-500 leading-relaxed">
             Linhas já importadas antes não viram tarefa de novo — status, responsável e observação

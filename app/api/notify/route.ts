@@ -3,7 +3,13 @@ import nodemailer from 'nodemailer'
 
 export async function POST(request: Request) {
   try {
-    const { to, subject, taskName, action, userName, observacoes } = await request.json()
+    // link/linkLabel são opcionais: sem eles o e-mail continua apontando para
+    // /tarefas, como sempre apontou.
+    const { to, subject, taskName, action, userName, observacoes, link, linkLabel } =
+      await request.json()
+
+    const destino = link || `${process.env.NEXT_PUBLIC_SITE_URL}/tarefas`
+    const textoBotao = linkLabel || 'Acessar Painel de Tarefas'
 
     const transporter = nodemailer.createTransport({
       host: 'smtp.zoho.com', 
@@ -35,8 +41,8 @@ export async function POST(request: Request) {
           ` : ''}
 
           <div style="margin-top: 32px; text-align: center;">
-            <a href="${process.env.NEXT_PUBLIC_SITE_URL}/tarefas" style="background-color: #0B1F3A; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
-              Acessar Painel de Tarefas
+            <a href="${destino}" style="background-color: #0B1F3A; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+              ${textoBotao}
             </a>
           </div>
         </div>
@@ -51,8 +57,9 @@ export async function POST(request: Request) {
     })
 
     return NextResponse.json({ success: true, message: 'Email enviado com sucesso!' })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Erro ao enviar email pelo Zoho:', error)
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    const mensagem = error instanceof Error ? error.message : String(error)
+    return NextResponse.json({ success: false, error: mensagem }, { status: 500 })
   }
 }

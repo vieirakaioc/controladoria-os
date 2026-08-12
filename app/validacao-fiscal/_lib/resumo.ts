@@ -1,5 +1,5 @@
 import { situacaoPrazo } from './prazo'
-import { ROTULO_ORIGEM, type TarefaFiscal } from './types'
+import { estaFinalizada, ROTULO_ORIGEM, type TarefaFiscal } from './types'
 
 /**
  * Indicadores do dashboard, calculados a partir da mesma lista que alimenta a
@@ -17,7 +17,11 @@ export type Contagem = {
 export type Resumo = {
   total: number
   emAberto: number
+  /** Encerradas, somando corrigidas e sem correção. */
   concluidas: number
+  corrigidas: number
+  semCorrecao: number
+  emAndamento: number
   atrasadas: number
   venceHoje: number
   noPrazo: number
@@ -43,7 +47,7 @@ function agrupar(
     const atual = mapa.get(rotulo) ?? { rotulo, total: 0, pendentes: 0, atrasadas: 0 }
 
     atual.total++
-    if (tarefa.status !== 'concluida') {
+    if (!estaFinalizada(tarefa.status)) {
       atual.pendentes++
       if (situacaoPrazo(tarefa.status, tarefa.prazo, tarefa.concluidoEm, hoje) === 'atrasada') {
         atual.atrasadas++
@@ -64,6 +68,9 @@ export function calcularResumo(tarefas: TarefaFiscal[], hoje: string): Resumo {
   let concluidasComAtraso = 0
   let semResponsavel = 0
   let valorPendente = 0
+  let corrigidas = 0
+  let semCorrecao = 0
+  let emAndamento = 0
 
   const diasResposta: number[] = []
 
@@ -89,12 +96,16 @@ export function calcularResumo(tarefas: TarefaFiscal[], hoje: string): Resumo {
         break
     }
 
-    if (tarefa.status !== 'concluida') {
+    if (tarefa.status === 'concluida') corrigidas++
+    if (tarefa.status === 'sem_correcao') semCorrecao++
+    if (tarefa.status === 'em_andamento') emAndamento++
+
+    if (!estaFinalizada(tarefa.status)) {
       valorPendente += tarefa.valor ?? 0
       if (!tarefa.responsavelId && !tarefa.responsavelNome) semResponsavel++
     }
 
-    if (tarefa.status === 'concluida' && tarefa.concluidoEm) {
+    if (estaFinalizada(tarefa.status) && tarefa.concluidoEm) {
       const dias =
         (new Date(tarefa.concluidoEm).getTime() - new Date(tarefa.criadoEm).getTime()) / 86_400_000
       if (Number.isFinite(dias) && dias >= 0) diasResposta.push(dias)
@@ -105,6 +116,9 @@ export function calcularResumo(tarefas: TarefaFiscal[], hoje: string): Resumo {
     total: tarefas.length,
     emAberto: tarefas.length - concluidas,
     concluidas,
+    corrigidas,
+    semCorrecao,
+    emAndamento,
     atrasadas,
     venceHoje,
     noPrazo,

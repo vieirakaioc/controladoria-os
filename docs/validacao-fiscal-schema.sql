@@ -52,8 +52,13 @@ create table if not exists public.validacao_fiscal_tarefas (
   emissao             date,
   -- Linha original completa, para a matriz exibir a planilha fielmente.
   dados               jsonb       not null default '{}'::jsonb,
+  -- concluida = corrigida; sem_correcao = conferida e já estava certa. Os dois
+  -- encerram a tarefa, e separá-los mostra quanto do relatório era divergência
+  -- de verdade.
   status              text        not null default 'pendente'
-                        check (status in ('pendente', 'em_andamento', 'concluida')),
+                        check (status in ('pendente', 'em_andamento', 'concluida', 'sem_correcao')),
+  -- Por que está parada: com quem está, o que falta.
+  motivo_andamento    text,
   -- bigint, não uuid: é o tipo de responsaveis.id neste banco.
   responsavel_id      bigint      references public.responsaveis (id) on delete set null,
   responsavel_nome    text,
@@ -64,6 +69,22 @@ create table if not exists public.validacao_fiscal_tarefas (
   criado_em           timestamptz not null default now(),
   atualizado_em       timestamptz not null default now()
 );
+
+-- ─── 2.1 Ajustes em banco já criado ─────────────────────────────────────────
+-- "create table if not exists" não altera tabela existente, então quem rodou a
+-- versão anterior deste arquivo precisa destes dois passos. Ambos são
+-- idempotentes: rodar em banco novo não faz nada.
+
+alter table public.validacao_fiscal_tarefas
+  add column if not exists motivo_andamento text;
+
+alter table public.validacao_fiscal_tarefas
+  drop constraint if exists validacao_fiscal_tarefas_status_check;
+
+alter table public.validacao_fiscal_tarefas
+  add constraint validacao_fiscal_tarefas_status_check
+  check (status in ('pendente', 'em_andamento', 'concluida', 'sem_correcao'));
+
 
 create index if not exists vf_tarefas_status_idx      on public.validacao_fiscal_tarefas (status);
 create index if not exists vf_tarefas_prazo_idx       on public.validacao_fiscal_tarefas (prazo);

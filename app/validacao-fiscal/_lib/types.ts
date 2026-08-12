@@ -8,7 +8,18 @@
 
 export type Origem = 'cte_divergencias' | 'situacoes_logistica'
 
-export type StatusTarefa = 'pendente' | 'em_andamento' | 'concluida'
+/**
+ * `concluida` e `sem_correcao` são os dois desfechos possíveis: a linha foi
+ * corrigida, ou foi conferida e já estava certa. Os dois encerram a tarefa —
+ * separá-los é o que deixa a controladoria enxergar quanto do relatório era
+ * divergência real.
+ */
+export type StatusTarefa = 'pendente' | 'em_andamento' | 'concluida' | 'sem_correcao'
+
+/** Encerrada, com ou sem correção. */
+export function estaFinalizada(status: StatusTarefa): boolean {
+  return status === 'concluida' || status === 'sem_correcao'
+}
 
 /** Como a tarefa está em relação ao prazo de resposta. */
 export type SituacaoPrazo =
@@ -39,6 +50,8 @@ export type TarefaFiscal = {
   responsavelId: string | null
   responsavelNome: string | null
   observacaoCorrecao: string | null
+  /** Por que a tarefa está parada — com quem está, o que falta. */
+  motivoAndamento: string | null
   /** YYYY-MM-DD */
   prazo: string
   concluidoEm: string | null
@@ -82,5 +95,6 @@ export const ROTULO_ORIGEM: Record<Origem, string> = {
 export const ROTULO_STATUS: Record<StatusTarefa, string> = {
   pendente: 'Pendente',
   em_andamento: 'Em andamento',
-  concluida: 'Concluída',
+  concluida: 'Corrigida',
+  sem_correcao: 'Sem correção',
 }

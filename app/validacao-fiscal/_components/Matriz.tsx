@@ -1,27 +1,49 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { Check, PencilLine, Search } from 'lucide-react'
+import { Check, PencilLine, Search, ShieldCheck } from 'lucide-react'
 
 import { formatarCelula, formatarInteiro } from '../_lib/formato'
 import { formatarData, situacaoPrazo, textoPrazo } from '../_lib/prazo'
 import { layoutDe } from '../_lib/planilhas'
-import { ROTULO_ORIGEM, type Responsavel, type TarefaFiscal } from '../_lib/types'
+import { estaFinalizada, ROTULO_ORIGEM, type Responsavel, type TarefaFiscal } from '../_lib/types'
 import { ChipPrazo, Painel } from './Ui'
 import { PainelResposta } from './PainelResposta'
 
-type FiltroPrazo = 'todos' | 'abertas' | 'atrasadas' | 'vence_hoje' | 'concluidas'
+type FiltroPrazo =
+  | 'todos'
+  | 'abertas'
+  | 'atrasadas'
+  | 'vence_hoje'
+  | 'corrigidas'
+  | 'sem_correcao'
 
 const FILTROS: { valor: FiltroPrazo; rotulo: string }[] = [
   { valor: 'abertas', rotulo: 'Em aberto' },
   { valor: 'atrasadas', rotulo: 'Atrasadas' },
   { valor: 'vence_hoje', rotulo: 'Vencem hoje' },
-  { valor: 'concluidas', rotulo: 'Concluídas' },
+  { valor: 'corrigidas', rotulo: 'Corrigidas' },
+  { valor: 'sem_correcao', rotulo: 'Sem correção' },
   { valor: 'todos', rotulo: 'Todas' },
 ]
 
 const CAMPO =
   'rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#0f88a8]'
+
+/** Coluna fixa da esquerda: largura travada e sombra marcando a borda de rolagem. */
+const CONGELADA =
+  'w-[186px] min-w-[186px] border-r border-slate-200 shadow-[8px_0_12px_-10px_rgba(15,23,42,0.45)]'
+
+const ROTULO_TH = 'text-[11px] font-bold uppercase tracking-wider text-slate-500'
+
+/**
+ * Chave de acesso tem 44 dígitos e ocuparia meia tela sem informar nada: o que
+ * distingue uma linha da outra está no fim. O valor inteiro fica no title e no
+ * painel de detalhe.
+ */
+function fimDaChave(valor: string): string {
+  return valor.length > 14 ? `…${valor.slice(-12)}` : valor
+}
 
 export function Matriz({
   tarefas,
@@ -67,8 +89,9 @@ export function Matriz({
     return grupo.tarefas.filter((tarefa) => {
       const situacao = situacaoPrazo(tarefa.status, tarefa.prazo, tarefa.concluidoEm, hoje)
 
-      if (filtroPrazo === 'abertas' && tarefa.status === 'concluida') return false
-      if (filtroPrazo === 'concluidas' && tarefa.status !== 'concluida') return false
+      if (filtroPrazo === 'abertas' && estaFinalizada(tarefa.status)) return false
+      if (filtroPrazo === 'corrigidas' && tarefa.status !== 'concluida') return false
+      if (filtroPrazo === 'sem_correcao' && tarefa.status !== 'sem_correcao') return false
       if (filtroPrazo === 'atrasadas' && situacao !== 'atrasada') return false
       if (filtroPrazo === 'vence_hoje' && situacao !== 'vence_hoje') return false
 
@@ -88,6 +111,7 @@ export function Matriz({
           tarefa.tipoDivergencia,
           tarefa.responsavelNome ?? '',
           tarefa.observacaoCorrecao ?? '',
+          tarefa.motivoAndamento ?? '',
           ...Object.values(tarefa.dados).map((v) => (v === null ? '' : String(v))),
         ]
           .join(' ')
@@ -115,7 +139,7 @@ export function Matriz({
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2">
         {grupos.map((g) => {
-          const abertas = g.tarefas.filter((t) => t.status !== 'concluida').length
+          const abertas = g.tarefas.filter((t) => !estaFinalizada(t.status)).length
           const ativa = g.chave === grupo.chave
 
           return (
@@ -192,17 +216,29 @@ export function Matriz({
       </Painel>
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="max-h-[65vh] overflow-auto">
-          <table className="w-full border-collapse text-sm">
+        <div className="max-h-[70vh] overflow-auto">
+          {/*
+            w-max em vez de w-full: com w-full o navegador estica as colunas para
+            preencher a tela e abre vãos enormes entre elas. Aqui cada coluna
+            ocupa o que o conteúdo pede e a tabela rola na horizontal.
+          */}
+          <table className="w-max min-w-full border-collapse text-sm">
             <thead className="sticky top-0 z-20">
               <tr>
-                {['', 'Prazo', 'Responsável', 'Observação da correção', ...layout.colunasMatriz].map(
+                <th
+                  scope="col"
+                  className={`${CONGELADA} sticky left-0 top-0 z-30 border-b border-slate-200 bg-slate-50 px-4 py-3 text-left ${ROTULO_TH}`}
+                >
+                  Tarefa e prazo
+                </th>
+
+                {['Responsável', 'Observação / motivo', ...layout.colunasMatriz].map(
                   (coluna, indice) => (
                     <th
                       key={`${coluna}-${indice}`}
                       scope="col"
-                      className={`whitespace-nowrap border-b border-slate-200 bg-slate-50 px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-400 ${
-                        indice === 0 ? 'sticky left-0 z-30' : ''
+                      className={`whitespace-nowrap border-b border-l border-slate-200 bg-slate-50 px-4 py-3 text-left ${ROTULO_TH} ${
+                        layout.colunasNumericas.includes(coluna) ? 'text-right' : ''
                       }`}
                     >
                       {coluna}
@@ -216,39 +252,48 @@ export function Matriz({
               {visiveis.length === 0 && (
                 <tr>
                   <td
-                    colSpan={4 + layout.colunasMatriz.length}
-                    className="px-4 py-10 text-center text-sm text-slate-400"
+                    colSpan={3 + layout.colunasMatriz.length}
+                    className="px-4 py-12 text-center text-sm text-slate-400"
                   >
                     Nenhuma tarefa com esses filtros.
                   </td>
                 </tr>
               )}
 
-              {visiveis.map((tarefa) => {
+              {visiveis.map((tarefa, linha) => {
                 const situacao = situacaoPrazo(tarefa.status, tarefa.prazo, tarefa.concluidoEm, hoje)
-                const concluida = tarefa.status === 'concluida'
+                const finalizada = estaFinalizada(tarefa.status)
+                const semCorrecao = tarefa.status === 'sem_correcao'
+                // A faixa zebrada precisa estar também na célula congelada, que
+                // tem fundo próprio para o resto da linha passar por baixo.
+                const faixa = linha % 2 === 1 ? 'bg-slate-50/70' : 'bg-white'
 
                 return (
                   <tr
                     key={tarefa.id}
-                    className={`border-b border-slate-100 transition-colors hover:bg-slate-50 ${
-                      concluida ? 'opacity-60' : ''
-                    }`}
+                    className={`group border-b border-slate-100 ${faixa} hover:bg-[#0f88a8]/[0.06]`}
                   >
-                    <td className="sticky left-0 z-10 bg-white px-3 py-2">
+                    <td
+                      className={`${CONGELADA} sticky left-0 z-10 px-4 py-3 align-top ${faixa} group-hover:bg-[#eef7fa]`}
+                    >
                       <button
                         type="button"
                         onClick={() => setEmEdicao(tarefa)}
-                        className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border px-3 py-1.5 text-xs font-bold transition-all ${
-                          concluida
-                            ? 'border-slate-200 text-slate-400 hover:text-slate-700'
+                        className={`inline-flex w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border px-3 py-1.5 text-xs font-bold transition-all ${
+                          finalizada
+                            ? 'border-slate-200 text-slate-400 hover:border-slate-300 hover:text-slate-700'
                             : 'border-[#0f88a8] text-[#0f88a8] hover:bg-[#0f88a8] hover:text-white'
                         }`}
                       >
-                        {concluida ? (
+                        {semCorrecao ? (
+                          <>
+                            <ShieldCheck size={13} />
+                            Sem correção
+                          </>
+                        ) : finalizada ? (
                           <>
                             <Check size={13} />
-                            Concluída
+                            Corrigida
                           </>
                         ) : (
                           <>
@@ -257,45 +302,86 @@ export function Matriz({
                           </>
                         )}
                       </button>
-                    </td>
 
-                    <td className="whitespace-nowrap px-3 py-2">
-                      <ChipPrazo
-                        situacao={situacao}
-                        complemento={concluida ? undefined : textoPrazo(tarefa.prazo, hoje)}
-                      />
-                      <div className="mt-1 text-[11px] tabular-nums text-slate-400">
-                        {formatarData(tarefa.prazo)}
+                      <div className="mt-2 flex flex-col gap-1">
+                        <ChipPrazo situacao={situacao} />
+                        <span className="text-[11px] tabular-nums text-slate-400">
+                          {finalizada
+                            ? formatarData(tarefa.prazo)
+                            : `${formatarData(tarefa.prazo)} · ${textoPrazo(tarefa.prazo, hoje)}`}
+                        </span>
+                        {tarefa.status === 'em_andamento' && (
+                          <span className="text-[11px] font-semibold text-[#c98500]">
+                            Em andamento
+                          </span>
+                        )}
                       </div>
                     </td>
 
-                    <td className="whitespace-nowrap px-3 py-2 text-slate-700">
-                      {tarefa.responsavelNome ?? <span className="text-slate-400">Não atribuída</span>}
+                    <td className="w-[150px] border-l border-slate-100 px-4 py-3 align-top text-slate-700">
+                      {tarefa.responsavelNome ?? (
+                        <span className="text-slate-300">Não atribuída</span>
+                      )}
                     </td>
 
-                    <td className="px-3 py-2">
-                      <div
-                        className="max-w-[280px] truncate text-slate-700"
-                        title={tarefa.observacaoCorrecao ?? ''}
-                      >
-                        {tarefa.observacaoCorrecao ?? <span className="text-slate-400">—</span>}
-                      </div>
+                    <td className="w-[250px] border-l border-slate-100 px-4 py-3 align-top">
+                      {tarefa.observacaoCorrecao && (
+                        <div
+                          className="line-clamp-2 leading-snug text-slate-700"
+                          title={tarefa.observacaoCorrecao}
+                        >
+                          {tarefa.observacaoCorrecao}
+                        </div>
+                      )}
+
+                      {tarefa.status === 'em_andamento' && tarefa.motivoAndamento && (
+                        <div
+                          className="line-clamp-2 leading-snug text-slate-500"
+                          title={tarefa.motivoAndamento}
+                        >
+                          <span className="font-semibold text-slate-400">Parada em: </span>
+                          {tarefa.motivoAndamento}
+                        </div>
+                      )}
+
+                      {!tarefa.observacaoCorrecao &&
+                        !(tarefa.status === 'em_andamento' && tarefa.motivoAndamento) && (
+                          <span className="text-slate-300">—</span>
+                        )}
                     </td>
 
                     {layout.colunasMatriz.map((coluna) => {
+                      const bruto = tarefa.dados[coluna]
                       const numerica = layout.colunasNumericas.includes(coluna)
-                      const moeda = layout.colunasMoeda.includes(coluna)
+                      const codigo = layout.colunasCodigo.includes(coluna)
+                      const larga = layout.colunasLargas.includes(coluna)
+                      const texto = formatarCelula(bruto, {
+                        moeda: layout.colunasMoeda.includes(coluna),
+                      })
 
                       return (
                         <td
                           key={coluna}
-                          className={`whitespace-nowrap px-3 py-2 text-slate-600 ${
-                            numerica ? 'text-right tabular-nums' : ''
+                          className={`border-l border-slate-100 px-4 py-3 align-top ${
+                            numerica ? 'text-right tabular-nums text-slate-700' : 'text-slate-600'
                           }`}
                         >
-                          <span className="block max-w-[320px] truncate">
-                            {formatarCelula(tarefa.dados[coluna], { moeda })}
-                          </span>
+                          {codigo ? (
+                            <span
+                              className="block whitespace-nowrap font-mono text-[11px] text-slate-500"
+                              title={texto}
+                            >
+                              {fimDaChave(texto)}
+                            </span>
+                          ) : larga ? (
+                            <span className="line-clamp-2 block w-[220px] leading-snug" title={texto}>
+                              {texto}
+                            </span>
+                          ) : (
+                            <span className="block max-w-[200px] truncate whitespace-nowrap" title={texto}>
+                              {texto}
+                            </span>
+                          )}
                         </td>
                       )
                     })}
@@ -306,6 +392,11 @@ export function Matriz({
           </table>
         </div>
       </div>
+
+      <p className="text-xs text-slate-400">
+        A tabela rola para o lado — a primeira coluna fica fixa. Clique em Responder para ver a
+        linha completa da planilha.
+      </p>
 
       {emEdicao && (
         <PainelResposta

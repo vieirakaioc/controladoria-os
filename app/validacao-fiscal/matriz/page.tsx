@@ -8,8 +8,11 @@ import { useValidacaoFiscal } from '../_hooks/useValidacaoFiscal'
 import { hoje } from '../_lib/prazo'
 
 export default function PaginaMatriz() {
-  const { userName, authLoaded } = useAuthGate()
-  const { tarefas, responsaveis, carregando, erro, aplicarTarefa } = useValidacaoFiscal()
+  const { userName, userEmail, authLoaded } = useAuthGate()
+  const { tarefas, responsaveis, carregando, erro, aplicarTarefa } = useValidacaoFiscal({
+    email: userEmail,
+    nome: userName,
+  })
 
   if (erro) return <AvisoErro mensagem={erro} />
   if (carregando || !authLoaded) return <Carregando linhas={4} />

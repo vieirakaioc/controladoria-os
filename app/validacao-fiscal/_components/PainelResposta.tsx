@@ -8,11 +8,26 @@ import { descreverErro, salvarResposta } from '../_lib/api'
 import { formatarCelula } from '../_lib/formato'
 import { formatarData, situacaoPrazo, textoPrazo } from '../_lib/prazo'
 import { layoutDe } from '../_lib/planilhas'
-import { ROTULO_ORIGEM, ROTULO_STATUS, type Responsavel, type StatusTarefa, type TarefaFiscal } from '../_lib/types'
+import {
+  estaFinalizada,
+  ROTULO_ORIGEM,
+  ROTULO_STATUS,
+  type Responsavel,
+  type StatusTarefa,
+  type TarefaFiscal,
+} from '../_lib/types'
 import { ChipPrazo } from './Ui'
 
 const CAMPO =
   'w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-[#0f88a8] focus:ring-2 focus:ring-[#0f88a8]/20'
+
+/** Os quatro desfechos possíveis, na ordem em que a tarefa costuma andar. */
+const ESTADOS: { valor: StatusTarefa; ajuda: string }[] = [
+  { valor: 'pendente', ajuda: 'Ainda não começou.' },
+  { valor: 'em_andamento', ajuda: 'Começou e está parada em alguém ou em alguma etapa.' },
+  { valor: 'concluida', ajuda: 'Havia divergência e ela foi corrigida.' },
+  { valor: 'sem_correcao', ajuda: 'Foi conferida e já estava certa — nada a corrigir.' },
+]
 
 /**
  * Painel lateral onde o time responde a tarefa.
@@ -37,12 +52,14 @@ export function PainelResposta({
 }) {
   const [responsavelId, setResponsavelId] = useState(tarefa.responsavelId ?? '')
   const [observacao, setObservacao] = useState(tarefa.observacaoCorrecao ?? '')
+  const [status, setStatus] = useState<StatusTarefa>(tarefa.status)
+  const [motivo, setMotivo] = useState(tarefa.motivoAndamento ?? '')
   const [erro, setErro] = useState<string | null>(null)
   const [salvando, setSalvando] = useState(false)
 
   const layout = layoutDe(tarefa.origem)
   const situacao = situacaoPrazo(tarefa.status, tarefa.prazo, tarefa.concluidoEm, hoje)
-  const concluida = tarefa.status === 'concluida'
+  const encerrando = estaFinalizada(status)
 
   useEffect(() => {
     const aoTeclar = (e: KeyboardEvent) => {
@@ -52,13 +69,22 @@ export function PainelResposta({
     return () => document.removeEventListener('keydown', aoTeclar)
   }, [aoFechar])
 
-  const enviar = async (status: StatusTarefa) => {
+  const enviar = async () => {
     const texto = observacao.trim()
+    const razao = motivo.trim()
 
-    // A observação é a justificativa da correção; sem ela a conclusão não
-    // conta como resposta auditável.
+    // Encerrar sem uma linha de justificativa não deixa rastro: seis meses
+    // depois ninguém sabe o que foi feito nem por que nada precisou ser feito.
     if (status === 'concluida' && !texto) {
       setErro('Descreva a correção na observação antes de concluir.')
+      return
+    }
+    if (status === 'sem_correcao' && !texto) {
+      setErro('Explique na observação por que a linha já estava correta.')
+      return
+    }
+    if (status === 'em_andamento' && !razao) {
+      setErro('Informe o motivo — com quem a tarefa está ou o que falta.')
       return
     }
 
@@ -72,6 +98,7 @@ export function PainelResposta({
         responsavelId: escolhido?.id ?? null,
         responsavelNome: escolhido?.nome ?? null,
         observacao: texto || null,
+        motivo: razao || null,
         usuario,
       })
       aoSalvar(atualizada)
@@ -117,7 +144,9 @@ export function PainelResposta({
           <div className="flex flex-wrap items-center gap-3">
             <ChipPrazo
               situacao={situacao}
-              complemento={concluida ? undefined : textoPrazo(tarefa.prazo, hoje)}
+              complemento={
+                estaFinalizada(tarefa.status) ? undefined : textoPrazo(tarefa.prazo, hoje)
+              }
             />
             <span className="text-sm text-slate-500">Prazo: {formatarData(tarefa.prazo)}</span>
             <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-600">
@@ -126,6 +155,59 @@ export function PainelResposta({
           </div>
 
           <div className="bg-white rounded-2xl border border-slate-200 p-4 space-y-4">
+            <fieldset>
+              <legend className="text-xs uppercase tracking-wider text-slate-400 font-semibold">
+                Situação da tarefa
+              </legend>
+
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                {ESTADOS.map((estado) => {
+                  const ativo = status === estado.valor
+
+                  return (
+                    <button
+                      key={estado.valor}
+                      type="button"
+                      onClick={() => setStatus(estado.valor)}
+                      aria-pressed={ativo}
+                      className={`rounded-xl border px-3 py-2.5 text-left text-sm font-semibold transition-all ${
+                        ativo
+                          ? 'border-[#0f88a8] bg-[#0f88a8]/10 text-[#063955]'
+                          : 'border-slate-200 text-slate-500 hover:border-slate-300 hover:text-[#063955]'
+                      }`}
+                    >
+                      {ROTULO_STATUS[estado.valor]}
+                    </button>
+                  )
+                })}
+              </div>
+
+              <p className="mt-2 text-xs text-slate-500 leading-relaxed">
+                {ESTADOS.find((e) => e.valor === status)?.ajuda}
+              </p>
+            </fieldset>
+
+            {status === 'em_andamento' && (
+              <div>
+                <label
+                  htmlFor="motivo"
+                  className="text-xs uppercase tracking-wider text-slate-400 font-semibold"
+                >
+                  Motivo — com quem está / o que falta
+                </label>
+                <input
+                  id="motivo"
+                  value={motivo}
+                  onChange={(e) => setMotivo(e.target.value)}
+                  placeholder="Ex.: enviado para o fiscal da transportadora em 11/08."
+                  className={`mt-2 ${CAMPO}`}
+                />
+                <p className="mt-1.5 text-xs text-slate-400">
+                  Aparece na matriz para todo mundo saber por que a tarefa está parada.
+                </p>
+              </div>
+            )}
+
             <div>
               <label htmlFor="responsavel" className="text-xs uppercase tracking-wider text-slate-400 font-semibold">
                 Responsável
@@ -154,11 +236,17 @@ export function PainelResposta({
                 value={observacao}
                 onChange={(e) => setObservacao(e.target.value)}
                 rows={4}
-                placeholder="O que foi corrigido, onde e quando."
+                placeholder={
+                  status === 'sem_correcao'
+                    ? 'Por que a linha já estava correta.'
+                    : 'O que foi corrigido, onde e quando.'
+                }
                 className={`mt-2 resize-y ${CAMPO}`}
               />
               <p className="mt-1.5 text-xs text-slate-400">
-                Obrigatória para concluir — é o registro do que foi feito.
+                {status === 'sem_correcao'
+                  ? 'Obrigatória — é o que justifica encerrar sem mexer em nada.'
+                  : 'Obrigatória para concluir — é o registro do que foi feito.'}
               </p>
             </div>
 
@@ -201,38 +289,30 @@ export function PainelResposta({
           </section>
         </div>
 
-        <footer className="flex flex-wrap gap-3 border-t border-slate-200 bg-white p-5">
-          {concluida ? (
-            <button
-              type="button"
-              onClick={() => enviar('em_andamento')}
-              disabled={salvando}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-40"
-            >
-              {salvando && <Loader2 size={16} className="animate-spin" />}
-              Reabrir correção
-            </button>
-          ) : (
-            <>
-              <button
-                type="button"
-                onClick={() => enviar('concluida')}
-                disabled={salvando}
-                className="inline-flex items-center gap-2 rounded-xl bg-[#0f88a8] px-5 py-2.5 text-sm font-bold text-white hover:brightness-110 transition-all disabled:opacity-40"
-              >
-                {salvando ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
-                Concluir correção
-              </button>
+        <footer className="flex flex-wrap items-center gap-3 border-t border-slate-200 bg-white p-5">
+          <button
+            type="button"
+            onClick={enviar}
+            disabled={salvando}
+            className="inline-flex items-center gap-2 rounded-xl bg-[#0f88a8] px-5 py-2.5 text-sm font-bold text-white transition-all hover:brightness-110 disabled:opacity-40"
+          >
+            {salvando ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
+            {encerrando ? `Encerrar como ${ROTULO_STATUS[status].toLowerCase()}` : 'Salvar resposta'}
+          </button>
 
-              <button
-                type="button"
-                onClick={() => enviar('em_andamento')}
-                disabled={salvando}
-                className="rounded-xl border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-40"
-              >
-                Salvar sem concluir
-              </button>
-            </>
+          <button
+            type="button"
+            onClick={aoFechar}
+            disabled={salvando}
+            className="rounded-xl border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-40"
+          >
+            Cancelar
+          </button>
+
+          {estaFinalizada(tarefa.status) && !encerrando && (
+            <span className="text-xs text-slate-500">
+              Vai reabrir a tarefa e limpar a data de conclusão.
+            </span>
           )}
         </footer>
       </div>
