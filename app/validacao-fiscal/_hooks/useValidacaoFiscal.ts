@@ -66,5 +66,18 @@ export function useValidacaoFiscal(usuario?: { email: string; nome: string }) {
     setTarefas((atuais) => atuais.map((t) => (t.id === atualizada.id ? atualizada : t)))
   }, [])
 
-  return { tarefas, responsaveis, carregando, erro, recarregar: carregar, aplicarTarefa }
+  /** Tira a tarefa do estado depois de apagada, sem recarregar tudo. */
+  const removerTarefa = useCallback((id: string) => {
+    setTarefas((atuais) => atuais.filter((t) => t.id !== id))
+  }, [])
+
+  return {
+    tarefas,
+    responsaveis,
+    carregando,
+    erro,
+    recarregar: carregar,
+    aplicarTarefa,
+    removerTarefa,
+  }
 }

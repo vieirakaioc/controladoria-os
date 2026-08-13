@@ -9,10 +9,8 @@ import { hoje } from '../_lib/prazo'
 
 export default function PaginaMatriz() {
   const { userName, userEmail, authLoaded } = useAuthGate()
-  const { tarefas, responsaveis, carregando, erro, aplicarTarefa } = useValidacaoFiscal({
-    email: userEmail,
-    nome: userName,
-  })
+  const { tarefas, responsaveis, carregando, erro, aplicarTarefa, removerTarefa } =
+    useValidacaoFiscal({ email: userEmail, nome: userName })
 
   if (erro) return <AvisoErro mensagem={erro} />
   if (carregando || !authLoaded) return <Carregando linhas={4} />
@@ -24,6 +22,7 @@ export default function PaginaMatriz() {
       hoje={hoje()}
       usuario={userName}
       aoAtualizar={aplicarTarefa}
+      aoRemover={removerTarefa}
     />
   )
 }

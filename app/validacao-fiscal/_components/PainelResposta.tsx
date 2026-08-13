@@ -1,10 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { AlertCircle, Check, Loader2, X } from 'lucide-react'
+import { AlertCircle, Check, Loader2, Pencil, Trash2, X } from 'lucide-react'
 
 import { CORES } from '../_lib/cores'
-import { descreverErro, salvarResposta } from '../_lib/api'
+import { descreverErro, excluirTarefa, salvarResposta, type EdicaoTarefa } from '../_lib/api'
 import { formatarCelula } from '../_lib/formato'
 import { formatarData, situacaoPrazo, textoPrazo } from '../_lib/prazo'
 import { layoutDe } from '../_lib/planilhas'
@@ -20,6 +20,8 @@ import { ChipPrazo } from './Ui'
 
 const CAMPO =
   'w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-[#0f88a8] focus:ring-2 focus:ring-[#0f88a8]/20'
+
+const ROTULO = 'text-xs uppercase tracking-wider text-slate-400 font-semibold'
 
 /** Os quatro desfechos possíveis, na ordem em que a tarefa costuma andar. */
 const ESTADOS: { valor: StatusTarefa; ajuda: string }[] = [
@@ -42,6 +44,7 @@ export function PainelResposta({
   usuario,
   aoFechar,
   aoSalvar,
+  aoExcluir,
 }: {
   tarefa: TarefaFiscal
   responsaveis: Responsavel[]
@@ -49,6 +52,7 @@ export function PainelResposta({
   usuario: string
   aoFechar: () => void
   aoSalvar: (t: TarefaFiscal) => void
+  aoExcluir: (id: string) => void
 }) {
   const [responsavelId, setResponsavelId] = useState(tarefa.responsavelId ?? '')
   const [observacao, setObservacao] = useState(tarefa.observacaoCorrecao ?? '')
@@ -56,6 +60,17 @@ export function PainelResposta({
   const [motivo, setMotivo] = useState(tarefa.motivoAndamento ?? '')
   const [erro, setErro] = useState<string | null>(null)
   const [salvando, setSalvando] = useState(false)
+
+  const [editando, setEditando] = useState(false)
+  const [excluindo, setExcluindo] = useState(false)
+  const [confirmandoExclusao, setConfirmandoExclusao] = useState(false)
+  const [edicao, setEdicao] = useState<EdicaoTarefa>({
+    documento: tarefa.documento,
+    emitente: tarefa.emitente,
+    tipoDivergencia: tarefa.tipoDivergencia,
+    valor: tarefa.valor,
+    prazo: tarefa.prazo,
+  })
 
   const layout = layoutDe(tarefa.origem)
   const situacao = situacaoPrazo(tarefa.status, tarefa.prazo, tarefa.concluidoEm, hoje)
@@ -87,6 +102,14 @@ export function PainelResposta({
       setErro('Informe o motivo — com quem a tarefa está ou o que falta.')
       return
     }
+    if (editando && !edicao.documento.trim()) {
+      setErro('O número do documento não pode ficar em branco.')
+      return
+    }
+    if (editando && !/^\d{4}-\d{2}-\d{2}$/.test(edicao.prazo)) {
+      setErro('Informe um prazo válido.')
+      return
+    }
 
     setErro(null)
     setSalvando(true)
@@ -100,12 +123,29 @@ export function PainelResposta({
         observacao: texto || null,
         motivo: razao || null,
         usuario,
+        // Só vai o que a pessoa realmente abriu para editar — assim uma tela
+        // aberta há dez minutos não sobrescreve o que outra pessoa corrigiu.
+        edicao: editando
+          ? { ...edicao, documento: edicao.documento.trim(), emitente: edicao.emitente.trim() }
+          : undefined,
       })
       aoSalvar(atualizada)
     } catch (falha) {
       setErro(descreverErro(falha))
     } finally {
       setSalvando(false)
+    }
+  }
+
+  const remover = async () => {
+    setErro(null)
+    setExcluindo(true)
+    try {
+      await excluirTarefa(tarefa.id)
+      aoExcluir(tarefa.id)
+    } catch (falha) {
+      setErro(descreverErro(falha))
+      setExcluindo(false)
     }
   }
 
@@ -124,8 +164,11 @@ export function PainelResposta({
             <p className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">
               {tarefa.aba ? `${ROTULO_ORIGEM[tarefa.origem]} · ${tarefa.aba}` : ROTULO_ORIGEM[tarefa.origem]}
             </p>
-            <h2 className="mt-1 truncate text-xl font-bold text-[#063955]">
-              Documento {tarefa.documento}
+            <h2 className="mt-1 flex items-center gap-2 text-xl font-bold text-[#063955]">
+              <span className="shrink-0 rounded-lg bg-slate-100 px-2 py-0.5 text-sm tabular-nums text-slate-500">
+                Nº {tarefa.numero}
+              </span>
+              <span className="truncate">Documento {tarefa.documento}</span>
             </h2>
             <p className="mt-1 text-sm text-slate-600">{tarefa.tipoDivergencia}</p>
           </div>
@@ -270,6 +313,123 @@ export function PainelResposta({
             )}
           </div>
 
+          <section className="rounded-2xl border border-slate-200 bg-white p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-bold text-[#063955]">Dados da tarefa</h3>
+                <p className="mt-1 text-xs text-slate-400 leading-relaxed">
+                  Corrija o que veio errado da planilha. A linha original continua guardada abaixo.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setEditando((atual) => !atual)}
+                aria-pressed={editando}
+                className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold transition-colors ${
+                  editando
+                    ? 'border-[#0f88a8] bg-[#0f88a8]/10 text-[#063955]'
+                    : 'border-slate-300 text-slate-500 hover:border-[#0f88a8] hover:text-[#0f88a8]'
+                }`}
+              >
+                <Pencil size={13} />
+                {editando ? 'Editando' : 'Editar'}
+              </button>
+            </div>
+
+            {editando ? (
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="ed-documento" className={ROTULO}>
+                    Nº do documento
+                  </label>
+                  <input
+                    id="ed-documento"
+                    value={edicao.documento}
+                    onChange={(e) => setEdicao((a) => ({ ...a, documento: e.target.value }))}
+                    className={`mt-2 ${CAMPO}`}
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="ed-prazo" className={ROTULO}>
+                    Prazo
+                  </label>
+                  <input
+                    id="ed-prazo"
+                    type="date"
+                    value={edicao.prazo}
+                    onChange={(e) => setEdicao((a) => ({ ...a, prazo: e.target.value }))}
+                    className={`mt-2 ${CAMPO}`}
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label htmlFor="ed-emitente" className={ROTULO}>
+                    Emitente
+                  </label>
+                  <input
+                    id="ed-emitente"
+                    value={edicao.emitente}
+                    onChange={(e) => setEdicao((a) => ({ ...a, emitente: e.target.value }))}
+                    className={`mt-2 ${CAMPO}`}
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label htmlFor="ed-tipo" className={ROTULO}>
+                    Tipo de divergência
+                  </label>
+                  <input
+                    id="ed-tipo"
+                    value={edicao.tipoDivergencia}
+                    onChange={(e) => setEdicao((a) => ({ ...a, tipoDivergencia: e.target.value }))}
+                    className={`mt-2 ${CAMPO}`}
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="ed-valor" className={ROTULO}>
+                    Valor
+                  </label>
+                  <input
+                    id="ed-valor"
+                    type="number"
+                    step="0.01"
+                    value={edicao.valor ?? ''}
+                    onChange={(e) =>
+                      setEdicao((a) => ({
+                        ...a,
+                        valor: e.target.value === '' ? null : Number(e.target.value),
+                      }))
+                    }
+                    className={`mt-2 ${CAMPO}`}
+                  />
+                </div>
+
+                <p className="self-end text-xs text-slate-400 leading-relaxed">
+                  As alterações vão junto com o botão Salvar, lá embaixo.
+                </p>
+              </div>
+            ) : (
+              <dl className="mt-4 grid gap-x-4 gap-y-2 sm:grid-cols-2">
+                {[
+                  { rotulo: 'Nº do documento', valor: tarefa.documento || '—' },
+                  { rotulo: 'Prazo', valor: formatarData(tarefa.prazo) },
+                  { rotulo: 'Emitente', valor: tarefa.emitente || '—' },
+                  { rotulo: 'Tipo de divergência', valor: tarefa.tipoDivergencia || '—' },
+                ].map((item) => (
+                  <div key={item.rotulo} className="min-w-0">
+                    <dt className="text-xs text-slate-400">{item.rotulo}</dt>
+                    <dd className="truncate text-sm text-slate-700" title={item.valor}>
+                      {item.valor}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            )}
+          </section>
+
           <section>
             <h3 className="text-sm font-bold text-[#063955]">Linha da planilha</h3>
             <p className="mt-1 text-xs text-slate-400">
@@ -314,6 +474,47 @@ export function PainelResposta({
               Vai reabrir a tarefa e limpar a data de conclusão.
             </span>
           )}
+
+          <div className="ml-auto">
+            {confirmandoExclusao ? (
+              <div className="flex flex-wrap items-center justify-end gap-3">
+                <span className="text-xs leading-relaxed text-slate-600">
+                  Apagar a tarefa nº {tarefa.numero}? Ela volta na próxima importação da mesma
+                  planilha, mas a resposta se perde.
+                </span>
+
+                <button
+                  type="button"
+                  onClick={remover}
+                  disabled={excluindo}
+                  className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold text-white transition-all hover:brightness-110 disabled:opacity-40"
+                  style={{ background: CORES.critico }}
+                >
+                  {excluindo ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
+                  Apagar
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setConfirmandoExclusao(false)}
+                  disabled={excluindo}
+                  className="text-sm text-slate-500 transition-colors hover:text-[#063955] disabled:opacity-40"
+                >
+                  Manter
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setConfirmandoExclusao(true)}
+                disabled={salvando}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-400 transition-colors hover:border-[#b1272d] hover:text-[#b1272d] disabled:opacity-40"
+              >
+                <Trash2 size={15} />
+                Excluir
+              </button>
+            )}
+          </div>
         </footer>
       </div>
     </div>

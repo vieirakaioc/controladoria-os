@@ -23,13 +23,14 @@ const TAB_LOTES = 'validacao_fiscal_lotes'
 const TAB_TAREFAS = 'validacao_fiscal_tarefas'
 
 const CAMPOS = `
-  id, lote_id, origem, aba, chave, documento, tipo_divergencia, emitente, filial,
+  id, numero, lote_id, origem, aba, chave, documento, tipo_divergencia, emitente, filial,
   valor, emissao, dados, status, responsavel_id, responsavel_nome,
   observacao_correcao, motivo_andamento, prazo, concluido_em, concluido_por, criado_em
 `
 
 type LinhaTarefa = {
   id: string
+  numero: number | null
   lote_id: string | null
   origem: Origem
   aba: string
@@ -56,6 +57,7 @@ type LinhaTarefa = {
 function mapear(linha: LinhaTarefa): TarefaFiscal {
   return {
     id: linha.id,
+    numero: linha.numero ?? 0,
     loteId: linha.lote_id,
     origem: linha.origem,
     aba: linha.aba ?? '',
@@ -185,6 +187,22 @@ export async function buscarResponsavelPorEmail(email: string): Promise<Responsa
   return { id: String(data.id), nome: data.nome, email: data.email }
 }
 
+/** Quais destas chaves já estão no banco. Consulta em fatias por causa da URL. */
+async function chavesExistentes(chaves: string[]): Promise<Set<string>> {
+  const encontradas = new Set<string>()
+
+  for (let inicio = 0; inicio < chaves.length; inicio += FATIA_ATRIBUICAO) {
+    const fatia = chaves.slice(inicio, inicio + FATIA_ATRIBUICAO)
+
+    const { data, error } = await supabase.from(TAB_TAREFAS).select('chave').in('chave', fatia)
+    if (error) throw error
+
+    for (const linha of data ?? []) encontradas.add(linha.chave)
+  }
+
+  return encontradas
+}
+
 /** Grava um lote e suas tarefas. Linhas já importadas antes são ignoradas. */
 export async function salvarLote(params: {
   origem: Origem
@@ -213,10 +231,17 @@ export async function salvarLote(params: {
 
   if (erroLote) throw erroLote
 
+  // Consulta o que já existe antes de inserir. O upsert com ignoreDuplicates
+  // resolveria o conflito, mas o DEFAULT da coluna `numero` é avaliado mesmo
+  // nas linhas descartadas — cada reimportação queimaria dezenas de números e
+  // a numeração das atividades ficaria cheia de buracos.
+  const jaExistem = await chavesExistentes(unicas.map((t) => t.chave))
+  const inserir = unicas.filter((t) => !jaExistem.has(t.chave))
+
   let novas = 0
 
-  if (unicas.length > 0) {
-    const linhas = unicas.map((t) => ({
+  if (inserir.length > 0) {
+    const linhas = inserir.map((t) => ({
       lote_id: lote.id,
       origem: t.origem,
       aba: t.aba,
@@ -233,8 +258,9 @@ export async function salvarLote(params: {
       responsavel_nome: params.responsavelPadrao?.nome ?? null,
     }))
 
-    // ignoreDuplicates faz o papel do "on conflict do nothing": a resposta já
-    // dada pelo time em uma importação anterior não pode ser sobrescrita.
+    // ignoreDuplicates continua aqui como rede de segurança: se duas pessoas
+    // importarem o mesmo arquivo ao mesmo tempo, a checagem acima não vê a
+    // linha da outra, e é o índice único da chave que decide.
     const { data: inseridas, error: erroTarefas } = await supabase
       .from(TAB_TAREFAS)
       .upsert(linhas, { onConflict: 'chave', ignoreDuplicates: true })
@@ -339,6 +365,21 @@ export async function excluirTarefa(id: string): Promise<void> {
   if (error) throw error
 }
 
+/**
+ * Campos da tarefa que a controladoria corrige à mão.
+ *
+ * `chave` não entra de propósito: é ela que identifica a linha na
+ * reimportação, e mudá-la faria a mesma linha da planilha voltar como tarefa
+ * nova, duplicando o trabalho.
+ */
+export type EdicaoTarefa = {
+  documento: string
+  emitente: string
+  tipoDivergencia: string
+  valor: number | null
+  prazo: string
+}
+
 /** Grava a resposta do time para uma tarefa da matriz. */
 export async function salvarResposta(entrada: {
   id: string
@@ -348,6 +389,8 @@ export async function salvarResposta(entrada: {
   observacao: string | null
   motivo: string | null
   usuario: string
+  /** Presente só quando a pessoa abriu a edição — vai na mesma gravação. */
+  edicao?: EdicaoTarefa
 }): Promise<TarefaFiscal> {
   const concluindo = estaFinalizada(entrada.status)
 
@@ -363,6 +406,14 @@ export async function salvarResposta(entrada: {
     // conclusão que deixou de existir.
     concluido_em: concluindo ? new Date().toISOString() : null,
     concluido_por: concluindo ? entrada.usuario : null,
+  }
+
+  if (entrada.edicao) {
+    patch.documento = entrada.edicao.documento
+    patch.emitente = entrada.edicao.emitente
+    patch.tipo_divergencia = entrada.edicao.tipoDivergencia
+    patch.valor = entrada.edicao.valor
+    patch.prazo = entrada.edicao.prazo
   }
 
   const { data, error } = await supabase

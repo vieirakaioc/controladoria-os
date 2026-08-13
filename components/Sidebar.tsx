@@ -25,15 +25,13 @@ import {
   Plane,
   ScanLine
 } from 'lucide-react'
-import { podeVerValidacaoFiscal } from '@/app/validacao-fiscal/_lib/acesso'
 
 const allNavItems = [
   { name: 'Início (Sincronizar)', href: '/', icon: Home, adminOnly: true },
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, adminOnly: false },
   { name: 'Gestão de Projetos', href: '/projetos', icon: Briefcase, adminOnly: false },
   { name: 'Controle de Tarefas', href: '/tarefas', icon: CheckSquare, adminOnly: false },
-  // Módulo restrito: além de admin, só quem está na lista de acesso.
-  { name: 'Validação Fiscal', href: '/validacao-fiscal', icon: ScanLine, adminOnly: false, restrito: true },
+  { name: 'Validação Fiscal', href: '/validacao-fiscal', icon: ScanLine, adminOnly: false },
   { name: 'Monitor da Equipe', href: '/equipe', icon: Users, adminOnly: true },
   { name: 'Férias da Equipe', href: '/ferias', icon: Plane, adminOnly: false },
   { name: 'Workflows', href: '/workflows', icon: GitMerge, adminOnly: true },
@@ -206,11 +204,7 @@ export default function Sidebar() {
 
   if (pathname === '/login') return null
 
-  const navItems = allNavItems.filter(item => {
-    if (item.adminOnly && userRole !== 'admin') return false
-    if (item.restrito && !podeVerValidacaoFiscal(userRole, userEmail)) return false
-    return true
-  })
+  const navItems = allNavItems.filter(item => !item.adminOnly || userRole === 'admin')
 
   return (
     <aside className={`relative bg-[#063955] text-white transition-all duration-300 ease-in-out flex flex-col shadow-2xl z-50 ${isExpanded ? 'w-64' : 'w-20'}`}>

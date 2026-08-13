@@ -33,6 +33,8 @@ export type LinhaPlanilha = Record<string, string | number | null>
 
 export type TarefaFiscal = {
   id: string
+  /** Número da atividade: identidade estável, para citar fora do sistema. */
+  numero: number
   loteId: string | null
   origem: Origem
   /** Aba de origem. Vazio para planilhas de aba única. */

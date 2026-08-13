@@ -78,6 +78,46 @@ create table if not exists public.validacao_fiscal_tarefas (
 alter table public.validacao_fiscal_tarefas
   add column if not exists motivo_andamento text;
 
+-- ─── Número da atividade ────────────────────────────────────────────────────
+-- Identidade estável e citável ("resolve a 47"). Vem de uma sequência, não da
+-- posição na tela: a ordem muda com filtro e com o que já foi respondido.
+--
+-- Reimportar não mexe no número de quem já existe — a gravação só insere as
+-- chaves novas. O índice único é a garantia de que dois lugares diferentes do
+-- código nunca vão produzir o mesmo número.
+
+alter table public.validacao_fiscal_tarefas
+  add column if not exists numero bigint;
+
+create sequence if not exists public.validacao_fiscal_tarefas_numero_seq
+  owned by public.validacao_fiscal_tarefas.numero;
+
+alter table public.validacao_fiscal_tarefas
+  alter column numero set default nextval('public.validacao_fiscal_tarefas_numero_seq');
+
+-- Numera o que já existe, na ordem em que foi criado, começando depois do
+-- maior número já usado (se o script rodar duas vezes, não colide).
+update public.validacao_fiscal_tarefas alvo
+   set numero = base.maior + ordenadas.posicao
+  from (select coalesce(max(numero), 0) as maior from public.validacao_fiscal_tarefas) base,
+       (select id, row_number() over (order by criado_em, id) as posicao
+          from public.validacao_fiscal_tarefas
+         where numero is null) ordenadas
+ where alvo.id = ordenadas.id
+   and alvo.numero is null;
+
+select setval(
+  'public.validacao_fiscal_tarefas_numero_seq',
+  coalesce((select max(numero) from public.validacao_fiscal_tarefas), 0) + 1,
+  false
+);
+
+create unique index if not exists vf_tarefas_numero_idx
+  on public.validacao_fiscal_tarefas (numero);
+
+alter table public.validacao_fiscal_tarefas
+  alter column numero set not null;
+
 alter table public.validacao_fiscal_tarefas
   drop constraint if exists validacao_fiscal_tarefas_status_check;
 
@@ -113,38 +153,19 @@ create trigger vf_tarefas_touch
 -- ─── 4. RLS ─────────────────────────────────────────────────────────────────
 -- Depende de public.current_user_is_admin() (criada em rls-reset-v2.sql).
 --
--- Regra: o módulo é restrito. Só admin e as pessoas listadas abaixo enxergam
--- e respondem as correções fiscais — o resto da equipe não vê nada, nem que
--- as tabelas existem. Importar planilha e apagar lote seguem só para admin.
+-- Regra: qualquer pessoa logada LÊ, RESPONDE, EDITA e APAGA uma tarefa — o
+-- acompanhamento é do time inteiro. Só admin IMPORTA planilha e apaga um lote
+-- inteiro, que são as ações que mexem em dezenas de itens de uma vez.
 
 alter table public.validacao_fiscal_lotes   enable row level security;
 alter table public.validacao_fiscal_tarefas enable row level security;
 
--- ─── Quem tem acesso ao módulo ──────────────────────────────────────────────
--- Para liberar mais alguém, acrescente o e-mail na lista do `in (...)` e rode
--- este arquivo de novo. A comparação é pelo e-mail do login (JWT), não pelo
--- cadastro de responsáveis: uma tarefa pode estar atribuída a quem nem usa o
--- sistema, e isso não pode virar permissão de leitura.
-create or replace function public.vf_pode_ver()
-returns boolean
-language sql
-security definer
-stable
-set search_path = public
-as $$
-  select public.current_user_is_admin()
-      or lower(coalesce(auth.jwt() ->> 'email', '')) in (
-           'fernando.carvalho@comber.com.br'
-         );
-$$;
-grant execute on function public.vf_pode_ver() to authenticated;
-
--- Lotes: leitura restrita, escrita só admin.
+-- Lotes: leitura para autenticados, escrita só admin.
 drop policy if exists "vf_lotes_select" on public.validacao_fiscal_lotes;
 create policy "vf_lotes_select"
   on public.validacao_fiscal_lotes for select
   to authenticated
-  using (public.vf_pode_ver());
+  using (true);
 
 drop policy if exists "vf_lotes_write_admin" on public.validacao_fiscal_lotes;
 create policy "vf_lotes_write_admin"
@@ -153,12 +174,12 @@ create policy "vf_lotes_write_admin"
   using (public.current_user_is_admin())
   with check (public.current_user_is_admin());
 
--- Tarefas: leitura restrita a admin e à lista do módulo.
+-- Tarefas: leitura para qualquer autenticado.
 drop policy if exists "vf_tarefas_select" on public.validacao_fiscal_tarefas;
 create policy "vf_tarefas_select"
   on public.validacao_fiscal_tarefas for select
   to authenticated
-  using (public.vf_pode_ver());
+  using (true);
 
 -- Criação (importação): só admin.
 drop policy if exists "vf_tarefas_insert_admin" on public.validacao_fiscal_tarefas;
@@ -167,20 +188,27 @@ create policy "vf_tarefas_insert_admin"
   to authenticated
   with check (public.current_user_is_admin());
 
--- Resposta: quem enxerga o módulo. As colunas que descrevem a divergência não
--- são editáveis pela tela; o que muda é status, responsável e observação.
+-- Resposta e edição: qualquer autenticado.
 drop policy if exists "vf_tarefas_update" on public.validacao_fiscal_tarefas;
 create policy "vf_tarefas_update"
   on public.validacao_fiscal_tarefas for update
   to authenticated
-  using (public.vf_pode_ver())
-  with check (public.vf_pode_ver());
+  using (true)
+  with check (true);
 
+-- Exclusão de uma tarefa: liberada. Apagar um lote inteiro continua sendo do
+-- admin — quem apaga uma linha errada perde uma; quem apaga um lote perde
+-- dezenas de respostas do time.
 drop policy if exists "vf_tarefas_delete_admin" on public.validacao_fiscal_tarefas;
-create policy "vf_tarefas_delete_admin"
+drop policy if exists "vf_tarefas_delete" on public.validacao_fiscal_tarefas;
+create policy "vf_tarefas_delete"
   on public.validacao_fiscal_tarefas for delete
   to authenticated
-  using (public.current_user_is_admin());
+  using (true);
+
+-- A restrição por e-mail deixou de existir; a função sai junto para não ficar
+-- um helper órfão sugerindo uma regra que não vale mais.
+drop function if exists public.vf_pode_ver();
 
 
 -- ─── 5. Sanity check ────────────────────────────────────────────────────────

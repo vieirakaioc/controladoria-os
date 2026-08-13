@@ -53,12 +53,14 @@ export function Matriz({
   hoje,
   usuario,
   aoAtualizar,
+  aoRemover,
 }: {
   tarefas: TarefaFiscal[]
   responsaveis: Responsavel[]
   hoje: string
   usuario: string
   aoAtualizar: (t: TarefaFiscal) => void
+  aoRemover: (id: string) => void
 }) {
   const [grupoAtivo, setGrupoAtivo] = useState<string | null>(null)
   const [filtroPrazo, setFiltroPrazo] = useState<FiltroPrazo>('abertas')
@@ -380,10 +382,11 @@ export function Matriz({
                     <td
                       className={`${CONGELADA} sticky left-0 z-10 px-4 py-3 align-top ${faixa} group-hover:bg-[#eef7fa]`}
                     >
-                      {/* Numeração pela ordem em tela: é assim que a pessoa
-                          conta a lista enquanto trabalha ("estou na 12"). */}
+                      {/* Número da atividade, não a posição na lista: serve
+                          para citar a tarefa fora do sistema e não muda quando
+                          o filtro muda. */}
                       <span className="mb-1.5 block text-[11px] font-bold tabular-nums text-slate-400">
-                        {formatarInteiro(linha + 1)}
+                        Nº {tarefa.numero}
                       </span>
 
                       <button
@@ -517,6 +520,10 @@ export function Matriz({
           aoFechar={() => setEmEdicao(null)}
           aoSalvar={(atualizada) => {
             aoAtualizar(atualizada)
+            setEmEdicao(null)
+          }}
+          aoExcluir={(id) => {
+            aoRemover(id)
             setEmEdicao(null)
           }}
         />
