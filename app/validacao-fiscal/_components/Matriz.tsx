@@ -1,7 +1,18 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { AlertCircle, Check, Loader2, PencilLine, Search, ShieldCheck, UserPlus } from 'lucide-react'
+import {
+  AlertCircle,
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  Check,
+  Loader2,
+  PencilLine,
+  Search,
+  ShieldCheck,
+  UserPlus,
+} from 'lucide-react'
 
 import { atribuirEmLote, descreverErro } from '../_lib/api'
 import { CORES } from '../_lib/cores'
@@ -47,6 +58,38 @@ function fimDaChave(valor: string): string {
   return valor.length > 14 ? `…${valor.slice(-12)}` : valor
 }
 
+/** Colunas fora da planilha que também dá para ordenar. */
+const CHAVE_NUMERO = '@numero'
+const CHAVE_RESPONSAVEL = '@responsavel'
+const CHAVE_OBSERVACAO = '@observacao'
+
+type Ordenacao = { coluna: string; direcao: 'asc' | 'desc' }
+
+function valorParaOrdenar(
+  tarefa: TarefaFiscal,
+  coluna: string,
+  layout: ReturnType<typeof layoutDe>,
+): string | number | null {
+  if (coluna === CHAVE_NUMERO) return tarefa.numero
+  if (coluna === CHAVE_RESPONSAVEL) return tarefa.responsavelNome
+  if (coluna === CHAVE_OBSERVACAO) return tarefa.observacaoCorrecao ?? tarefa.motivoAndamento
+  return valorDaColuna(layout, tarefa.dados, coluna)
+}
+
+/**
+ * Compara duas células. Vazio sempre no fim, nos dois sentidos: quem ordena
+ * está procurando conteúdo, e uma coluna cheia de branco no topo não ajuda.
+ */
+function comparar(a: string | number | null, b: string | number | null): number {
+  const vazioA = a === null || a === ''
+  const vazioB = b === null || b === ''
+  if (vazioA || vazioB) return vazioA && vazioB ? 0 : vazioA ? 1 : -1
+
+  if (typeof a === 'number' && typeof b === 'number') return a - b
+
+  return String(a).localeCompare(String(b), 'pt-BR', { numeric: true, sensitivity: 'base' })
+}
+
 export function Matriz({
   tarefas,
   responsaveis,
@@ -71,6 +114,7 @@ export function Matriz({
   const [confirmandoLote, setConfirmandoLote] = useState(false)
   const [atribuindo, setAtribuindo] = useState(false)
   const [erroLote, setErroLote] = useState<string | null>(null)
+  const [ordenacao, setOrdenacao] = useState<Ordenacao | null>(null)
 
   const grupos = useMemo(() => {
     const mapa = new Map<string, { chave: string; rotulo: string; tarefas: TarefaFiscal[] }>()
@@ -94,7 +138,7 @@ export function Matriz({
     if (!grupo) return []
     const termo = busca.trim().toLowerCase()
 
-    return grupo.tarefas.filter((tarefa) => {
+    const filtradas = grupo.tarefas.filter((tarefa) => {
       const situacao = situacaoPrazo(tarefa.status, tarefa.prazo, tarefa.concluidoEm, hoje)
 
       if (filtroPrazo === 'abertas' && estaFinalizada(tarefa.status)) return false
@@ -129,7 +173,65 @@ export function Matriz({
 
       return true
     })
-  }, [grupo, filtroPrazo, filtroResponsavel, busca, hoje])
+
+    // Sem escolha da pessoa, vale a ordem que veio do banco: em aberto
+    // primeiro, prazo mais curto no topo.
+    if (!ordenacao) return filtradas
+
+    const layoutGrupo = layoutDe(grupo.tarefas[0].origem)
+    const sinal = ordenacao.direcao === 'asc' ? 1 : -1
+
+    return [...filtradas].sort(
+      (a, b) =>
+        sinal *
+        comparar(
+          valorParaOrdenar(a, ordenacao.coluna, layoutGrupo),
+          valorParaOrdenar(b, ordenacao.coluna, layoutGrupo),
+        ),
+    )
+  }, [grupo, filtroPrazo, filtroResponsavel, busca, hoje, ordenacao])
+
+  /** Um clique ordena crescente, o seguinte inverte, o terceiro solta a coluna. */
+  const alternarOrdem = (coluna: string) => {
+    setOrdenacao((atual) => {
+      if (atual?.coluna !== coluna) return { coluna, direcao: 'asc' }
+      if (atual.direcao === 'asc') return { coluna, direcao: 'desc' }
+      return null
+    })
+  }
+
+  const ariaOrdem = (coluna: string): 'ascending' | 'descending' | 'none' => {
+    if (ordenacao?.coluna !== coluna) return 'none'
+    return ordenacao.direcao === 'asc' ? 'ascending' : 'descending'
+  }
+
+  // Função que devolve JSX, não um componente declarado aqui dentro: um
+  // componente novo a cada render remontaria o cabeçalho a cada tecla digitada
+  // na busca.
+  const botaoOrdenar = (chave: string, rotulo: string, alinharDireita = false) => {
+    const ativa = ordenacao?.coluna === chave
+    const Icone = !ativa ? ArrowUpDown : ordenacao.direcao === 'asc' ? ArrowUp : ArrowDown
+
+    return (
+      <button
+        type="button"
+        onClick={() => alternarOrdem(chave)}
+        title={`Ordenar por ${rotulo}`}
+        className={`group flex w-full items-center gap-1.5 transition-colors hover:text-[#0f88a8] ${
+          alinharDireita ? 'justify-end' : ''
+        } ${ativa ? 'text-[#0f88a8]' : ''}`}
+      >
+        {rotulo}
+        <Icone
+          size={12}
+          className={`shrink-0 transition-opacity ${
+            ativa ? 'opacity-100' : 'opacity-0 group-hover:opacity-60'
+          }`}
+          aria-hidden
+        />
+      </button>
+    )
+  }
 
   const escolhidoParaLote = responsaveis.find((r) => r.id === donoEmLote) ?? null
 
@@ -333,24 +435,32 @@ export function Matriz({
               <tr>
                 <th
                   scope="col"
+                  aria-sort={ariaOrdem(CHAVE_NUMERO)}
                   className={`${CONGELADA} sticky left-0 top-0 z-30 border-b border-slate-200 bg-slate-50 px-4 py-3 text-left ${ROTULO_TH}`}
                 >
-                  Nº · tarefa e prazo
+                  {botaoOrdenar(CHAVE_NUMERO, 'Nº · tarefa')}
                 </th>
 
-                {['Responsável', 'Observação / motivo', ...layout.colunasMatriz].map(
-                  (coluna, indice) => (
-                    <th
-                      key={`${coluna}-${indice}`}
-                      scope="col"
-                      className={`whitespace-nowrap border-b border-l border-slate-200 bg-slate-50 px-4 py-3 text-left ${ROTULO_TH} ${
-                        layout.colunasNumericas.includes(coluna) ? 'text-right' : ''
-                      }`}
-                    >
-                      {coluna}
-                    </th>
-                  ),
-                )}
+                {[
+                  { chave: CHAVE_RESPONSAVEL, rotulo: 'Responsável' },
+                  { chave: CHAVE_OBSERVACAO, rotulo: 'Observação / motivo' },
+                  ...layout.colunasMatriz.map((coluna) => ({ chave: coluna, rotulo: coluna })),
+                ].map((coluna) => (
+                  <th
+                    key={coluna.chave}
+                    scope="col"
+                    aria-sort={ariaOrdem(coluna.chave)}
+                    className={`whitespace-nowrap border-b border-l border-slate-200 bg-slate-50 px-4 py-3 text-left ${ROTULO_TH} ${
+                      layout.colunasNumericas.includes(coluna.chave) ? 'text-right' : ''
+                    }`}
+                  >
+                    {botaoOrdenar(
+                      coluna.chave,
+                      coluna.rotulo,
+                      layout.colunasNumericas.includes(coluna.chave),
+                    )}
+                  </th>
+                ))}
               </tr>
             </thead>
 
