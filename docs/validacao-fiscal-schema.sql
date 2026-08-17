@@ -106,11 +106,16 @@ update public.validacao_fiscal_tarefas alvo
  where alvo.id = ordenadas.id
    and alvo.numero is null;
 
-select setval(
-  'public.validacao_fiscal_tarefas_numero_seq',
-  coalesce((select max(numero) from public.validacao_fiscal_tarefas), 0) + 1,
-  false
-);
+-- Dentro de um bloco para o script não terminar cuspindo o número da
+-- sequência como se fosse resultado — parece erro e não é.
+do $$
+begin
+  perform setval(
+    'public.validacao_fiscal_tarefas_numero_seq',
+    coalesce((select max(numero) from public.validacao_fiscal_tarefas), 0) + 1,
+    false
+  );
+end $$;
 
 create unique index if not exists vf_tarefas_numero_idx
   on public.validacao_fiscal_tarefas (numero);
