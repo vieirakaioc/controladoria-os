@@ -15,6 +15,7 @@ import {
   Painel,
   type ItemBarra,
 } from './_components/Ui'
+import { ExportarPainel } from './_components/ExportarPainel'
 import { useValidacaoFiscal } from './_hooks/useValidacaoFiscal'
 import { CORES } from './_lib/cores'
 import { formatarInteiro, formatarMoeda } from './_lib/formato'
@@ -182,6 +183,8 @@ export default function PaginaDashboard() {
           <ListaBarras itens={porEmitente} />
         </Painel>
       </div>
+
+      <ExportarPainel resumo={resumo} tarefas={tarefas} hoje={referencia} />
     </div>
   )
 }

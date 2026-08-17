@@ -5,7 +5,7 @@ export async function POST(request: Request) {
   try {
     // link/linkLabel são opcionais: sem eles o e-mail continua apontando para
     // /tarefas, como sempre apontou.
-    const { to, subject, taskName, action, userName, observacoes, link, linkLabel } =
+    const { to, subject, taskName, action, userName, observacoes, link, linkLabel, html } =
       await request.json()
 
     const destino = link || `${process.env.NEXT_PUBLIC_SITE_URL}/tarefas`
@@ -53,7 +53,9 @@ export async function POST(request: Request) {
       from: `"Portal da Controladoria" <${process.env.ZOHO_EMAIL}>`,
       to,
       subject,
-      html: htmlTemplate,
+      // `html` pronto substitui o template: relatórios trazem o próprio
+      // layout. Sem ele, nada muda para quem já usava esta rota.
+      html: html || htmlTemplate,
     })
 
     return NextResponse.json({ success: true, message: 'Email enviado com sucesso!' })
