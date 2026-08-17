@@ -133,6 +133,44 @@ create index if not exists vf_tarefas_responsavel_idx on public.validacao_fiscal
 create index if not exists vf_tarefas_lote_idx        on public.validacao_fiscal_tarefas (lote_id);
 
 
+-- ─── 2.2 CONTROLE DO RESUMO DIÁRIO ──────────────────────────────────────────
+-- Uma linha por dia em que o resumo já foi enviado.
+--
+-- A trava precisa ser compartilhada: o disparo acontece no navegador de quem
+-- abre o app, e o e-mail vai para a equipe inteira. Com trava em localStorage,
+-- três pessoas abrindo de manhã mandariam três cópias para todo mundo. A
+-- chave primária na data resolve — o segundo insert do dia falha, e quem
+-- falhou simplesmente não envia.
+create table if not exists public.validacao_fiscal_envios (
+  data           date        primary key,
+  enviado_em     timestamptz not null default now(),
+  enviado_por    text,
+  destinatarios  text
+);
+
+alter table public.validacao_fiscal_envios enable row level security;
+
+drop policy if exists "vf_envios_select" on public.validacao_fiscal_envios;
+create policy "vf_envios_select"
+  on public.validacao_fiscal_envios for select
+  to authenticated
+  using (true);
+
+-- Insert liberado: é o que reserva o dia. Delete também, porque quem reservou
+-- e não conseguiu enviar precisa liberar para a próxima pessoa tentar.
+drop policy if exists "vf_envios_insert" on public.validacao_fiscal_envios;
+create policy "vf_envios_insert"
+  on public.validacao_fiscal_envios for insert
+  to authenticated
+  with check (true);
+
+drop policy if exists "vf_envios_delete" on public.validacao_fiscal_envios;
+create policy "vf_envios_delete"
+  on public.validacao_fiscal_envios for delete
+  to authenticated
+  using (true);
+
+
 -- ─── 3. atualizado_em automático ────────────────────────────────────────────
 create or replace function public.vf_touch_atualizado_em()
 returns trigger

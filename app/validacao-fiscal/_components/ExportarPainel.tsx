@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { AlertCircle, CheckCircle2, Download, Eye, Loader2, Mail } from 'lucide-react'
 
-import { EMAIL_RESPONSAVEL_PADRAO } from '../_lib/acesso'
+import { EMAILS_RESUMO_DIARIO } from '../_lib/acesso'
 import { CORES } from '../_lib/cores'
 import { formatarData } from '../_lib/prazo'
 import { montarRelatorio } from '../_lib/relatorio'
@@ -35,7 +35,9 @@ export function ExportarPainel({
   tarefas: TarefaFiscal[]
   hoje: string
 }) {
-  const [destinatarios, setDestinatarios] = useState(EMAIL_RESPONSAVEL_PADRAO)
+  // Mesma lista do envio automático: mandar à mão fora de hora não deveria
+  // exigir redigitar oito endereços.
+  const [destinatarios, setDestinatarios] = useState(EMAILS_RESUMO_DIARIO.join(', '))
   const [estado, setEstado] = useState<Estado>({ fase: 'inicial' })
 
   const gerar = () =>
