@@ -152,6 +152,8 @@ export default function PaginaDashboard() {
         </div>
       </div>
 
+      <ExportarPainel resumo={resumo} tarefas={tarefas} hoje={referencia} />
+
       <Painel
         titulo="Situação do prazo"
         descricao="Como as tarefas geradas estão distribuídas em relação ao prazo de resposta."
@@ -183,8 +185,6 @@ export default function PaginaDashboard() {
           <ListaBarras itens={porEmitente} />
         </Painel>
       </div>
-
-      <ExportarPainel resumo={resumo} tarefas={tarefas} hoje={referencia} />
     </div>
   )
 }
