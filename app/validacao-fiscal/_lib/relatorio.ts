@@ -25,15 +25,22 @@ function escapar(texto: string): string {
     .replace(/"/g, '&quot;')
 }
 
+/**
+ * Um cartão de indicador.
+ *
+ * `colunas` existe porque todas as linhas dividem a mesma grade: um cartão
+ * largo sem colspan redefine a largura da primeira coluna e esmaga as outras
+ * duas nas linhas de cima.
+ */
 function cartao(
   rotulo: string,
   valor: string,
   cor: string,
   detalhe?: string,
-  largura = '33%',
+  colunas = 1,
 ): string {
   return `
-    <td width="${largura}" valign="top" style="padding:6px;">
+    <td colspan="${colunas}" width="${Math.round((colunas / 3) * 100)}%" valign="top" style="padding:6px;">
       <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
              style="border:1px solid ${BORDA};border-radius:10px;background:#ffffff;">
         <tr><td style="padding:12px 14px;">
@@ -195,7 +202,8 @@ export function montarRelatorio(params: {
   </td></tr>
 
   <tr><td style="padding-top:14px;">
-    <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+    <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
+           style="table-layout:fixed;">
       <tr>
         ${cartao('Em aberto', formatarInteiro(resumo.emAberto), '#063955', 'Aguardando resposta')}
         ${cartao(
@@ -228,7 +236,7 @@ export function montarRelatorio(params: {
           formatarMoeda(resumo.valorPendente),
           '#063955',
           'Soma dos documentos que ainda não foram respondidos',
-          '100%',
+          3,
         )}
       </tr>
     </table>
