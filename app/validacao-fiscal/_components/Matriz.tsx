@@ -28,6 +28,8 @@ type FiltroPrazo =
   | 'abertas'
   | 'atrasadas'
   | 'vence_hoje'
+  | 'em_andamento'
+  | 'andamento_atrasado'
   | 'corrigidas'
   | 'sem_correcao'
 
@@ -35,6 +37,8 @@ const FILTROS: { valor: FiltroPrazo; rotulo: string }[] = [
   { valor: 'abertas', rotulo: 'Em aberto' },
   { valor: 'atrasadas', rotulo: 'Atrasadas' },
   { valor: 'vence_hoje', rotulo: 'Vencem hoje' },
+  { valor: 'em_andamento', rotulo: 'Em andamento' },
+  { valor: 'andamento_atrasado', rotulo: 'Em andamento atrasadas' },
   { valor: 'corrigidas', rotulo: 'Corrigidas' },
   { valor: 'sem_correcao', rotulo: 'Sem correção' },
   { valor: 'todos', rotulo: 'Todas' },
@@ -146,6 +150,13 @@ export function Matriz({
       if (filtroPrazo === 'sem_correcao' && tarefa.status !== 'sem_correcao') return false
       if (filtroPrazo === 'atrasadas' && situacao !== 'atrasada') return false
       if (filtroPrazo === 'vence_hoje' && situacao !== 'vence_hoje') return false
+      if (filtroPrazo === 'em_andamento' && tarefa.status !== 'em_andamento') return false
+      if (
+        filtroPrazo === 'andamento_atrasado' &&
+        (tarefa.status !== 'em_andamento' || situacao !== 'atrasada')
+      ) {
+        return false
+      }
 
       if (filtroResponsavel === 'sem' && tarefa.responsavelId) return false
       if (
@@ -534,8 +545,13 @@ export function Matriz({
                             : `${formatarData(tarefa.prazo)} · ${textoPrazo(tarefa.prazo, hoje)}`}
                         </span>
                         {tarefa.status === 'em_andamento' && (
-                          <span className="text-[11px] font-semibold text-[#c98500]">
-                            Em andamento
+                          <span
+                            className="text-[11px] font-semibold"
+                            style={{
+                              color: situacao === 'atrasada' ? CORES.critico : CORES.atencao,
+                            }}
+                          >
+                            Em andamento{situacao === 'atrasada' ? ' · fora do prazo' : ''}
                           </span>
                         )}
                       </div>

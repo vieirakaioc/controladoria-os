@@ -29,11 +29,9 @@ type Estado =
 
 export function FormularioImportacao({
   usuario,
-  podeImportar,
   aoImportar,
 }: {
   usuario: string
-  podeImportar: boolean
   aoImportar: () => void
 }) {
   const [estado, setEstado] = useState<Estado>({ situacao: 'inicial' })
@@ -123,26 +121,11 @@ export function FormularioImportacao({
         titulo="Importar planilhas"
         descricao={`Cada linha vira uma tarefa com prazo de ${PRAZO_DIAS_UTEIS} dias úteis a partir de hoje. Você pode enviar as duas planilhas de uma vez.`}
       >
-        {!podeImportar && (
-          <p
-            className="mb-4 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm"
-            style={{ color: CORES.atencao }}
-          >
-            <AlertCircle size={16} className="mt-0.5 shrink-0" />
-            Importar planilha é restrito a administradores. Você pode acompanhar e responder as
-            tarefas na matriz.
-          </p>
-        )}
-
         <div className="space-y-5">
           <div>
             <label
               htmlFor="planilhas"
-              className={`flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-6 py-10 text-center transition-colors ${
-                podeImportar
-                  ? 'cursor-pointer border-slate-300 bg-slate-50 hover:border-[#0f88a8] hover:bg-[#0f88a8]/5'
-                  : 'cursor-not-allowed border-slate-200 bg-slate-50 opacity-50'
-              }`}
+              className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center transition-colors hover:border-[#0f88a8] hover:bg-[#0f88a8]/5"
             >
               <Upload size={26} className="text-[#0f88a8]" />
               <span className="text-sm font-bold text-[#063955]">
@@ -180,7 +163,6 @@ export function FormularioImportacao({
               id="planilhas"
               type="file"
               multiple
-              disabled={!podeImportar}
               accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
               className="sr-only"
               onChange={(e) => setArquivos(Array.from(e.target.files ?? []))}
@@ -205,7 +187,7 @@ export function FormularioImportacao({
             <button
               type="button"
               onClick={importar}
-              disabled={enviando || arquivos.length === 0 || !podeImportar}
+              disabled={enviando || arquivos.length === 0}
               className="inline-flex items-center gap-2 rounded-xl bg-[#0f88a8] px-5 py-2.5 text-sm font-bold text-white transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {enviando ? (

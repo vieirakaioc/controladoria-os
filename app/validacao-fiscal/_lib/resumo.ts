@@ -22,6 +22,10 @@ export type Resumo = {
   corrigidas: number
   semCorrecao: number
   emAndamento: number
+  /** Alguém já pegou, mas o prazo estourou. */
+  emAndamentoAtrasadas: number
+  /** Alguém já pegou e ainda há prazo. */
+  emAndamentoNoPrazo: number
   atrasadas: number
   venceHoje: number
   noPrazo: number
@@ -71,6 +75,7 @@ export function calcularResumo(tarefas: TarefaFiscal[], hoje: string): Resumo {
   let corrigidas = 0
   let semCorrecao = 0
   let emAndamento = 0
+  let emAndamentoAtrasadas = 0
 
   const diasResposta: number[] = []
 
@@ -98,7 +103,12 @@ export function calcularResumo(tarefas: TarefaFiscal[], hoje: string): Resumo {
 
     if (tarefa.status === 'concluida') corrigidas++
     if (tarefa.status === 'sem_correcao') semCorrecao++
-    if (tarefa.status === 'em_andamento') emAndamento++
+    if (tarefa.status === 'em_andamento') {
+      emAndamento++
+      // Separar as duas é o que diferencia "tem gente cuidando" de "tem gente
+      // cuidando e mesmo assim passou do prazo" — a segunda pede cobrança.
+      if (situacao === 'atrasada') emAndamentoAtrasadas++
+    }
 
     if (!estaFinalizada(tarefa.status)) {
       valorPendente += tarefa.valor ?? 0
@@ -119,6 +129,8 @@ export function calcularResumo(tarefas: TarefaFiscal[], hoje: string): Resumo {
     corrigidas,
     semCorrecao,
     emAndamento,
+    emAndamentoAtrasadas,
+    emAndamentoNoPrazo: emAndamento - emAndamentoAtrasadas,
     atrasadas,
     venceHoje,
     noPrazo,

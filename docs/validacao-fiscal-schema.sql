@@ -210,12 +210,29 @@ create policy "vf_lotes_select"
   to authenticated
   using (true);
 
+-- Registrar a importação: qualquer autenticado. O insert cria o lote e o
+-- update grava o placar (novas / já existiam) logo depois.
 drop policy if exists "vf_lotes_write_admin" on public.validacao_fiscal_lotes;
-create policy "vf_lotes_write_admin"
-  on public.validacao_fiscal_lotes for all
+drop policy if exists "vf_lotes_insert" on public.validacao_fiscal_lotes;
+create policy "vf_lotes_insert"
+  on public.validacao_fiscal_lotes for insert
   to authenticated
-  using (public.current_user_is_admin())
-  with check (public.current_user_is_admin());
+  with check (true);
+
+drop policy if exists "vf_lotes_update" on public.validacao_fiscal_lotes;
+create policy "vf_lotes_update"
+  on public.validacao_fiscal_lotes for update
+  to authenticated
+  using (true)
+  with check (true);
+
+-- Apagar um lote continua sendo do admin: leva junto dezenas de tarefas e as
+-- respostas que o time já tinha dado nelas.
+drop policy if exists "vf_lotes_delete_admin" on public.validacao_fiscal_lotes;
+create policy "vf_lotes_delete_admin"
+  on public.validacao_fiscal_lotes for delete
+  to authenticated
+  using (public.current_user_is_admin());
 
 -- Tarefas: leitura para qualquer autenticado.
 drop policy if exists "vf_tarefas_select" on public.validacao_fiscal_tarefas;
@@ -226,10 +243,11 @@ create policy "vf_tarefas_select"
 
 -- Criação (importação): só admin.
 drop policy if exists "vf_tarefas_insert_admin" on public.validacao_fiscal_tarefas;
-create policy "vf_tarefas_insert_admin"
+drop policy if exists "vf_tarefas_insert" on public.validacao_fiscal_tarefas;
+create policy "vf_tarefas_insert"
   on public.validacao_fiscal_tarefas for insert
   to authenticated
-  with check (public.current_user_is_admin());
+  with check (true);
 
 -- Resposta e edição: qualquer autenticado.
 drop policy if exists "vf_tarefas_update" on public.validacao_fiscal_tarefas;

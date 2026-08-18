@@ -108,7 +108,12 @@ export default function PaginaDashboard() {
             rotulo="Atrasadas"
             valor={formatarInteiro(resumo.atrasadas)}
             tom={resumo.atrasadas > 0 ? 'critico' : 'neutro'}
-            detalhe="Passaram do prazo sem resposta"
+            detalhe={
+              resumo.atrasadas === 0
+                ? 'Nenhuma fora do prazo'
+                : `${formatarInteiro(resumo.emAndamentoAtrasadas)} com alguém tocando, ` +
+                  `${formatarInteiro(resumo.atrasadas - resumo.emAndamentoAtrasadas)} parada(s)`
+            }
           />
           <Kpi
             rotulo="Vencem hoje"
@@ -134,8 +139,13 @@ export default function PaginaDashboard() {
           <Kpi
             rotulo="Em andamento"
             valor={formatarInteiro(resumo.emAndamento)}
-            tom={resumo.emAndamento > 0 ? 'atencao' : 'neutro'}
-            detalhe="Paradas com motivo registrado"
+            tom={resumo.emAndamentoAtrasadas > 0 ? 'critico' : 'atencao'}
+            detalhe={
+              resumo.emAndamento === 0
+                ? 'Ninguém tocando nenhuma agora'
+                : `${formatarInteiro(resumo.emAndamentoAtrasadas)} fora do prazo · ` +
+                  `${formatarInteiro(resumo.emAndamentoNoPrazo)} dentro`
+            }
           />
           <Kpi
             rotulo="Valor em aberto"

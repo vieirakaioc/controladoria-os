@@ -71,11 +71,7 @@ export default function PaginaImportar() {
 
   return (
     <div className="space-y-6">
-      <FormularioImportacao
-        usuario={userName}
-        podeImportar={userRole === 'admin'}
-        aoImportar={carregar}
-      />
+      <FormularioImportacao usuario={userName} aoImportar={carregar} />
 
       <Painel
         titulo="Importações recentes"
