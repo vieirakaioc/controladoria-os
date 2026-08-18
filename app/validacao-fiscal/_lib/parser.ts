@@ -235,6 +235,39 @@ function montarTarefa(origem: Origem, aba: string, linha: LinhaPlanilha): Tarefa
     }
   }
 
+  if (origem === 'notas_entrada') {
+    const nota = texto(linha, 'Nota Fiscal')
+    const arquivo = texto(linha, 'Arquivo')
+    if (!nota && !arquivo) return null
+
+    // A coluna sai como "R$ -" quando é zero, e texto não soma. Reproduzimos a
+    // conta da própria planilha para a coluna virar número de verdade.
+    const xml = numero(linha, 'Valor XML')
+    const senior = numero(linha, 'Valor Sênior')
+    if (typeof campo(linha, 'Diferença') !== 'number' && xml !== null && senior !== null) {
+      linha['Diferença'] = Number((xml - senior).toFixed(2))
+    }
+
+    const modelo = texto(linha, 'Modelo')
+
+    return {
+      origem,
+      // Modelo no lugar da aba (as duas planilhas se chamam "Folha1"): assim a
+      // matriz separa NF-e de NFS-e em abas próprias.
+      aba: modelo || aba,
+      // O nome do arquivo carrega a chave de acesso e é único por nota; a
+      // filial entra para o caso de a exportação vir sem ele.
+      chave: `entrada::${arquivo || `${texto(linha, 'Filial')}::${modelo}::${nota}`}`,
+      documento: nota,
+      tipoDivergencia: texto(linha, 'Observação') || texto(linha, 'Status') || 'Sem classificação',
+      emitente: texto(linha, 'Emitente / Destinatário'),
+      filial: texto(linha, 'Filial'),
+      valor: xml,
+      emissao: null,
+      dados: linha,
+    }
+  }
+
   const filial = texto(linha, 'Filial')
   const serie = texto(linha, 'Série NF')
   const documento = texto(linha, 'Nº Nota Fiscal')

@@ -36,8 +36,8 @@ export default function PaginaDashboard() {
     return (
       <Painel titulo="Nenhuma tarefa ainda">
         <p className="text-sm text-slate-600 leading-relaxed">
-          Importe o relatório de divergências CT-e e a planilha de situações da logística para gerar
-          as tarefas de correção.
+          Importe os relatórios de divergência — auditoria fiscal, situações da logística e notas
+          de entrada — para gerar as tarefas de correção.
         </p>
         <Link
           href="/validacao-fiscal/importar"

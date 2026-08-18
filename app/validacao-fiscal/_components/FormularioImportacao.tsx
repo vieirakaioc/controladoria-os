@@ -119,7 +119,7 @@ export function FormularioImportacao({
     <div className="space-y-6">
       <Painel
         titulo="Importar planilhas"
-        descricao={`Cada linha vira uma tarefa com prazo de ${PRAZO_DIAS_UTEIS} dias úteis a partir de hoje. Você pode enviar as duas planilhas de uma vez.`}
+        descricao={`Cada linha vira uma tarefa com prazo de ${PRAZO_DIAS_UTEIS} dias úteis a partir de hoje. Você pode enviar várias planilhas de uma vez.`}
       >
         <div className="space-y-5">
           <div>

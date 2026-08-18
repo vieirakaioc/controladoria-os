@@ -6,7 +6,7 @@
  * campos promovidos a coluna existem para filtrar, ordenar e somar.
  */
 
-export type Origem = 'cte_divergencias' | 'situacoes_logistica'
+export type Origem = 'cte_divergencias' | 'situacoes_logistica' | 'notas_entrada'
 
 /**
  * `concluida` e `sem_correcao` são os dois desfechos possíveis: a linha foi
@@ -92,6 +92,7 @@ export type Responsavel = { id: string; nome: string; email?: string | null }
 export const ROTULO_ORIGEM: Record<Origem, string> = {
   cte_divergencias: 'Divergências fiscais',
   situacoes_logistica: 'Situações Logística',
+  notas_entrada: 'Notas de entrada',
 }
 
 export const ROTULO_STATUS: Record<StatusTarefa, string> = {
