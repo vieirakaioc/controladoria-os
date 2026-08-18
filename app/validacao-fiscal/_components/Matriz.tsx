@@ -74,17 +74,57 @@ const CHAVE_NUMERO = '@numero'
 const CHAVE_RESPONSAVEL = '@responsavel'
 const CHAVE_OBSERVACAO = '@observacao'
 
+/**
+ * Colunas usadas quando a tela mistura planilhas diferentes.
+ *
+ * Cada relatório tem as suas colunas próprias, e não dá para mostrar as 39 de
+ * uma vez — a maioria ficaria vazia em cada linha. Estas são as que existem em
+ * todas: o essencial para decidir o que fazer. A linha original inteira
+ * continua no painel, a um clique de distância.
+ */
+const COLUNAS_COMUNS = [
+  { chave: '@origem', rotulo: 'Planilha' },
+  { chave: '@documento', rotulo: 'Documento' },
+  { chave: '@emitente', rotulo: 'Emitente' },
+  { chave: '@tipo', rotulo: 'Divergência' },
+  { chave: '@filial', rotulo: 'Filial' },
+  { chave: '@valor', rotulo: 'Valor' },
+] as const
+
+const COMUNS_NUMERICAS = new Set(['@filial', '@valor'])
+const COMUNS_LARGAS = new Set(['@emitente', '@tipo'])
+
+function valorComum(tarefa: TarefaFiscal, chave: string): string | number | null {
+  switch (chave) {
+    case '@origem':
+      return tarefa.aba ? `${ROTULO_ORIGEM[tarefa.origem]} · ${tarefa.aba}` : ROTULO_ORIGEM[tarefa.origem]
+    case '@documento':
+      return tarefa.documento
+    case '@emitente':
+      return tarefa.emitente
+    case '@tipo':
+      return tarefa.tipoDivergencia
+    case '@filial':
+      return tarefa.filial
+    case '@valor':
+      return tarefa.valor
+    default:
+      return null
+  }
+}
+
 type Ordenacao = { coluna: string; direcao: 'asc' | 'desc' }
 
 function valorParaOrdenar(
   tarefa: TarefaFiscal,
   coluna: string,
-  layout: ReturnType<typeof layoutDe>,
+  layout: ReturnType<typeof layoutDe> | null,
 ): string | number | null {
   if (coluna === CHAVE_NUMERO) return tarefa.numero
   if (coluna === CHAVE_RESPONSAVEL) return tarefa.responsavelNome
   if (coluna === CHAVE_OBSERVACAO) return tarefa.observacaoCorrecao ?? tarefa.motivoAndamento
-  return valorDaColuna(layout, tarefa.dados, coluna)
+  if (coluna.startsWith('@')) return valorComum(tarefa, coluna)
+  return layout ? valorDaColuna(layout, tarefa.dados, coluna) : null
 }
 
 /**
@@ -116,7 +156,6 @@ export function Matriz({
   aoAtualizar: (t: TarefaFiscal) => void
   aoRemover: (id: string) => void
 }) {
-  const [grupoAtivo, setGrupoAtivo] = useState<string | null>(null)
   const [filtroPrazo, setFiltroPrazo] = useState<FiltroPrazo>('abertas')
   const [filtroResponsavel, setFiltroResponsavel] = useState('todos')
   const [busca, setBusca] = useState('')
@@ -128,29 +167,10 @@ export function Matriz({
   const [ordenacao, setOrdenacao] = useState<Ordenacao | null>(null)
   const [filtroFluxo, setFiltroFluxo] = useState<Fluxo | 'todos'>('todos')
 
-  const grupos = useMemo(() => {
-    const mapa = new Map<string, { chave: string; rotulo: string; tarefas: TarefaFiscal[] }>()
-
-    for (const tarefa of tarefas) {
-      const chave = `${tarefa.origem}||${tarefa.aba}`
-      const rotulo = tarefa.aba
-        ? `${ROTULO_ORIGEM[tarefa.origem]} · ${tarefa.aba}`
-        : ROTULO_ORIGEM[tarefa.origem]
-
-      if (!mapa.has(chave)) mapa.set(chave, { chave, rotulo, tarefas: [] })
-      mapa.get(chave)!.tarefas.push(tarefa)
-    }
-
-    return [...mapa.values()]
-  }, [tarefas])
-
-  const grupo = grupos.find((g) => g.chave === grupoAtivo) ?? grupos[0]
-
   const visiveis = useMemo(() => {
-    if (!grupo) return []
     const termo = busca.trim().toLowerCase()
 
-    const filtradas = grupo.tarefas.filter((tarefa) => {
+    const filtradas = tarefas.filter((tarefa) => {
       const situacao = situacaoPrazo(tarefa.status, tarefa.prazo, tarefa.concluidoEm, hoje)
 
       if (filtroFluxo !== 'todos' && tarefa.fluxo !== filtroFluxo) return false
@@ -199,7 +219,8 @@ export function Matriz({
     // primeiro, prazo mais curto no topo.
     if (!ordenacao) return filtradas
 
-    const layoutGrupo = layoutDe(grupo.tarefas[0].origem)
+    const origens = new Set(filtradas.map((t) => t.origem))
+    const layoutGrupo = origens.size === 1 ? layoutDe([...origens][0]) : null
     const sinal = ordenacao.direcao === 'asc' ? 1 : -1
 
     return [...filtradas].sort(
@@ -210,7 +231,28 @@ export function Matriz({
           valorParaOrdenar(b, ordenacao.coluna, layoutGrupo),
         ),
     )
-  }, [grupo, filtroPrazo, filtroFluxo, filtroResponsavel, busca, hoje, ordenacao])
+  }, [tarefas, filtroPrazo, filtroFluxo, filtroResponsavel, busca, hoje, ordenacao])
+
+  /**
+   * Colunas da tabela.
+   *
+   * Com uma planilha só em tela, valem as colunas dela, fiéis ao arquivo. Com
+   * várias misturadas, cai para o conjunto comum — senão seriam 39 colunas com
+   * a maioria vazia em cada linha.
+   */
+  const origensVisiveis = useMemo(
+    () => [...new Set(visiveis.map((t) => t.origem))],
+    [visiveis],
+  )
+
+  const layout = origensVisiveis.length === 1 ? layoutDe(origensVisiveis[0]) : null
+
+  const colunas = layout
+    ? layout.colunasMatriz.map((coluna) => ({ chave: coluna, rotulo: coluna }))
+    : COLUNAS_COMUNS.map((c) => ({ chave: c.chave, rotulo: c.rotulo }))
+
+  const ehNumerica = (chave: string) =>
+    layout ? layout.colunasNumericas.includes(chave) : COMUNS_NUMERICAS.has(chave)
 
   /** Um clique ordena crescente, o seguinte inverte, o terceiro solta a coluna. */
   const alternarOrdem = (coluna: string) => {
@@ -275,7 +317,7 @@ export function Matriz({
     }
   }
 
-  if (!grupo) {
+  if (tarefas.length === 0) {
     return (
       <Painel titulo="Nenhuma tarefa">
         <p className="text-sm text-slate-500">
@@ -285,36 +327,8 @@ export function Matriz({
     )
   }
 
-  const layout = layoutDe(grupo.tarefas[0].origem)
-
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap gap-2">
-        {grupos.map((g) => {
-          const abertas = g.tarefas.filter((t) => !estaFinalizada(t.status)).length
-          const ativa = g.chave === grupo.chave
-
-          return (
-            <button
-              key={g.chave}
-              type="button"
-              onClick={() => setGrupoAtivo(g.chave)}
-              aria-pressed={ativa}
-              className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition-all ${
-                ativa
-                  ? 'border-[#0f88a8] bg-[#0f88a8]/10 text-[#063955]'
-                  : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-[#063955]'
-              }`}
-            >
-              {g.rotulo}
-              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs tabular-nums text-slate-600">
-                {abertas}/{g.tarefas.length}
-              </span>
-            </button>
-          )
-        })}
-      </div>
-
       <Painel className="!p-4">
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2">
@@ -386,7 +400,7 @@ export function Matriz({
           </select>
 
           <span className="ml-auto text-sm text-slate-500">
-            {formatarInteiro(visiveis.length)} de {formatarInteiro(grupo.tarefas.length)} tarefas
+            {formatarInteiro(visiveis.length)} de {formatarInteiro(tarefas.length)} tarefas
           </span>
         </div>
 
@@ -489,21 +503,17 @@ export function Matriz({
                 {[
                   { chave: CHAVE_RESPONSAVEL, rotulo: 'Responsável' },
                   { chave: CHAVE_OBSERVACAO, rotulo: 'Observação / motivo' },
-                  ...layout.colunasMatriz.map((coluna) => ({ chave: coluna, rotulo: coluna })),
+                  ...colunas,
                 ].map((coluna) => (
                   <th
                     key={coluna.chave}
                     scope="col"
                     aria-sort={ariaOrdem(coluna.chave)}
                     className={`whitespace-nowrap border-b border-l border-slate-200 bg-slate-50 px-4 py-3 text-left ${ROTULO_TH} ${
-                      layout.colunasNumericas.includes(coluna.chave) ? 'text-right' : ''
+                      ehNumerica(coluna.chave) ? 'text-right' : ''
                     }`}
                   >
-                    {botaoOrdenar(
-                      coluna.chave,
-                      coluna.rotulo,
-                      layout.colunasNumericas.includes(coluna.chave),
-                    )}
+                    {botaoOrdenar(coluna.chave, coluna.rotulo, ehNumerica(coluna.chave))}
                   </th>
                 ))}
               </tr>
@@ -513,7 +523,7 @@ export function Matriz({
               {visiveis.length === 0 && (
                 <tr>
                   <td
-                    colSpan={3 + layout.colunasMatriz.length}
+                    colSpan={3 + colunas.length}
                     className="px-4 py-12 text-center text-sm text-slate-400"
                   >
                     Nenhuma tarefa com esses filtros.
@@ -626,13 +636,22 @@ export function Matriz({
                         )}
                     </td>
 
-                    {layout.colunasMatriz.map((coluna) => {
-                      const bruto = valorDaColuna(layout, tarefa.dados, coluna)
-                      const numerica = layout.colunasNumericas.includes(coluna)
-                      const codigo = layout.colunasCodigo.includes(coluna)
-                      const larga = layout.colunasLargas.includes(coluna)
+                    {colunas.map(({ chave: coluna }) => {
+                      const comum = coluna.startsWith('@')
+
+                      const bruto = comum
+                        ? valorComum(tarefa, coluna)
+                        : valorDaColuna(layout!, tarefa.dados, coluna)
+
+                      const numerica = ehNumerica(coluna)
+                      const codigo = !comum && layout!.colunasCodigo.includes(coluna)
+                      const larga = comum
+                        ? COMUNS_LARGAS.has(coluna)
+                        : layout!.colunasLargas.includes(coluna)
                       const texto = formatarCelula(bruto, {
-                        moeda: layout.colunasMoeda.includes(coluna),
+                        moeda: comum
+                          ? coluna === '@valor'
+                          : layout!.colunasMoeda.includes(coluna),
                       })
 
                       return (
@@ -670,8 +689,10 @@ export function Matriz({
       </div>
 
       <p className="text-xs text-slate-400">
-        A tabela rola para o lado — a primeira coluna fica fixa. Clique em Responder para ver a
-        linha completa da planilha.
+        {layout
+          ? `Só ${layout.rotulo} em tela: as colunas são as da própria planilha.`
+          : 'Planilhas misturadas: as colunas mostradas são as comuns a todas. Filtre ou busque até sobrar uma só para ver as colunas originais dela.'}{' '}
+        A tabela rola para o lado — a primeira coluna fica fixa, e Responder abre a linha completa.
       </p>
 
       {emEdicao && (
