@@ -102,7 +102,9 @@ export type Responsavel = { id: string; nome: string; email?: string | null }
 export const ROTULO_ORIGEM: Record<Origem, string> = {
   cte_divergencias: 'Divergências fiscais',
   situacoes_logistica: 'Situações Logística',
-  notas_entrada: 'Notas de entrada',
+  // O identificador ficou de quando só havia entrada; o relatório traz os
+  // dois fluxos, e o rótulo precisa dizer isso.
+  notas_entrada: 'Notas fiscais',
 }
 
 export const ROTULO_FLUXO: Record<Fluxo, string> = {

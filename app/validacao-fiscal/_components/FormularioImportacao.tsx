@@ -135,7 +135,7 @@ export function FormularioImportacao({
     <div className="space-y-6">
       <Painel
         titulo="Importar planilhas"
-        descricao={`Cada linha vira uma tarefa com prazo de ${PRAZO_DIAS_UTEIS} dias úteis a partir de hoje. Você pode enviar várias planilhas de uma vez.`}
+        descricao={`Cada linha vira uma tarefa com prazo de ${PRAZO_DIAS_UTEIS} dias úteis a partir de hoje. A coluna de entrada/saída da planilha define, linha a linha, quem fica responsável e qual lista recebe o aviso — um arquivo só pode trazer os dois fluxos.`}
       >
         <div className="space-y-5">
           <div>
@@ -155,8 +155,9 @@ export function FormularioImportacao({
 
             <div className="mt-3 flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
               <span className="text-xs text-slate-500 leading-relaxed">
-                Deu erro de estrutura? Baixe o modelo, cole os dados nele e envie — os cabeçalhos já
-                vêm exatamente como a importação espera.
+                Deu erro de estrutura? Baixe o modelo padrão, cole os dados nele e envie — os
+                cabeçalhos já vêm como a importação espera. Os formatos antigos continuam sendo
+                aceitos.
               </span>
 
               <div className="ml-auto flex flex-wrap gap-2">
@@ -165,10 +166,19 @@ export function FormularioImportacao({
                     key={layout.origem}
                     type="button"
                     onClick={() => baixarModelo(layout.origem)}
-                    className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 transition-colors hover:border-[#0f88a8] hover:text-[#0f88a8]"
+                    title={
+                      layout.legado
+                        ? 'Formato anterior — ainda aceito na importação'
+                        : 'Formato padrão da planilha geral'
+                    }
+                    className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border px-3 py-1.5 text-xs font-bold transition-colors ${
+                      layout.legado
+                        ? 'border-slate-200 bg-white text-slate-400 hover:border-slate-300 hover:text-slate-600'
+                        : 'border-[#0f88a8] bg-white text-[#0f88a8] hover:bg-[#0f88a8] hover:text-white'
+                    }`}
                   >
                     <Download size={13} />
-                    Modelo {layout.rotulo}
+                    {layout.legado ? `Antigo · ${layout.rotulo}` : `Modelo padrão · ${layout.rotulo}`}
                   </button>
                 ))}
               </div>

@@ -194,6 +194,20 @@ export async function buscarResponsavelPorEmail(email: string): Promise<Responsa
   return { id: String(data.id), nome: data.nome, email: data.email }
 }
 
+/**
+ * Chaves que representam a mesma linha em formatos diferentes.
+ *
+ * A planilha padrão nova gera `entrada::<arquivo>`; a auditoria fiscal antiga
+ * gerava `cte::<arquivo>` para o mesmo documento. Sem isto, a primeira
+ * importação no formato novo recriaria como tarefa nova tudo o que já foi
+ * respondido no formato antigo.
+ */
+function chavesEquivalentes(chave: string): string[] {
+  if (chave.startsWith('entrada::')) return [chave, `cte::${chave.slice('entrada::'.length)}`]
+  if (chave.startsWith('cte::')) return [chave, `entrada::${chave.slice('cte::'.length)}`]
+  return [chave]
+}
+
 /** Quais destas chaves já estão no banco. Consulta em fatias por causa da URL. */
 async function chavesExistentes(chaves: string[]): Promise<Set<string>> {
   const encontradas = new Set<string>()
@@ -246,8 +260,8 @@ export async function salvarLote(params: {
   // resolveria o conflito, mas o DEFAULT da coluna `numero` é avaliado mesmo
   // nas linhas descartadas — cada reimportação queimaria dezenas de números e
   // a numeração das atividades ficaria cheia de buracos.
-  const jaExistem = await chavesExistentes(unicas.map((t) => t.chave))
-  const inserir = unicas.filter((t) => !jaExistem.has(t.chave))
+  const jaExistem = await chavesExistentes(unicas.flatMap((t) => chavesEquivalentes(t.chave)))
+  const inserir = unicas.filter((t) => !chavesEquivalentes(t.chave).some((c) => jaExistem.has(c)))
 
   let novas = 0
 

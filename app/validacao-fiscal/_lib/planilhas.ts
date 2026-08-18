@@ -31,9 +31,52 @@ export type LayoutPlanilha = {
    * exatamente a mesma tarefa, e a deduplicação continua valendo.
    */
   sinonimos: Record<string, string[]>
+  /**
+   * Formato anterior ao padrão atual. Continua sendo aceito — há tarefa no
+   * sistema que veio dele —, mas não é o que a tela oferece como modelo.
+   */
+  legado?: boolean
 }
 
 export const LAYOUTS: LayoutPlanilha[] = [
+  {
+    // NFE_DIVERGENTES e NFSE_DIVERGENTES saem com as mesmas 14 colunas; o que
+    // muda entre os dois é o valor de "Modelo" e o nome da última coluna. Um
+    // layout só atende os dois, e a matriz separa por modelo na hora de agrupar.
+    //
+    // A coluna "Fluxo" decide, linha a linha, se é entrada ou saída — e é ela
+    // que define o dono e a lista de e-mail. Um arquivo só pode trazer os dois.
+    origem: 'notas_entrada',
+    rotulo: 'Notas fiscais',
+    // "Fluxo" é o que distingue esta planilha das outras: nenhuma das demais
+    // exportações traz essa coluna.
+    assinatura: ['Nota Fiscal', 'Fluxo', 'Valor XML'],
+    colunasMatriz: [
+      'Nota Fiscal',
+      'Modelo',
+      'Fluxo',
+      'Filial',
+      'Emitente / Destinatário',
+      'Valor XML',
+      'Valor Sênior',
+      'Diferença',
+      'Status',
+      'Observação',
+      'Empresa',
+      'CNPJ da Filial',
+      'Arquivo',
+    ],
+    colunasNumericas: ['Nota Fiscal', 'Filial', 'Valor XML', 'Valor Sênior', 'Diferença'],
+    colunasMoeda: ['Valor XML', 'Valor Sênior', 'Diferença'],
+    colunasLargas: ['Emitente / Destinatário', 'Observação', 'Empresa'],
+    colunasCodigo: ['Arquivo'],
+    sinonimos: {
+      // O relatório de NF-e chama a mesma coluna de "Obs".
+      'Observação': ['Obs', 'Observacao'],
+      'Emitente / Destinatário': ['Emitente', 'Destinatário', 'Emitente Destinatario'],
+      'Valor Sênior': ['Valor Senior'],
+    },
+  },
   {
     origem: 'cte_divergencias',
     rotulo: 'Divergências fiscais',
@@ -55,6 +98,7 @@ export const LAYOUTS: LayoutPlanilha[] = [
     colunasCodigo: ['ARQUIVO'],
     // O relatório antigo saía com VALOR_CTE_*; o "padrão" novo largou o CTE do
     // nome, já que a mesma auditoria traz NFS-e além de CT-e.
+    legado: true,
     sinonimos: {
       'VALOR XML': ['VALOR_CTE_XML', 'VALOR DO XML', 'VALOR CTE XML'],
       'VALOR SÊNIOR': ['VALOR_CTE_SÊNIOR', 'VALOR DO SÊNIOR', 'VALOR CTE SENIOR'],
@@ -98,45 +142,11 @@ export const LAYOUTS: LayoutPlanilha[] = [
       'Nome do Representante',
     ],
     colunasCodigo: ['Chv.Aces.Nf-e'],
+    legado: true,
     sinonimos: {
       'Nº Nota Fiscal': ['Numero Nota Fiscal', 'Nota Fiscal', 'Nº NF'],
       'Desc. Situação NF-e': ['Descrição Situação NF-e', 'Situação NF-e'],
       'Chv.Aces.Nf-e': ['Chave de Acesso', 'Chave Acesso NF-e'],
-    },
-  },
-  {
-    // NFE_DIVERGENTES e NFSE_DIVERGENTES saem com as mesmas 14 colunas; o que
-    // muda entre os dois é o valor de "Modelo" e o nome da última coluna. Um
-    // layout só atende os dois, e a matriz separa por modelo na hora de agrupar.
-    origem: 'notas_entrada',
-    rotulo: 'Notas de entrada',
-    // "Fluxo" é o que distingue esta planilha das outras: nenhuma das demais
-    // exportações traz essa coluna.
-    assinatura: ['Nota Fiscal', 'Fluxo', 'Valor XML'],
-    colunasMatriz: [
-      'Nota Fiscal',
-      'Modelo',
-      'Fluxo',
-      'Filial',
-      'Emitente / Destinatário',
-      'Valor XML',
-      'Valor Sênior',
-      'Diferença',
-      'Status',
-      'Observação',
-      'Empresa',
-      'CNPJ da Filial',
-      'Arquivo',
-    ],
-    colunasNumericas: ['Nota Fiscal', 'Filial', 'Valor XML', 'Valor Sênior', 'Diferença'],
-    colunasMoeda: ['Valor XML', 'Valor Sênior', 'Diferença'],
-    colunasLargas: ['Emitente / Destinatário', 'Observação', 'Empresa'],
-    colunasCodigo: ['Arquivo'],
-    sinonimos: {
-      // O relatório de NF-e chama a mesma coluna de "Obs".
-      'Observação': ['Obs', 'Observacao'],
-      'Emitente / Destinatário': ['Emitente', 'Destinatário', 'Emitente Destinatario'],
-      'Valor Sênior': ['Valor Senior'],
     },
   },
 ]
