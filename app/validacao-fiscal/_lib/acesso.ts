@@ -10,7 +10,7 @@ import type { Fluxo } from './types'
 
 /** Quem fica com as tarefas de cada fluxo quando a planilha é importada. */
 export const EMAIL_RESPONSAVEL: Record<Fluxo, string> = {
-  saida: 'fernando.carvalho@comber.com.br',
+  saida: 'matheus.carvaho@comber.com.br',
   entrada: 'erica.araujo@comber.com.br',
 }
 
