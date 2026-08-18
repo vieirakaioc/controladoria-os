@@ -162,7 +162,10 @@ export default function PaginaDashboard() {
         </div>
       </div>
 
-      <ExportarPainel resumo={resumo} tarefas={tarefas} hoje={referencia} />
+      <div className="grid gap-4 lg:grid-cols-2">
+        <ExportarPainel fluxo="saida" tarefas={tarefas} hoje={referencia} />
+        <ExportarPainel fluxo="entrada" tarefas={tarefas} hoje={referencia} />
+      </div>
 
       <Painel
         titulo="Situação do prazo"

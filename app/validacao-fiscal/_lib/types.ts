@@ -16,6 +16,14 @@ export type Origem = 'cte_divergencias' | 'situacoes_logistica' | 'notas_entrada
  */
 export type StatusTarefa = 'pendente' | 'em_andamento' | 'concluida' | 'sem_correcao'
 
+/**
+ * Entrada = nota recebida (escrita fiscal); saída = documento emitido.
+ *
+ * Decide quem responde e para qual lista o resumo vai, então sai da planilha
+ * quando ela informa, nunca de palpite sobre o nome do arquivo.
+ */
+export type Fluxo = 'entrada' | 'saida'
+
 /** Encerrada, com ou sem correção. */
 export function estaFinalizada(status: StatusTarefa): boolean {
   return status === 'concluida' || status === 'sem_correcao'
@@ -44,6 +52,7 @@ export type TarefaFiscal = {
   tipoDivergencia: string
   emitente: string
   filial: string
+  fluxo: Fluxo
   valor: number | null
   /** YYYY-MM-DD */
   emissao: string | null
@@ -82,6 +91,7 @@ export type TarefaLida = {
   tipoDivergencia: string
   emitente: string
   filial: string
+  fluxo: Fluxo
   valor: number | null
   emissao: string | null
   dados: LinhaPlanilha
@@ -93,6 +103,11 @@ export const ROTULO_ORIGEM: Record<Origem, string> = {
   cte_divergencias: 'Divergências fiscais',
   situacoes_logistica: 'Situações Logística',
   notas_entrada: 'Notas de entrada',
+}
+
+export const ROTULO_FLUXO: Record<Fluxo, string> = {
+  entrada: 'Notas de entrada',
+  saida: 'Notas de saída',
 }
 
 export const ROTULO_STATUS: Record<StatusTarefa, string> = {

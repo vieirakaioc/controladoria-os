@@ -3,12 +3,13 @@
 import { useState } from 'react'
 import { AlertCircle, CheckCircle2, Download, Eye, Loader2, Mail } from 'lucide-react'
 
-import { EMAILS_RESUMO_DIARIO } from '../_lib/acesso'
+import { EMAILS_RESUMO } from '../_lib/acesso'
 import { CORES } from '../_lib/cores'
+import { formatarInteiro } from '../_lib/formato'
 import { formatarData } from '../_lib/prazo'
 import { montarRelatorio } from '../_lib/relatorio'
-import type { Resumo } from '../_lib/resumo'
-import type { TarefaFiscal } from '../_lib/types'
+import { calcularResumo, type Resumo } from '../_lib/resumo'
+import { ROTULO_FLUXO, type Fluxo, type TarefaFiscal } from '../_lib/types'
 import { Painel } from './Ui'
 
 const CAMPO =
@@ -27,24 +28,30 @@ type Estado =
  * chega na caixa de entrada ser exatamente o que foi conferido na tela.
  */
 export function ExportarPainel({
-  resumo,
+  fluxo,
   tarefas,
   hoje,
 }: {
-  resumo: Resumo
+  fluxo: Fluxo
   tarefas: TarefaFiscal[]
   hoje: string
 }) {
   // Mesma lista do envio automático: mandar à mão fora de hora não deveria
-  // exigir redigitar oito endereços.
-  const [destinatarios, setDestinatarios] = useState(EMAILS_RESUMO_DIARIO.join(', '))
+  // exigir redigitar os endereços.
+  const [destinatarios, setDestinatarios] = useState(EMAILS_RESUMO[fluxo].join(', '))
   const [estado, setEstado] = useState<Estado>({ fase: 'inicial' })
+
+  // Só as tarefas deste fluxo, e o resumo recalculado sobre elas: um número no
+  // e-mail de entrada que somasse saída seria pior do que não ter e-mail.
+  const doFluxo = tarefas.filter((t) => t.fluxo === fluxo)
+  const resumo: Resumo = calcularResumo(doFluxo, hoje)
 
   const gerar = () =>
     montarRelatorio({
       resumo,
-      tarefas,
+      tarefas: doFluxo,
       hoje,
+      escopo: ROTULO_FLUXO[fluxo],
       link:
         typeof window === 'undefined'
           ? ''
@@ -69,7 +76,7 @@ export function ExportarPainel({
     const url = URL.createObjectURL(blob)
     const ancora = document.createElement('a')
     ancora.href = url
-    ancora.download = `validacao-fiscal-${hoje}.html`
+    ancora.download = `validacao-fiscal-${fluxo}-${hoje}.html`
     ancora.click()
     URL.revokeObjectURL(url)
   }
@@ -99,7 +106,9 @@ export function ExportarPainel({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           to: lista.join(', '),
-          subject: `[Validação Fiscal] Painel de ${formatarData(hoje)} — ${resumo.emAberto} em aberto, ${resumo.atrasadas} atrasada(s)`,
+          subject:
+            `[Validação Fiscal] ${ROTULO_FLUXO[fluxo]} · ${formatarData(hoje)} — ` +
+            `${resumo.emAberto} em aberto, ${resumo.atrasadas} atrasada(s)`,
           html: gerar(),
         }),
       })
@@ -122,8 +131,8 @@ export function ExportarPainel({
 
   return (
     <Painel
-      titulo="Enviar este painel por e-mail"
-      descricao="Gera um resumo visual com os indicadores, a fila do que está atrasado e a carga por responsável."
+      titulo={`Enviar painel de ${ROTULO_FLUXO[fluxo].toLowerCase()}`}
+      descricao={`Resumo visual com os indicadores, a fila do que está atrasado e a carga por responsável — só de ${ROTULO_FLUXO[fluxo].toLowerCase()} (${formatarInteiro(doFluxo.length)} tarefas).`}
     >
       <div className="flex flex-wrap items-end gap-3">
         <div className="min-w-[280px] flex-1">

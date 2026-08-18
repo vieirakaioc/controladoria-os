@@ -19,7 +19,14 @@ import { CORES } from '../_lib/cores'
 import { formatarCelula, formatarInteiro } from '../_lib/formato'
 import { formatarData, situacaoPrazo, textoPrazo } from '../_lib/prazo'
 import { layoutDe, valorDaColuna } from '../_lib/planilhas'
-import { estaFinalizada, ROTULO_ORIGEM, type Responsavel, type TarefaFiscal } from '../_lib/types'
+import {
+  estaFinalizada,
+  ROTULO_FLUXO,
+  ROTULO_ORIGEM,
+  type Fluxo,
+  type Responsavel,
+  type TarefaFiscal,
+} from '../_lib/types'
 import { ChipPrazo, Painel } from './Ui'
 import { PainelResposta } from './PainelResposta'
 
@@ -119,6 +126,7 @@ export function Matriz({
   const [atribuindo, setAtribuindo] = useState(false)
   const [erroLote, setErroLote] = useState<string | null>(null)
   const [ordenacao, setOrdenacao] = useState<Ordenacao | null>(null)
+  const [filtroFluxo, setFiltroFluxo] = useState<Fluxo | 'todos'>('todos')
 
   const grupos = useMemo(() => {
     const mapa = new Map<string, { chave: string; rotulo: string; tarefas: TarefaFiscal[] }>()
@@ -144,6 +152,8 @@ export function Matriz({
 
     const filtradas = grupo.tarefas.filter((tarefa) => {
       const situacao = situacaoPrazo(tarefa.status, tarefa.prazo, tarefa.concluidoEm, hoje)
+
+      if (filtroFluxo !== 'todos' && tarefa.fluxo !== filtroFluxo) return false
 
       if (filtroPrazo === 'abertas' && estaFinalizada(tarefa.status)) return false
       if (filtroPrazo === 'corrigidas' && tarefa.status !== 'concluida') return false
@@ -200,7 +210,7 @@ export function Matriz({
           valorParaOrdenar(b, ordenacao.coluna, layoutGrupo),
         ),
     )
-  }, [grupo, filtroPrazo, filtroResponsavel, busca, hoje, ordenacao])
+  }, [grupo, filtroPrazo, filtroFluxo, filtroResponsavel, busca, hoje, ordenacao])
 
   /** Um clique ordena crescente, o seguinte inverte, o terceiro solta a coluna. */
   const alternarOrdem = (coluna: string) => {
@@ -316,6 +326,30 @@ export function Matriz({
               placeholder="Buscar em qualquer campo da planilha"
               className="w-64 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
             />
+          </div>
+
+          {/* Entrada e saída são times diferentes: separar antes do prazo evita
+              alguém responder o que não é da sua área. */}
+          <div className="flex flex-wrap gap-1 rounded-xl bg-slate-100 p-1">
+            {([
+              { valor: 'todos', rotulo: 'Todas' },
+              { valor: 'saida', rotulo: 'Saídas' },
+              { valor: 'entrada', rotulo: 'Entradas' },
+            ] as const).map((f) => (
+              <button
+                key={f.valor}
+                type="button"
+                onClick={() => setFiltroFluxo(f.valor)}
+                aria-pressed={filtroFluxo === f.valor}
+                className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-all ${
+                  filtroFluxo === f.valor
+                    ? 'bg-white text-[#063955] shadow-sm'
+                    : 'text-slate-500 hover:text-[#063955]'
+                }`}
+              >
+                {f.rotulo}
+              </button>
+            ))}
           </div>
 
           <div className="flex flex-wrap gap-1 rounded-xl bg-slate-100 p-1">
@@ -543,6 +577,9 @@ export function Matriz({
                           {finalizada
                             ? formatarData(tarefa.prazo)
                             : `${formatarData(tarefa.prazo)} · ${textoPrazo(tarefa.prazo, hoje)}`}
+                        </span>
+                        <span className="text-[11px] text-slate-400">
+                          {ROTULO_FLUXO[tarefa.fluxo]}
                         </span>
                         {tarefa.status === 'em_andamento' && (
                           <span

@@ -2,11 +2,12 @@
 
 import { supabase } from '@/lib/supabase'
 
-import { EMAILS_RESUMO_DIARIO } from './acesso'
+import { EMAILS_RESUMO } from './acesso'
 import { listarTarefas } from './api'
 import { formatarData, hoje as dataDeHoje } from './prazo'
 import { montarRelatorio } from './relatorio'
 import { calcularResumo } from './resumo'
+import { ROTULO_FLUXO, type Fluxo } from './types'
 
 /**
  * Resumo diário do painel para a equipe.
@@ -46,6 +47,14 @@ export async function enviarResumoDiario(usuario: string): Promise<void> {
   if (ehFimDeSemana(hoje)) return
   if (horaLocal() < HORA_MINIMA) return
 
+  // Um resumo por fluxo, para listas diferentes: quem cuida de escrita fiscal
+  // não deve receber cobrança de nota emitida.
+  for (const fluxo of ['saida', 'entrada'] as const) {
+    await enviarDoFluxo(fluxo, hoje, usuario)
+  }
+}
+
+async function enviarDoFluxo(fluxo: Fluxo, hoje: string, usuario: string): Promise<void> {
   try {
     // Consulta barata primeiro: na imensa maioria das aberturas o dia já foi
     // enviado, e aí nem vale buscar as tarefas.
@@ -53,23 +62,26 @@ export async function enviarResumoDiario(usuario: string): Promise<void> {
       .from(TABELA)
       .select('data')
       .eq('data', hoje)
+      .eq('escopo', fluxo)
       .maybeSingle()
 
     if (jaEnviado) return
 
     // Reserva o dia ANTES de montar o e-mail. Se duas pessoas abrirem no mesmo
     // segundo, a segunda leva 23505 aqui e desiste — em vez de as duas
-    // mandarem o resumo para as oito pessoas.
+    // mandarem o resumo para a lista inteira.
     const { error: erroReserva } = await supabase.from(TABELA).insert({
       data: hoje,
+      escopo: fluxo,
       enviado_por: usuario || null,
-      destinatarios: EMAILS_RESUMO_DIARIO.join(', '),
+      destinatarios: EMAILS_RESUMO[fluxo].join(', '),
     })
 
     if (erroReserva) return
 
     try {
-      const tarefas = await listarTarefas()
+      const todas = await listarTarefas()
+      const tarefas = todas.filter((t) => t.fluxo === fluxo)
       if (tarefas.length === 0) throw new Error('sem tarefas para resumir')
 
       const resumo = calcularResumo(tarefas, hoje)
@@ -78,12 +90,15 @@ export async function enviarResumoDiario(usuario: string): Promise<void> {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          to: EMAILS_RESUMO_DIARIO.join(', '),
-          subject: `[Validação Fiscal] Painel de ${formatarData(hoje)} — ${resumo.emAberto} em aberto, ${resumo.atrasadas} atrasada(s)`,
+          to: EMAILS_RESUMO[fluxo].join(', '),
+          subject:
+            `[Validação Fiscal] ${ROTULO_FLUXO[fluxo]} · ${formatarData(hoje)} — ` +
+            `${resumo.emAberto} em aberto, ${resumo.atrasadas} atrasada(s)`,
           html: montarRelatorio({
             resumo,
             tarefas,
             hoje,
+            escopo: ROTULO_FLUXO[fluxo],
             link: `${window.location.origin}/validacao-fiscal/matriz`,
           }),
         }),
@@ -94,12 +109,12 @@ export async function enviarResumoDiario(usuario: string): Promise<void> {
     } catch (falha) {
       // Devolve o dia: a reserva sem e-mail enviado deixaria a equipe sem
       // resumo até amanhã. Assim a próxima pessoa que abrir tenta de novo.
-      await supabase.from(TABELA).delete().eq('data', hoje)
+      await supabase.from(TABELA).delete().eq('data', hoje).eq('escopo', fluxo)
       throw falha
     }
   } catch (falha) {
     if (typeof console !== 'undefined') {
-      console.warn('[validacao-fiscal] resumo diário não enviado:', falha)
+      console.warn(`[validacao-fiscal] resumo de ${fluxo} não enviado:`, falha)
     }
   }
 }

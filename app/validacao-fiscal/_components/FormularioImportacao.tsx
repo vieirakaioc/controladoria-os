@@ -11,13 +11,14 @@ import {
   salvarLote,
   type ResultadoImportacao,
 } from '../_lib/api'
-import { EMAIL_RESPONSAVEL_PADRAO } from '../_lib/acesso'
+import { EMAILS_RESUMO, EMAIL_RESPONSAVEL } from '../_lib/acesso'
 import { avisarNovasTarefas } from '../_lib/avisos'
 import { baixarModelo } from '../_lib/modelo'
 import { PlanilhaInvalida, lerPlanilha } from '../_lib/parser'
 import { LAYOUTS } from '../_lib/planilhas'
+import { formatarInteiro } from '../_lib/formato'
 import { PRAZO_DIAS_UTEIS, calcularPrazo, formatarData } from '../_lib/prazo'
-import { ROTULO_ORIGEM } from '../_lib/types'
+import { ROTULO_FLUXO, ROTULO_ORIGEM } from '../_lib/types'
 import { Painel } from './Ui'
 
 const TAMANHO_MAXIMO = 15 * 1024 * 1024
@@ -50,9 +51,13 @@ export function FormularioImportacao({
     let ignoradas = 0
 
     try {
-      // Todas as tarefas novas nascem no nome do responsável padrão. Sem dono,
-      // a planilha vira uma lista que ninguém se sente encarregado de responder.
-      const responsavelPadrao = await buscarResponsavelPorEmail(EMAIL_RESPONSAVEL_PADRAO)
+      // Cada fluxo nasce no nome do seu dono. Sem isso, a nota de entrada cairia
+      // para quem cuida de saída e ninguém se sentiria encarregado dela.
+      const [donoSaida, donoEntrada] = await Promise.all([
+        buscarResponsavelPorEmail(EMAIL_RESPONSAVEL.saida),
+        buscarResponsavelPorEmail(EMAIL_RESPONSAVEL.entrada),
+      ])
+      const responsaveisPorFluxo = { saida: donoSaida, entrada: donoEntrada }
 
       for (const arquivo of arquivos) {
         if (arquivo.size > TAMANHO_MAXIMO) {
@@ -76,7 +81,7 @@ export function FormularioImportacao({
               importadoPor: usuario || null,
               prazo,
               tarefas: leitura.tarefas,
-              responsavelPadrao,
+              responsaveisPorFluxo,
             }),
           )
         }
@@ -95,16 +100,27 @@ export function FormularioImportacao({
 
       // Depois de mostrar o resultado: o aviso é complemento, e uma falha de
       // SMTP não pode fazer parecer que a importação deu errado.
-      await avisarNovasTarefas({
-        destino: EMAIL_RESPONSAVEL_PADRAO,
-        quem: usuario || 'Controladoria',
-        prazo,
-        arquivos: resultados.map((r) => ({
-          arquivo: r.arquivo,
-          novas: r.novas,
-          duplicadas: r.duplicadas,
-        })),
-      })
+      //
+      // Um aviso por fluxo: quem cuida de entrada não deve ser cobrado por
+      // nota de saída que apareceu na mesma importação.
+      for (const fluxo of ['saida', 'entrada'] as const) {
+        const arquivos = resultados
+          .map((r) => ({
+            arquivo: r.arquivo,
+            novas: r.novasPorFluxo[fluxo],
+            duplicadas: r.duplicadas,
+          }))
+          .filter((a) => a.novas > 0)
+
+        if (arquivos.length === 0) continue
+
+        await avisarNovasTarefas({
+          destino: EMAILS_RESUMO[fluxo].join(', '),
+          quem: usuario || 'Controladoria',
+          prazo,
+          arquivos,
+        })
+      }
     } catch (falha) {
       setEstado({
         situacao: 'erro',
@@ -279,23 +295,32 @@ export function FormularioImportacao({
             ))}
           </ul>
 
-          {estado.resultados[0].responsavelPadrao ? (
-            <p className="mt-4 text-sm text-slate-600 leading-relaxed">
-              As tarefas novas ficaram com <strong>{estado.resultados[0].responsavelPadrao}</strong>,
-              que também recebeu o aviso por e-mail. A atribuição pode ser trocada linha a linha na
-              matriz.
-            </p>
-          ) : (
-            <p
-              className="mt-4 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm"
-              style={{ color: CORES.atencao }}
-            >
-              <AlertCircle size={16} className="mt-0.5 shrink-0" />
-              As tarefas ficaram sem responsável: não há ninguém com o e-mail{' '}
-              {EMAIL_RESPONSAVEL_PADRAO} no cadastro de responsáveis. O e-mail de aviso foi enviado
-              assim mesmo.
-            </p>
-          )}
+          <div className="mt-4 space-y-2 text-sm text-slate-600 leading-relaxed">
+            {(['saida', 'entrada'] as const).map((fluxo) => {
+              const novas = estado.resultados.reduce((soma, r) => soma + r.novasPorFluxo[fluxo], 0)
+              if (novas === 0) return null
+
+              const dono = estado.resultados[0].responsaveis[fluxo]
+
+              return (
+                <p key={fluxo}>
+                  <strong>{formatarInteiro(novas)}</strong> de {ROTULO_FLUXO[fluxo].toLowerCase()}
+                  {dono ? (
+                    <>
+                      {' '}
+                      no nome de <strong>{dono}</strong>
+                    </>
+                  ) : (
+                    <span style={{ color: CORES.atencao }}>
+                      {' '}
+                      sem responsável — ninguém cadastrado com o e-mail {EMAIL_RESPONSAVEL[fluxo]}
+                    </span>
+                  )}
+                  , com aviso enviado para a lista de {ROTULO_FLUXO[fluxo].toLowerCase()}.
+                </p>
+              )
+            })}
+          </div>
 
           <p className="mt-4 text-xs text-slate-500 leading-relaxed">
             Linhas já importadas antes não viram tarefa de novo — status, responsável e observação

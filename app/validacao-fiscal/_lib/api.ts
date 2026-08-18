@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase'
 
 import {
   estaFinalizada,
+  type Fluxo,
   type LinhaPlanilha,
   type LoteImportacao,
   type Origem,
@@ -24,7 +25,7 @@ const TAB_TAREFAS = 'validacao_fiscal_tarefas'
 
 const CAMPOS = `
   id, numero, lote_id, origem, aba, chave, documento, tipo_divergencia, emitente, filial,
-  valor, emissao, dados, status, responsavel_id, responsavel_nome,
+  fluxo, valor, emissao, dados, status, responsavel_id, responsavel_nome,
   observacao_correcao, motivo_andamento, prazo, concluido_em, concluido_por, criado_em
 `
 
@@ -39,6 +40,7 @@ type LinhaTarefa = {
   tipo_divergencia: string
   emitente: string
   filial: string
+  fluxo: Fluxo | null
   valor: number | string | null
   emissao: string | null
   dados: LinhaPlanilha | null
@@ -66,6 +68,9 @@ function mapear(linha: LinhaTarefa): TarefaFiscal {
     tipoDivergencia: linha.tipo_divergencia ?? '',
     emitente: linha.emitente ?? '',
     filial: linha.filial ?? '',
+    // Linha gravada antes da coluna existir não trava a tela: saída é o que a
+    // migração aplicou retroativamente.
+    fluxo: linha.fluxo ?? 'saida',
     valor: linha.valor === null ? null : Number(linha.valor),
     emissao: linha.emissao,
     dados: linha.dados ?? {},
@@ -168,8 +173,10 @@ export type ResultadoImportacao = {
   novas: number
   duplicadas: number
   prazo: string
-  /** Nome de quem ficou como responsável, ou null se o e-mail padrão não existe. */
-  responsavelPadrao: string | null
+  /** Quantas tarefas novas de cada fluxo, para o aviso ir à lista certa. */
+  novasPorFluxo: Record<Fluxo, number>
+  /** Nomes de quem ficou responsável, por fluxo. */
+  responsaveis: Partial<Record<Fluxo, string>>
 }
 
 /**
@@ -210,8 +217,12 @@ export async function salvarLote(params: {
   importadoPor: string | null
   prazo: string
   tarefas: TarefaLida[]
-  /** Dono inicial das tarefas novas. Tarefas já existentes não são tocadas. */
-  responsavelPadrao: Responsavel | null
+  /**
+   * Dono inicial de cada fluxo. Entrada e saída têm times diferentes, então a
+   * atribuição sai da linha, não do arquivo. Tarefas já existentes não são
+   * tocadas.
+   */
+  responsaveisPorFluxo: Record<Fluxo, Responsavel | null>
 }): Promise<ResultadoImportacao> {
   // Uma planilha pode repetir a mesma linha; a chave natural resolve antes de
   // chegar ao banco, senão o upsert reclamaria de conflito no próprio lote.
@@ -252,10 +263,11 @@ export async function salvarLote(params: {
       filial: t.filial,
       valor: t.valor,
       emissao: t.emissao,
+      fluxo: t.fluxo,
       dados: t.dados,
       prazo: params.prazo,
-      responsavel_id: params.responsavelPadrao?.id ?? null,
-      responsavel_nome: params.responsavelPadrao?.nome ?? null,
+      responsavel_id: params.responsaveisPorFluxo[t.fluxo]?.id ?? null,
+      responsavel_nome: params.responsaveisPorFluxo[t.fluxo]?.nome ?? null,
     }))
 
     // ignoreDuplicates continua aqui como rede de segurança: se duas pessoas
@@ -289,7 +301,14 @@ export async function salvarLote(params: {
     novas,
     duplicadas,
     prazo: params.prazo,
-    responsavelPadrao: params.responsavelPadrao?.nome ?? null,
+    novasPorFluxo: {
+      entrada: inserir.filter((t) => t.fluxo === 'entrada').length,
+      saida: inserir.filter((t) => t.fluxo === 'saida').length,
+    },
+    responsaveis: {
+      entrada: params.responsaveisPorFluxo.entrada?.nome,
+      saida: params.responsaveisPorFluxo.saida?.nome,
+    },
   }
 }
 

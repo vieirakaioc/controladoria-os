@@ -7,7 +7,7 @@ import {
   normalizarCabecalho,
   type LayoutPlanilha,
 } from './planilhas'
-import type { LinhaPlanilha, Origem, TarefaLida } from './types'
+import type { Fluxo, LinhaPlanilha, Origem, TarefaLida } from './types'
 
 /**
  * Leitura das planilhas de correção fiscal (roda no navegador).
@@ -200,6 +200,33 @@ function data(linha: LinhaPlanilha, coluna: string): string | null {
   return null
 }
 
+/**
+ * Fluxo do documento, lido da planilha.
+ *
+ * Cada relatório informa isso de um jeito: "Fluxo" nas notas de entrada,
+ * "Desc.Tipo Nf" ("NF Saída") na logística. A auditoria fiscal não traz coluna
+ * nenhuma, e aí vale o padrão da origem — chutar pelo nome do arquivo criaria
+ * tarefa no nome da pessoa errada.
+ */
+function fluxoDaLinha(origem: Origem, linha: LinhaPlanilha): Fluxo {
+  const candidatas = ['Fluxo', 'Desc.Tipo Nf', 'Tipo de Nota', 'Entrada/Saída', 'E/S']
+
+  for (const coluna of candidatas) {
+    const bruto = texto(linha, coluna)
+    if (!bruto) continue
+
+    const normal = bruto
+      .normalize('NFD')
+      .replace(new RegExp('[\u0300-\u036f]', 'g'), '')
+      .toUpperCase()
+
+    if (normal.includes('ENTRADA')) return 'entrada'
+    if (normal.includes('SAIDA')) return 'saida'
+  }
+
+  return origem === 'notas_entrada' ? 'entrada' : 'saida'
+}
+
 /** Monta a tarefa a partir da linha, conforme a planilha de origem. */
 function montarTarefa(origem: Origem, aba: string, linha: LinhaPlanilha): TarefaLida | null {
   if (origem === 'cte_divergencias') {
@@ -225,6 +252,7 @@ function montarTarefa(origem: Origem, aba: string, linha: LinhaPlanilha): Tarefa
       // repete entre emitentes e não serve sozinho para deduplicar.
       chave: `cte::${arquivo || documento}`,
       documento,
+      fluxo: fluxoDaLinha(origem, linha),
       tipoDivergencia:
         texto(linha, 'OBSERVAÇÃO') || texto(linha, 'STATUS') || 'Sem classificação',
       emitente: texto(linha, 'EMITENTE'),
@@ -259,6 +287,7 @@ function montarTarefa(origem: Origem, aba: string, linha: LinhaPlanilha): Tarefa
       // filial entra para o caso de a exportação vir sem ele.
       chave: `entrada::${arquivo || `${texto(linha, 'Filial')}::${modelo}::${nota}`}`,
       documento: nota,
+      fluxo: fluxoDaLinha(origem, linha),
       tipoDivergencia: texto(linha, 'Observação') || texto(linha, 'Status') || 'Sem classificação',
       emitente: texto(linha, 'Emitente / Destinatário'),
       filial: texto(linha, 'Filial'),
@@ -278,6 +307,7 @@ function montarTarefa(origem: Origem, aba: string, linha: LinhaPlanilha): Tarefa
     aba,
     chave: `log::${aba}::${filial}::${serie}::${documento}`,
     documento,
+    fluxo: fluxoDaLinha(origem, linha),
     tipoDivergencia: texto(linha, 'Observação') || 'Sem classificação',
     emitente: texto(linha, 'Fantasia') || texto(linha, 'Nome do Cliente'),
     filial,

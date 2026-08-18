@@ -141,8 +141,10 @@ export function montarRelatorio(params: {
   tarefas: TarefaFiscal[]
   hoje: string
   link: string
+  /** "Notas de entrada", "Notas de saída" — some quando o relatório é geral. */
+  escopo?: string
 }): string {
-  const { resumo, tarefas, hoje, link } = params
+  const { resumo, tarefas, hoje, link, escopo } = params
 
   // As que mais pedem ação: atrasadas primeiro, prazo mais antigo no topo.
   const criticas = tarefas
@@ -195,7 +197,9 @@ export function montarRelatorio(params: {
 <table width="${LARGURA}" cellpadding="0" cellspacing="0" role="presentation" style="width:${LARGURA}px;max-width:100%;">
 
   <tr><td style="background:#063955;border-radius:12px;padding:20px 22px;">
-    <div style="font:700 18px/1.3 Arial,sans-serif;color:#ffffff;">Validação Fiscal</div>
+    <div style="font:700 18px/1.3 Arial,sans-serif;color:#ffffff;">
+      Validação Fiscal${escopo ? ` · ${escapar(escopo)}` : ''}
+    </div>
     <div style="font:400 12px/1.6 Arial,sans-serif;color:#9fc4d4;padding-top:4px;">
       Situação em ${formatarData(hoje)} · ${formatarInteiro(resumo.total)} tarefas geradas
     </div>

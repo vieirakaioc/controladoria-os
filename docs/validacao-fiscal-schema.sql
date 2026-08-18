@@ -131,6 +131,24 @@ alter table public.validacao_fiscal_tarefas
   check (status in ('pendente', 'em_andamento', 'concluida', 'sem_correcao'));
 
 
+-- ─── Fluxo do documento ─────────────────────────────────────────────────────
+-- entrada = nota recebida (escrita fiscal); saida = documento emitido.
+--
+-- Não é um detalhe estético: o fluxo decide quem fica responsável pela tarefa
+-- e para qual lista o resumo diário vai. Misturar os dois faria a controladoria
+-- de entrada cobrar nota de saída e vice-versa.
+alter table public.validacao_fiscal_tarefas
+  add column if not exists fluxo text not null default '';
+
+-- Retroativo: o que veio das planilhas de nota de entrada é entrada; o resto
+-- do que já está gravado é saída.
+update public.validacao_fiscal_tarefas
+   set fluxo = case when origem = 'notas_entrada' then 'entrada' else 'saida' end
+ where fluxo = '';
+
+create index if not exists vf_tarefas_fluxo_idx on public.validacao_fiscal_tarefas (fluxo);
+
+
 create index if not exists vf_tarefas_status_idx      on public.validacao_fiscal_tarefas (status);
 create index if not exists vf_tarefas_prazo_idx       on public.validacao_fiscal_tarefas (prazo);
 create index if not exists vf_tarefas_origem_idx      on public.validacao_fiscal_tarefas (origem, aba);
@@ -147,11 +165,31 @@ create index if not exists vf_tarefas_lote_idx        on public.validacao_fiscal
 -- chave primária na data resolve — o segundo insert do dia falha, e quem
 -- falhou simplesmente não envia.
 create table if not exists public.validacao_fiscal_envios (
-  data           date        primary key,
+  data           date        not null,
+  -- 'entrada' ou 'saida': são dois resumos por dia, para listas diferentes,
+  -- e cada um precisa da sua própria reserva.
+  escopo         text        not null default 'saida',
   enviado_em     timestamptz not null default now(),
   enviado_por    text,
-  destinatarios  text
+  destinatarios  text,
+  primary key (data, escopo)
 );
+
+-- Quem rodou a versão anterior tem a tabela com chave só na data.
+alter table public.validacao_fiscal_envios
+  add column if not exists escopo text not null default 'saida';
+
+do $$
+begin
+  if exists (
+    select 1 from pg_constraint
+     where conname = 'validacao_fiscal_envios_pkey'
+       and (select count(*) from unnest(conkey)) = 1
+  ) then
+    alter table public.validacao_fiscal_envios drop constraint validacao_fiscal_envios_pkey;
+    alter table public.validacao_fiscal_envios add primary key (data, escopo);
+  end if;
+end $$;
 
 alter table public.validacao_fiscal_envios enable row level security;
 
