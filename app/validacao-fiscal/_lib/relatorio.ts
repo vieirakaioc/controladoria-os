@@ -2,7 +2,7 @@ import { CORES } from './cores'
 import { formatarInteiro, formatarMoeda } from './formato'
 import { formatarData, situacaoPrazo } from './prazo'
 import type { Resumo } from './resumo'
-import { estaFinalizada, ROTULO_STATUS, type TarefaFiscal } from './types'
+import { estaFinalizada, type TarefaFiscal } from './types'
 
 /**
  * Relatório visual do painel, em HTML de e-mail.
@@ -25,9 +25,15 @@ function escapar(texto: string): string {
     .replace(/"/g, '&quot;')
 }
 
-function cartao(rotulo: string, valor: string, cor: string, detalhe?: string): string {
+function cartao(
+  rotulo: string,
+  valor: string,
+  cor: string,
+  detalhe?: string,
+  largura = '33%',
+): string {
   return `
-    <td width="33%" valign="top" style="padding:6px;">
+    <td width="${largura}" valign="top" style="padding:6px;">
       <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
              style="border:1px solid ${BORDA};border-radius:10px;background:#ffffff;">
         <tr><td style="padding:12px 14px;">
@@ -139,11 +145,23 @@ export function montarRelatorio(params: {
 
   const linhasCriticas = criticas.map((t) => {
     const atrasada = situacaoPrazo(t.status, t.prazo, t.concluidoEm, hoje) === 'atrasada'
+    const tocando = t.status === 'em_andamento'
+
+    // Quem está atrasado precisa saber se alguém já pegou a tarefa dele: sem
+    // isso, a lista parece só uma cobrança sem endereço.
+    const situacao = tocando
+      ? `<span style="color:${CORES.atencao};font-weight:700;">Em andamento</span>` +
+        (t.motivoAndamento
+          ? `<div style="font:400 11px/1.4 Arial,sans-serif;color:${TINTA_FRACA};padding-top:2px;">
+               ${escapar(t.motivoAndamento)}</div>`
+          : '')
+      : `<span style="color:${TINTA_FRACA};">Ninguém pegou</span>`
+
     return [
       `<strong>${t.numero}</strong>`,
       escapar(t.documento || '—'),
-      escapar(t.emitente || '—'),
       escapar(t.responsavelNome || 'Sem responsável'),
+      situacao,
       `<span style="color:${atrasada ? CORES.critico : CORES.atencao};font-weight:700;">
          ${formatarData(t.prazo)}</span>`,
     ]
@@ -180,13 +198,38 @@ export function montarRelatorio(params: {
     <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
       <tr>
         ${cartao('Em aberto', formatarInteiro(resumo.emAberto), '#063955', 'Aguardando resposta')}
-        ${cartao('Atrasadas', formatarInteiro(resumo.atrasadas), CORES.critico, 'Passaram do prazo')}
+        ${cartao(
+          'Atrasadas',
+          formatarInteiro(resumo.atrasadas),
+          CORES.critico,
+          resumo.atrasadas === 0
+            ? 'Nenhuma fora do prazo'
+            : `${formatarInteiro(resumo.emAndamentoAtrasadas)} com alguém tocando, ` +
+              `${formatarInteiro(resumo.atrasadas - resumo.emAndamentoAtrasadas)} parada(s)`,
+        )}
         ${cartao('Vencem hoje', formatarInteiro(resumo.venceHoje), CORES.atencao, 'Último dia')}
       </tr>
       <tr>
+        ${cartao(
+          'Em andamento',
+          formatarInteiro(resumo.emAndamento),
+          resumo.emAndamentoAtrasadas > 0 ? CORES.critico : CORES.atencao,
+          resumo.emAndamento === 0
+            ? 'Ninguém tocando nenhuma'
+            : `${formatarInteiro(resumo.emAndamentoAtrasadas)} fora do prazo, ` +
+              `${formatarInteiro(resumo.emAndamentoNoPrazo)} dentro`,
+        )}
         ${cartao('Corrigidas', formatarInteiro(resumo.corrigidas), CORES.bom, 'Divergência resolvida')}
         ${cartao('Sem correção', formatarInteiro(resumo.semCorrecao), TINTA_FRACA, 'Já estavam certas')}
-        ${cartao('Valor em aberto', formatarMoeda(resumo.valorPendente), '#063955', 'Documentos pendentes')}
+      </tr>
+      <tr>
+        ${cartao(
+          'Valor em aberto',
+          formatarMoeda(resumo.valorPendente),
+          '#063955',
+          'Soma dos documentos que ainda não foram respondidos',
+          '100%',
+        )}
       </tr>
     </table>
   </td></tr>
@@ -200,7 +243,7 @@ export function montarRelatorio(params: {
   ])}
 
   ${titulo('Precisa de resposta agora')}
-  ${tabela(['Nº', 'Documento', 'Emitente', 'Responsável', 'Prazo'], linhasCriticas)}
+  ${tabela(['Nº', 'Documento', 'Responsável', 'Situação', 'Prazo'], linhasCriticas)}
 
   ${titulo('Carga por responsável')}
   ${tabela(['Responsável', 'Em aberto', 'Atrasadas'], porResponsavel)}
@@ -218,8 +261,7 @@ export function montarRelatorio(params: {
 
   <tr><td align="center" style="padding-bottom:6px;">
     <div style="font:400 11px/1.6 Arial,sans-serif;color:#94a3b8;">
-      Gerado pelo Portal da Controladoria · ${escapar(ROTULO_STATUS.em_andamento)}: ${formatarInteiro(resumo.emAndamento)}
-      · Sem responsável: ${formatarInteiro(resumo.semResponsavel)}
+      Gerado pelo Portal da Controladoria · Sem responsável: ${formatarInteiro(resumo.semResponsavel)}
     </div>
   </td></tr>
 
