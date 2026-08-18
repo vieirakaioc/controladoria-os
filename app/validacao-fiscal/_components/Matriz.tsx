@@ -18,7 +18,6 @@ import { atribuirEmLote, descreverErro } from '../_lib/api'
 import { CORES } from '../_lib/cores'
 import { formatarCelula, formatarInteiro } from '../_lib/formato'
 import { formatarData, situacaoPrazo, textoPrazo } from '../_lib/prazo'
-import { layoutDe, valorDaColuna } from '../_lib/planilhas'
 import {
   estaFinalizada,
   ROTULO_FLUXO,
@@ -75,20 +74,23 @@ const CHAVE_RESPONSAVEL = '@responsavel'
 const CHAVE_OBSERVACAO = '@observacao'
 
 /**
- * Colunas usadas quando a tela mistura planilhas diferentes.
+ * As colunas da matriz — as mesmas sempre.
  *
- * Cada relatório tem as suas colunas próprias, e não dá para mostrar as 39 de
- * uma vez — a maioria ficaria vazia em cada linha. Estas são as que existem em
- * todas: o essencial para decidir o que fazer. A linha original inteira
- * continua no painel, a um clique de distância.
+ * Já foram adaptativas, mostrando as colunas próprias de cada relatório, e o
+ * resultado foi uma tabela que mudava de forma conforme o filtro: entrada e
+ * saída pareciam telas diferentes. Um conjunto fixo é o que deixa a pessoa
+ * aprender a matriz uma vez. A linha original inteira continua no painel, a um
+ * clique de distância.
  */
 const COLUNAS_COMUNS = [
   { chave: '@origem', rotulo: 'Planilha' },
+  { chave: '@fluxo', rotulo: 'Fluxo' },
   { chave: '@documento', rotulo: 'Documento' },
-  { chave: '@emitente', rotulo: 'Emitente' },
+  { chave: '@emitente', rotulo: 'Emitente / destinatário' },
   { chave: '@tipo', rotulo: 'Divergência' },
   { chave: '@filial', rotulo: 'Filial' },
   { chave: '@valor', rotulo: 'Valor' },
+  { chave: '@emissao', rotulo: 'Emissão' },
 ] as const
 
 const COMUNS_NUMERICAS = new Set(['@filial', '@valor'])
@@ -106,8 +108,12 @@ function valorComum(tarefa: TarefaFiscal, chave: string): string | number | null
       return tarefa.tipoDivergencia
     case '@filial':
       return tarefa.filial
+    case '@fluxo':
+      return ROTULO_FLUXO[tarefa.fluxo]
     case '@valor':
       return tarefa.valor
+    case '@emissao':
+      return tarefa.emissao
     default:
       return null
   }
@@ -115,16 +121,11 @@ function valorComum(tarefa: TarefaFiscal, chave: string): string | number | null
 
 type Ordenacao = { coluna: string; direcao: 'asc' | 'desc' }
 
-function valorParaOrdenar(
-  tarefa: TarefaFiscal,
-  coluna: string,
-  layout: ReturnType<typeof layoutDe> | null,
-): string | number | null {
+function valorParaOrdenar(tarefa: TarefaFiscal, coluna: string): string | number | null {
   if (coluna === CHAVE_NUMERO) return tarefa.numero
   if (coluna === CHAVE_RESPONSAVEL) return tarefa.responsavelNome
   if (coluna === CHAVE_OBSERVACAO) return tarefa.observacaoCorrecao ?? tarefa.motivoAndamento
-  if (coluna.startsWith('@')) return valorComum(tarefa, coluna)
-  return layout ? valorDaColuna(layout, tarefa.dados, coluna) : null
+  return valorComum(tarefa, coluna)
 }
 
 /**
@@ -219,40 +220,16 @@ export function Matriz({
     // primeiro, prazo mais curto no topo.
     if (!ordenacao) return filtradas
 
-    const origens = new Set(filtradas.map((t) => t.origem))
-    const layoutGrupo = origens.size === 1 ? layoutDe([...origens][0]) : null
     const sinal = ordenacao.direcao === 'asc' ? 1 : -1
 
     return [...filtradas].sort(
       (a, b) =>
-        sinal *
-        comparar(
-          valorParaOrdenar(a, ordenacao.coluna, layoutGrupo),
-          valorParaOrdenar(b, ordenacao.coluna, layoutGrupo),
-        ),
+        sinal * comparar(valorParaOrdenar(a, ordenacao.coluna), valorParaOrdenar(b, ordenacao.coluna)),
     )
   }, [tarefas, filtroPrazo, filtroFluxo, filtroResponsavel, busca, hoje, ordenacao])
 
-  /**
-   * Colunas da tabela.
-   *
-   * Com uma planilha só em tela, valem as colunas dela, fiéis ao arquivo. Com
-   * várias misturadas, cai para o conjunto comum — senão seriam 39 colunas com
-   * a maioria vazia em cada linha.
-   */
-  const origensVisiveis = useMemo(
-    () => [...new Set(visiveis.map((t) => t.origem))],
-    [visiveis],
-  )
-
-  const layout = origensVisiveis.length === 1 ? layoutDe(origensVisiveis[0]) : null
-
-  const colunas = layout
-    ? layout.colunasMatriz.map((coluna) => ({ chave: coluna, rotulo: coluna }))
-    : COLUNAS_COMUNS.map((c) => ({ chave: c.chave, rotulo: c.rotulo }))
-
-  const ehNumerica = (chave: string) =>
-    layout ? layout.colunasNumericas.includes(chave) : COMUNS_NUMERICAS.has(chave)
+  const colunas = COLUNAS_COMUNS.map((c) => ({ chave: c.chave, rotulo: c.rotulo }))
+  const ehNumerica = (chave: string) => COMUNS_NUMERICAS.has(chave)
 
   /** Um clique ordena crescente, o seguinte inverte, o terceiro solta a coluna. */
   const alternarOrdem = (coluna: string) => {
@@ -637,22 +614,12 @@ export function Matriz({
                     </td>
 
                     {colunas.map(({ chave: coluna }) => {
-                      const comum = coluna.startsWith('@')
-
-                      const bruto = comum
-                        ? valorComum(tarefa, coluna)
-                        : valorDaColuna(layout!, tarefa.dados, coluna)
-
                       const numerica = ehNumerica(coluna)
-                      const codigo = !comum && layout!.colunasCodigo.includes(coluna)
-                      const larga = comum
-                        ? COMUNS_LARGAS.has(coluna)
-                        : layout!.colunasLargas.includes(coluna)
-                      const texto = formatarCelula(bruto, {
-                        moeda: comum
-                          ? coluna === '@valor'
-                          : layout!.colunasMoeda.includes(coluna),
+                      const larga = COMUNS_LARGAS.has(coluna)
+                      const texto = formatarCelula(valorComum(tarefa, coluna), {
+                        moeda: coluna === '@valor',
                       })
+                      const codigo = false
 
                       return (
                         <td
@@ -689,10 +656,8 @@ export function Matriz({
       </div>
 
       <p className="text-xs text-slate-400">
-        {layout
-          ? `Só ${layout.rotulo} em tela: as colunas são as da própria planilha.`
-          : 'Planilhas misturadas: as colunas mostradas são as comuns a todas. Filtre ou busque até sobrar uma só para ver as colunas originais dela.'}{' '}
-        A tabela rola para o lado — a primeira coluna fica fixa, e Responder abre a linha completa.
+        A matriz é a mesma para entrada e saída. Para ver a linha exatamente como veio da planilha,
+        com todas as colunas do arquivo, clique em Responder.
       </p>
 
       {emEdicao && (

@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { ArrowUpRight } from 'lucide-react'
 
@@ -21,18 +21,28 @@ import { CORES } from './_lib/cores'
 import { formatarInteiro, formatarMoeda } from './_lib/formato'
 import { PRAZO_DIAS_UTEIS, hoje } from './_lib/prazo'
 import { calcularResumo } from './_lib/resumo'
+import { ROTULO_FLUXO, type Fluxo } from './_lib/types'
 
 export default function PaginaDashboard() {
   const { userName, userEmail } = useAuthGate()
   const { tarefas, carregando, erro } = useValidacaoFiscal({ email: userEmail, nome: userName })
   const referencia = hoje()
+  const [fluxo, setFluxo] = useState<Fluxo | 'todos'>('todos')
 
-  const resumo = useMemo(() => calcularResumo(tarefas, referencia), [tarefas, referencia])
+  // O filtro entra antes da conta: os indicadores precisam falar do mesmo
+  // recorte que o título diz, senão o painel de entrada mostraria número de
+  // saída.
+  const visiveis = useMemo(
+    () => (fluxo === 'todos' ? tarefas : tarefas.filter((t) => t.fluxo === fluxo)),
+    [tarefas, fluxo],
+  )
+
+  const resumo = useMemo(() => calcularResumo(visiveis, referencia), [visiveis, referencia])
 
   if (erro) return <AvisoErro mensagem={erro} />
   if (carregando) return <Carregando linhas={4} />
 
-  if (resumo.total === 0) {
+  if (tarefas.length === 0) {
     return (
       <Painel titulo="Nenhuma tarefa ainda">
         <p className="text-sm text-slate-600 leading-relaxed">
@@ -78,6 +88,40 @@ export default function PaginaDashboard() {
 
   return (
     <div className="space-y-6">
+      <Painel className="!p-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="pl-1 text-sm font-semibold text-[#063955]">Mostrar</span>
+
+          <div className="flex flex-wrap gap-1 rounded-xl bg-slate-100 p-1">
+            {(
+              [
+                { valor: 'todos', rotulo: 'Tudo' },
+                { valor: 'saida', rotulo: ROTULO_FLUXO.saida },
+                { valor: 'entrada', rotulo: ROTULO_FLUXO.entrada },
+              ] as const
+            ).map((opcao) => (
+              <button
+                key={opcao.valor}
+                type="button"
+                onClick={() => setFluxo(opcao.valor)}
+                aria-pressed={fluxo === opcao.valor}
+                className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-all ${
+                  fluxo === opcao.valor
+                    ? 'bg-white text-[#063955] shadow-sm'
+                    : 'text-slate-500 hover:text-[#063955]'
+                }`}
+              >
+                {opcao.rotulo}
+              </button>
+            ))}
+          </div>
+
+          <span className="text-sm text-slate-500">
+            {formatarInteiro(visiveis.length)} de {formatarInteiro(tarefas.length)} tarefas
+          </span>
+        </div>
+      </Painel>
+
       <div className="grid gap-4 lg:grid-cols-[minmax(250px,0.85fr)_2fr]">
         <Painel className="flex flex-col justify-between">
           <div>
