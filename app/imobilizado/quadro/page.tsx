@@ -183,7 +183,11 @@ function ColunaQuadro({ coluna, hoje }: { coluna: Coluna; hoje: string }) {
     >
       {/* Faixa de 2px no topo: a coluna com atraso se identifica de longe, sem
           tingir as cartas que estão dentro dela. */}
-      <div className={`h-[2px] w-full ${atrasados > 0 ? 'bg-negativo' : final ? 'bg-ink-400/40' : 'bg-teal-500'}`} />
+      <div
+        className={`h-[2px] w-full ${
+          atrasados > 0 ? 'bg-negativo' : final ? 'bg-ink-400/40' : 'bg-navy-500'
+        }`}
+      />
 
       <header className="flex items-start justify-between gap-2 border-b border-line bg-navy-50/70 px-4 py-3">
         <div className="min-w-0">

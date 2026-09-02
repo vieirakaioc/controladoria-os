@@ -24,11 +24,19 @@ import type { Etapa, Item } from '../_lib/types'
 /** Como está a célula — a etapa daquele item. */
 type Sinal = 'concluida' | 'atrasada' | 'hoje' | 'aberta' | 'bloqueada' | 'ausente'
 
+/*
+ * "Em aberto" é azul, e não teal.
+ *
+ * O teal da marca (#10B098) fica a ΔE 11,8 do verde de concluída — abaixo do
+ * piso de 15 para visão normal. Numa grade, com as duas cores em células
+ * vizinhas, isso vira erro de leitura: a pessoa vê a linha como pronta quando
+ * ainda falta etapa. O azul navy-500 passa com folga (ΔE 15,9).
+ */
 const ESTILO: Record<Sinal, { classe: string; rotulo: string }> = {
   concluida: { classe: 'bg-positivo text-white', rotulo: 'Concluída' },
   atrasada: { classe: 'bg-negativo text-white', rotulo: 'Atrasada' },
   hoje: { classe: 'bg-alerta text-white', rotulo: 'Vence hoje' },
-  aberta: { classe: 'bg-teal-500 text-white', rotulo: 'Em aberto' },
+  aberta: { classe: 'bg-navy-500 text-white', rotulo: 'Em aberto' },
   bloqueada: { classe: 'bg-navy-100 text-navy-400', rotulo: 'Aguardando a anterior' },
   ausente: { classe: 'bg-transparent text-ink-400', rotulo: 'Não se aplica a este item' },
 }
@@ -203,7 +211,7 @@ export default function PaginaMatriz() {
                           é onde o trabalho se acumula. */}
                       <div
                         className={`num mt-1 text-[11px] font-bold ${
-                          emAberto > 0 ? 'text-teal-700' : 'text-ink-400'
+                          emAberto > 0 ? 'text-navy-500' : 'text-ink-400'
                         }`}
                       >
                         {emAberto > 0 ? `${emAberto} em aberto` : '—'}
