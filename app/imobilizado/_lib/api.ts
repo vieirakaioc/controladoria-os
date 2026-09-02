@@ -11,6 +11,7 @@ import type {
   Item,
   ModeloEtapa,
   Participante,
+  Pessoa,
   StatusEtapa,
 } from './types'
 
@@ -723,21 +724,43 @@ export async function removerAnexo(item: Item, anexo: Anexo, usuario: string): P
 
 /* ─────────────────────── pessoas do processo ─────────────────────── */
 
+/**
+ * Pessoas com login no portal.
+ *
+ * Vem de `profiles`, e não de `responsaveis`: aquela é alimentada só pela
+ * sincronização da planilha, então quem entrou no portal depois da última
+ * sincronização não aparecia — e era justamente quem se queria incluir.
+ */
+export async function listarPessoasDoPortal(): Promise<Pessoa[]> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, full_name, email')
+    .order('full_name')
+
+  if (error) throw error
+
+  return (data ?? []).map((p) => ({
+    id: String(p.id),
+    nome: texto(p.full_name) || texto(p.email) || 'Sem nome',
+    email: ouNulo(p.email),
+  }))
+}
+
 export async function listarParticipantes(): Promise<Participante[]> {
   const { data, error } = await supabase
     .from(TAB_PARTICIPANTES)
-    .select('id, papel, tipo, ativo, responsavel_id, responsaveis (nome, email)')
+    .select('id, papel, tipo, ativo, profile_id, profiles (full_name, email)')
     .order('id')
 
   if (error) throw error
 
   return (data ?? []).map((l) => {
-    const pessoa = l.responsaveis as unknown as { nome?: string; email?: string } | null
+    const perfil = l.profiles as unknown as { full_name?: string; email?: string } | null
     return {
       id: Number(l.id),
-      responsavelId: String(l.responsavel_id),
-      nome: pessoa?.nome ?? '—',
-      email: pessoa?.email ?? null,
+      profileId: ouNulo(l.profile_id),
+      nome: perfil?.full_name ?? perfil?.email ?? '—',
+      email: perfil?.email ?? null,
       papel: texto(l.papel),
       tipo: (l.tipo as Participante['tipo']) ?? 'participante',
       ativo: Boolean(l.ativo),
@@ -748,23 +771,22 @@ export async function listarParticipantes(): Promise<Participante[]> {
 /**
  * Inclui alguém no processo.
  *
- * O vínculo é com `responsaveis`, o mesmo cadastro do resto do portal: quem
- * entra aqui já existe como pessoa no sistema, e é o e-mail de lá que a RLS
- * compara com o login.
+ * O vínculo é com o perfil de login, e a RLS reconhece a pessoa por
+ * `auth.uid()` — identidade exata, sem depender da grafia de um e-mail.
  */
 export async function incluirParticipante(entrada: {
-  responsavelId: string
+  profileId: string
   papel: string
   tipo: 'participante' | 'observador'
 }): Promise<void> {
   const { error } = await supabase.from(TAB_PARTICIPANTES).upsert(
     {
-      responsavel_id: entrada.responsavelId,
+      profile_id: entrada.profileId,
       papel: entrada.papel,
       tipo: entrada.tipo,
       ativo: true,
     },
-    { onConflict: 'responsavel_id' },
+    { onConflict: 'profile_id' },
   )
 
   if (error) throw error

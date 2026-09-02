@@ -51,13 +51,13 @@ async function enviar(corpo: Envio, item: Item): Promise<void> {
 async function equipeDoProcesso(): Promise<string[]> {
   const { data, error } = await supabase
     .from('imobilizado_participantes')
-    .select('ativo, responsaveis (email)')
+    .select('ativo, profiles (email)')
     .eq('ativo', true)
 
   if (error || !data) return []
 
   return data
-    .map((linha) => (linha.responsaveis as unknown as { email?: string } | null)?.email ?? '')
+    .map((linha) => (linha.profiles as unknown as { email?: string } | null)?.email ?? '')
     .filter((email) => email.includes('@'))
 }
 

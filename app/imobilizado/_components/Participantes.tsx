@@ -3,15 +3,13 @@
 import { useState } from 'react'
 import { Check, Loader2, Plus, Trash2, UserRound } from 'lucide-react'
 
-import type { Responsavel } from '@/app/validacao-fiscal/_lib/types'
-
 import {
   atualizarParticipante,
   descreverErro,
   incluirParticipante,
   removerParticipante,
 } from '../_lib/api'
-import type { Participante, TipoParticipante } from '../_lib/types'
+import type { Participante, Pessoa, TipoParticipante } from '../_lib/types'
 import { Painel } from './Ui'
 
 const CAMPO =
@@ -26,13 +24,14 @@ const CAMPO =
  */
 export function Participantes({
   pessoas,
-  responsaveis,
+  doPortal,
   areas,
   ehAdmin,
   aoMudar,
 }: {
   pessoas: Participante[]
-  responsaveis: Responsavel[]
+  /** Todo mundo com login no portal. */
+  doPortal: Pessoa[]
   /** Áreas donas das etapas — é o que a pessoa faz no processo. */
   areas: string[]
   ehAdmin: boolean
@@ -46,16 +45,14 @@ export function Participantes({
 
   // Quem já está no processo sai da lista de escolha: reincluir a mesma pessoa
   // não faria nada, e a opção só atrapalharia a busca visual.
-  const disponiveis = responsaveis.filter(
-    (r) => !pessoas.some((p) => p.responsavelId === r.id),
-  )
+  const disponiveis = doPortal.filter((r) => !pessoas.some((p) => p.profileId === r.id))
 
   const incluir = async () => {
     if (!novoId) return
     setSalvando(true)
     setErro(null)
     try {
-      await incluirParticipante({ responsavelId: novoId, papel: novoPapel, tipo: novoTipo })
+      await incluirParticipante({ profileId: novoId, papel: novoPapel, tipo: novoTipo })
       setNovoId('')
       setNovoPapel('')
       await aoMudar()
@@ -87,8 +84,10 @@ export function Participantes({
               {disponiveis.map((r) => (
                 <option key={r.id} value={r.id}>
                   {r.nome}
+                  {r.email ? ` · ${r.email}` : ''}
                 </option>
               ))}
+              {disponiveis.length === 0 && <option disabled>Todo mundo já está no processo</option>}
             </select>
           </div>
 

@@ -93,8 +93,16 @@ export default function Sidebar() {
       fetchNotificacoes(email)
       
       try {
-        const { data } = await supabase.from('profiles').select('role, full_name, avatar_url').eq('id', userId).single()
+        const { data } = await supabase.from('profiles').select('role, full_name, avatar_url, email').eq('id', userId).single()
         if (data) {
+          // O e-mail vive em auth.users, que o navegador não lê. Guardamos uma
+          // cópia no perfil na primeira visita de cada pessoa: é de lá que os
+          // avisos do portal tiram o endereço, e sem isso quem entra depois da
+          // migração ficaria sem receber nada.
+          if (email && data.email !== email) {
+            supabase.from('profiles').update({ email }).eq('id', userId)
+          }
+
           setUserRole(data.role || 'membro')
           setUserName(data.full_name || email.split('@')[0] || 'Usuário')
           setAvatarUrl(data.avatar_url || '')

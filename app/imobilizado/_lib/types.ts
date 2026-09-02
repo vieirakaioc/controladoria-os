@@ -122,12 +122,20 @@ export function rotuloFilial(f: Filial): string {
 
 export type Participante = {
   id: number
-  responsavelId: string
+  /** Perfil de login. É por ele que a RLS reconhece a pessoa. */
+  profileId: string | null
   nome: string
   email: string | null
   papel: string
   tipo: TipoParticipante
   ativo: boolean
+}
+
+/** Pessoa com login no portal — a fonte da lista de participantes. */
+export type Pessoa = {
+  id: string
+  nome: string
+  email: string | null
 }
 
 export const ROTULO_STATUS_ITEM: Record<StatusItem, string> = {

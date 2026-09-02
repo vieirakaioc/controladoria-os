@@ -5,9 +5,6 @@ import { Check, Loader2, Truck } from 'lucide-react'
 
 import { CORES } from '@/app/validacao-fiscal/_lib/cores'
 
-import { listarResponsaveis } from '@/app/validacao-fiscal/_lib/api'
-import type { Responsavel } from '@/app/validacao-fiscal/_lib/types'
-
 import { Participantes } from '../_components/Participantes'
 import { AvisoErro, Carregando, Painel, SemAcesso } from '../_components/Ui'
 import {
@@ -15,9 +12,10 @@ import {
   descreverErro,
   listarModelo,
   listarParticipantes,
+  listarPessoasDoPortal,
   meuAcesso,
 } from '../_lib/api'
-import type { Acesso, ModeloEtapa, Participante } from '../_lib/types'
+import type { Acesso, ModeloEtapa, Participante, Pessoa } from '../_lib/types'
 
 /**
  * O desenho do processo, como ele está no banco.
@@ -28,7 +26,7 @@ import type { Acesso, ModeloEtapa, Participante } from '../_lib/types'
 export default function PaginaProcesso() {
   const [modelo, setModelo] = useState<ModeloEtapa[]>([])
   const [pessoas, setPessoas] = useState<Participante[]>([])
-  const [responsaveis, setResponsaveis] = useState<Responsavel[]>([])
+  const [doPortal, setDoPortal] = useState<Pessoa[]>([])
   const [acesso, setAcesso] = useState<Acesso>(null)
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
@@ -42,11 +40,11 @@ export default function PaginaProcesso() {
       const [etapas, participantes, pessoasDoPortal] = await Promise.all([
         listarModelo(),
         listarParticipantes(),
-        listarResponsaveis(),
+        listarPessoasDoPortal(),
       ])
       setModelo(etapas)
       setPessoas(participantes)
-      setResponsaveis(pessoasDoPortal)
+      setDoPortal(pessoasDoPortal)
     } catch (falha) {
       setErro(descreverErro(falha))
     } finally {
@@ -160,7 +158,7 @@ export default function PaginaProcesso() {
 
       <Participantes
         pessoas={pessoas}
-        responsaveis={responsaveis}
+        doPortal={doPortal}
         areas={[...new Set(modelo.map((m) => m.area).filter(Boolean))].sort()}
         ehAdmin={acesso === 'admin'}
         aoMudar={carregar}
