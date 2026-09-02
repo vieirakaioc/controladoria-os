@@ -15,10 +15,10 @@ export default function LayoutImobilizado({ children }: { children: React.ReactN
 
   return (
     <div className="space-y-6 p-6">
-      <header className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <header className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="shrink-0 rounded-xl bg-[#063955] p-2.5 text-white">
+            <div className="shrink-0 rounded-md bg-[#063955] p-2.5 text-white">
               <Boxes size={22} />
             </div>
             <div>
@@ -30,7 +30,7 @@ export default function LayoutImobilizado({ children }: { children: React.ReactN
             </div>
           </div>
 
-          <nav className="flex flex-wrap items-center gap-1 rounded-xl bg-slate-100 p-1">
+          <nav className="flex flex-wrap items-center gap-1 rounded-md bg-slate-100 p-1">
             {ABAS.map((aba) => {
               // "/imobilizado" é prefixo das demais; só fica ativa exata.
               const ativa =
@@ -41,7 +41,7 @@ export default function LayoutImobilizado({ children }: { children: React.ReactN
                   key={aba.href}
                   href={aba.href}
                   aria-current={ativa ? 'page' : undefined}
-                  className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
+                  className={`rounded-md px-4 py-2 text-sm font-semibold transition-all ${
                     ativa ? 'bg-white text-[#063955] shadow-sm' : 'text-slate-500 hover:text-[#063955]'
                   }`}
                 >

@@ -101,8 +101,8 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 p-6 font-sans">
-      <div className="flex w-full max-w-md flex-col items-center rounded-3xl border border-slate-100 bg-white p-10 shadow-xl transition-all">
-        <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-[#C7A77B]/20 bg-[#031D2D] shadow-lg">
+      <div className="flex w-full max-w-md flex-col items-center rounded-xl border border-slate-100 bg-white p-10 shadow-xl transition-all">
+        <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-lg border border-[#C7A77B]/20 bg-[#031D2D] shadow-lg">
           <span className="text-2xl font-black tracking-tighter text-[#C7A77B]">PC</span>
         </div>
 
@@ -119,7 +119,7 @@ export default function LoginPage() {
 
         {msg && (
           <div
-            className={`mb-6 flex w-full items-start gap-2 rounded-xl border p-4 text-sm font-medium ${
+            className={`mb-6 flex w-full items-start gap-2 rounded-md border p-4 text-sm font-medium ${
               msg.includes('✅')
                 ? 'border-[#5A755C]/20 bg-[#5A755C]/10 text-[#2d6943]'
                 : 'border-red-100 bg-red-50 text-red-600'
@@ -135,7 +135,7 @@ export default function LoginPage() {
               E-mail de acesso
             </label>
             <input
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm text-slate-800 outline-none transition-colors focus:border-[#C7A77B] focus:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+              className="w-full rounded-md border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm text-slate-800 outline-none transition-colors focus:border-[#C7A77B] focus:bg-white disabled:cursor-not-allowed disabled:opacity-60"
               placeholder="exemplo@empresa.com"
               type="email"
               value={email}
@@ -168,7 +168,7 @@ export default function LoginPage() {
               </div>
 
               <input
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm text-slate-800 outline-none transition-colors focus:border-[#C7A77B] focus:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+                className="w-full rounded-md border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm text-slate-800 outline-none transition-colors focus:border-[#C7A77B] focus:bg-white disabled:cursor-not-allowed disabled:opacity-60"
                 placeholder="••••••••"
                 type="password"
                 value={password}
@@ -182,7 +182,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading || !email || (viewMode !== 'reset' && !password)}
-            className="mt-4 w-full rounded-xl bg-[#031D2D] py-3.5 font-bold tracking-wide text-[#E5D6A7] shadow-md transition-all hover:bg-[#063955] disabled:opacity-50"
+            className="mt-4 w-full rounded-md bg-[#031D2D] py-3.5 font-bold tracking-wide text-[#E5D6A7] shadow-md transition-all hover:bg-[#063955] disabled:opacity-50"
           >
             {loading
               ? 'Processando...'

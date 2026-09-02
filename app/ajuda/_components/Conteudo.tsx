@@ -366,7 +366,7 @@ export function Conteudo() {
 
       {/* 9. FAQ */}
       <Section id="faq" title="Perguntas Frequentes">
-        <details className="border border-slate-100 dark:border-slate-800 rounded-xl p-4 mb-3 group">
+        <details className="border border-slate-100 dark:border-slate-800 rounded-md p-4 mb-3 group">
           <summary className="font-semibold cursor-pointer text-[#063955] dark:text-white">
             Importei a planilha mas as tarefas não aparecem no Kanban.
           </summary>
@@ -376,7 +376,7 @@ export function Conteudo() {
           </p>
         </details>
 
-        <details className="border border-slate-100 dark:border-slate-800 rounded-xl p-4 mb-3 group">
+        <details className="border border-slate-100 dark:border-slate-800 rounded-md p-4 mb-3 group">
           <summary className="font-semibold cursor-pointer text-[#063955] dark:text-white">
             Erro "Aba ListBox não encontrada" ao importar.
           </summary>
@@ -387,7 +387,7 @@ export function Conteudo() {
           </p>
         </details>
 
-        <details className="border border-slate-100 dark:border-slate-800 rounded-xl p-4 mb-3 group">
+        <details className="border border-slate-100 dark:border-slate-800 rounded-md p-4 mb-3 group">
           <summary className="font-semibold cursor-pointer text-[#063955] dark:text-white">
             Como adicionar uma frequência nova (ex: Quinzenal)?
           </summary>
@@ -398,7 +398,7 @@ export function Conteudo() {
           </p>
         </details>
 
-        <details className="border border-slate-100 dark:border-slate-800 rounded-xl p-4 mb-3 group">
+        <details className="border border-slate-100 dark:border-slate-800 rounded-md p-4 mb-3 group">
           <summary className="font-semibold cursor-pointer text-[#063955] dark:text-white">
             O "Dias ativos" do colaborador no Monitor está zerado.
           </summary>
@@ -409,7 +409,7 @@ export function Conteudo() {
           </p>
         </details>
 
-        <details className="border border-slate-100 dark:border-slate-800 rounded-xl p-4 mb-3 group">
+        <details className="border border-slate-100 dark:border-slate-800 rounded-md p-4 mb-3 group">
           <summary className="font-semibold cursor-pointer text-[#063955] dark:text-white">
             Como mudar quem é admin?
           </summary>
@@ -419,7 +419,7 @@ export function Conteudo() {
           </p>
         </details>
 
-        <details className="border border-slate-100 dark:border-slate-800 rounded-xl p-4 mb-3 group">
+        <details className="border border-slate-100 dark:border-slate-800 rounded-md p-4 mb-3 group">
           <summary className="font-semibold cursor-pointer text-[#063955] dark:text-white">
             Cadastrei minha férias mas o calendário não me mostra.
           </summary>
@@ -431,7 +431,7 @@ export function Conteudo() {
           </p>
         </details>
 
-        <details className="border border-slate-100 dark:border-slate-800 rounded-xl p-4 mb-3 group">
+        <details className="border border-slate-100 dark:border-slate-800 rounded-md p-4 mb-3 group">
           <summary className="font-semibold cursor-pointer text-[#063955] dark:text-white">
             Cadastrei substituto mas as tarefas continuam aparecendo pra mim no Kanban.
           </summary>
@@ -451,7 +451,7 @@ export function Conteudo() {
 
 function ConceitoCard({ icone, termo, desc }: { icone: React.ReactNode; termo: string; desc: string }) {
   return (
-    <div className="p-4 border border-slate-100 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/50">
+    <div className="p-4 border border-slate-100 dark:border-slate-800 rounded-md bg-slate-50/50 dark:bg-slate-950/50">
       <div className="flex items-center gap-2 mb-1">
         <span className="text-[#0f88a8] dark:text-[#38bdf8]">{icone}</span>
         <span className="font-bold text-[#063955] dark:text-white">{termo}</span>
@@ -477,7 +477,7 @@ function Coluna({ nome, obrig, desc }: { nome: string; obrig: string; desc: stri
 
 function FreqCard({ nome, regra, badge }: { nome: string; regra: string; badge?: string }) {
   return (
-    <div className="p-3 border border-slate-100 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900">
+    <div className="p-3 border border-slate-100 dark:border-slate-800 rounded-md bg-white dark:bg-slate-900">
       <div className="flex items-center gap-2 mb-1">
         <span className="font-bold text-sm text-[#063955] dark:text-white">{nome}</span>
         {badge && (
@@ -493,7 +493,7 @@ function FreqCard({ nome, regra, badge }: { nome: string; regra: string; badge?:
 
 function DimensaoCard({ nome, formula, peso }: { nome: string; formula: string; peso: string }) {
   return (
-    <div className="p-3 border border-slate-100 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900">
+    <div className="p-3 border border-slate-100 dark:border-slate-800 rounded-md bg-white dark:bg-slate-900">
       <div className="font-bold text-sm text-[#063955] dark:text-white">{nome}</div>
       <code className="text-[11px] text-slate-500 dark:text-slate-400 block mt-1">{formula}</code>
       <span className="text-[10px] uppercase font-bold tracking-wider text-[#C7A77B] mt-1.5 block">{peso}</span>
@@ -503,7 +503,7 @@ function DimensaoCard({ nome, formula, peso }: { nome: string; formula: string; 
 
 function PaginaItem({ icone, titulo, desc, admin }: { icone: React.ReactNode; titulo: string; desc: string; admin: boolean }) {
   return (
-    <div className="flex items-start gap-3 p-3 border border-slate-100 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900">
+    <div className="flex items-start gap-3 p-3 border border-slate-100 dark:border-slate-800 rounded-md bg-white dark:bg-slate-900">
       <div className="text-[#0f88a8] dark:text-[#38bdf8] mt-0.5">{icone}</div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">

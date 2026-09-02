@@ -39,13 +39,13 @@ export function AnexoUploader({ value, onChange }: Props) {
   }
 
   return (
-    <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700/50">
+    <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-md border border-slate-100 dark:border-slate-700/50">
       <label className="text-xs text-[#063955] dark:text-slate-300 font-bold tracking-wide uppercase block mb-3">
         Evidência / Anexo
       </label>
       <div className="flex items-center gap-3">
         {value ? (
-          <div className="flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-2 rounded-lg text-sm font-medium w-full justify-between border border-slate-200 dark:border-slate-700 shadow-sm">
+          <div className="flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-2 rounded-md text-sm font-medium w-full justify-between border border-slate-200 dark:border-slate-700 shadow-sm">
             <a href={value} target="_blank" rel="noreferrer" className="text-[#0f88a8] dark:text-[#38bdf8] hover:underline truncate w-full">
               📎 Ver Documento Anexado
             </a>
@@ -54,7 +54,7 @@ export function AnexoUploader({ value, onChange }: Props) {
         ) : (
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center justify-center gap-2 w-full bg-white dark:bg-slate-800 border border-dashed border-slate-300 dark:border-slate-600 rounded-lg px-4 py-3 text-sm text-slate-500 dark:text-slate-400 hover:border-[#0f88a8] hover:text-[#0f88a8] transition-colors"
+            className="flex items-center justify-center gap-2 w-full bg-white dark:bg-slate-800 border border-dashed border-slate-300 dark:border-slate-600 rounded-md px-4 py-3 text-sm text-slate-500 dark:text-slate-400 hover:border-[#0f88a8] hover:text-[#0f88a8] transition-colors"
           >
             📎 Clique para anexar uma evidência
           </button>

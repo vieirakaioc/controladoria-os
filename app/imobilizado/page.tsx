@@ -123,7 +123,7 @@ export default function PaginaFila() {
         </p>
         <Link
           href="/imobilizado/novo"
-          className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#0f88a8] px-5 py-2.5 text-sm font-bold text-white transition-all hover:brightness-110"
+          className="mt-5 inline-flex items-center gap-2 rounded-md bg-[#0f88a8] px-5 py-2.5 text-sm font-bold text-white transition-all hover:brightness-110"
         >
           Cadastrar item
           <ArrowUpRight size={16} />
@@ -161,7 +161,7 @@ export default function PaginaFila() {
 
       <Painel className="!p-4">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2">
+          <div className="flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2">
             <Search size={16} className="shrink-0 text-slate-400" />
             <input
               type="search"
@@ -172,14 +172,14 @@ export default function PaginaFila() {
             />
           </div>
 
-          <div className="flex flex-wrap gap-1 rounded-xl bg-slate-100 p-1">
+          <div className="flex flex-wrap gap-1 rounded-md bg-slate-100 p-1">
             {FILTROS.map((f) => (
               <button
                 key={f.valor}
                 type="button"
                 onClick={() => setFiltro(f.valor)}
                 aria-pressed={filtro === f.valor}
-                className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-all ${
+                className={`rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
                   filtro === f.valor
                     ? 'bg-white text-[#063955] shadow-sm'
                     : 'text-slate-500 hover:text-[#063955]'
@@ -195,7 +195,7 @@ export default function PaginaFila() {
               value={filtroFilial}
               onChange={(e) => setFiltroFilial(e.target.value)}
               aria-label="Filtrar por empresa e filial"
-              className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#0f88a8]"
+              className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#0f88a8]"
             >
               <option value="todas">Todas as filiais</option>
               {filiaisEmUso.map(([id, rotulo]) => (
@@ -212,7 +212,7 @@ export default function PaginaFila() {
         </div>
       </Painel>
 
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-max min-w-full border-collapse text-sm">
             <thead className="bg-slate-50">
@@ -310,7 +310,7 @@ export default function PaginaFila() {
                     <td className="whitespace-nowrap px-4 py-3 text-right align-top">
                       <Link
                         href={`/imobilizado/${item.id}`}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-[#0f88a8] px-3 py-1.5 text-xs font-bold text-[#0f88a8] transition-all hover:bg-[#0f88a8] hover:text-white"
+                        className="inline-flex items-center gap-1.5 rounded-md border border-[#0f88a8] px-3 py-1.5 text-xs font-bold text-[#0f88a8] transition-all hover:bg-[#0f88a8] hover:text-white"
                       >
                         Abrir
                       </Link>

@@ -24,7 +24,7 @@ type Props = {
   onReset: () => void
 }
 
-const baseSelect = 'bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-sm text-slate-700 dark:text-slate-200 outline-none transition-colors'
+const baseSelect = 'bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-md px-4 py-2 text-sm text-slate-700 dark:text-slate-200 outline-none transition-colors'
 
 export function FiltersBar({
   filtroTexto, filtroStatus, filtroSetor, filtroResp, filtroClassificacao, filtroProjeto,
@@ -33,12 +33,12 @@ export function FiltersBar({
   totalFiltradas, onReset,
 }: Props) {
   return (
-    <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 mb-6 flex flex-wrap gap-3 items-center transition-colors">
+    <div className="bg-white dark:bg-slate-900 p-4 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 mb-6 flex flex-wrap gap-3 items-center transition-colors">
       <input
         value={filtroTexto}
         onChange={(e) => setFiltroTexto(e.target.value)}
         placeholder="Buscar atividade..."
-        className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-sm w-full md:w-64 outline-none focus:border-[#0f88a8] dark:text-white transition-colors"
+        className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-md px-4 py-2 text-sm w-full md:w-64 outline-none focus:border-[#0f88a8] dark:text-white transition-colors"
       />
 
       <select

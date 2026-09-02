@@ -73,7 +73,7 @@ function InfoTooltip({ text }: { text: string }) {
   return (
     <div className="group relative flex items-center justify-center cursor-help">
       <Info size={14} className="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors" />
-      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-64 p-3 bg-slate-800 dark:bg-slate-700 text-white text-[11px] leading-relaxed rounded-xl shadow-2xl z-[99999] text-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 font-medium">
+      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-64 p-3 bg-slate-800 dark:bg-slate-700 text-white text-[11px] leading-relaxed rounded-md shadow-xl z-[99999] text-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 font-medium">
         {text}
         <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800 dark:border-t-slate-700"></div>
       </div>
@@ -83,7 +83,7 @@ function InfoTooltip({ text }: { text: string }) {
 
 function Section({ title, subtitle, right, info, children, className = '' }: { title: string; subtitle?: string; right?: React.ReactNode; info?: string; children: React.ReactNode; className?: string }) {
   return (
-    <div className={`relative hover:z-20 bg-white dark:bg-slate-900 border border-slate-100/50 dark:border-slate-800/50 rounded-2xl shadow-sm hover:shadow-xl dark:hover:shadow-slate-900/50 transition-all duration-500 flex flex-col h-full ${className}`}>
+    <div className={`relative hover:z-20 bg-white dark:bg-slate-900 border border-slate-100/50 dark:border-slate-800/50 rounded-lg shadow-sm hover:shadow-xl dark:hover:shadow-slate-900/50 transition-all duration-500 flex flex-col h-full ${className}`}>
       <div className="p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/20 dark:bg-slate-950/20 flex items-start justify-between gap-4 shrink-0 rounded-t-2xl">
         <div>
           <div className="flex items-center gap-2">
@@ -141,8 +141,8 @@ function HealthHero({ metrics, isDark }: { metrics: any; isDark: boolean }) {
   })()
 
   return (
-    <div className={`mb-6 bg-gradient-to-br ${cfg.bg} border ${cfg.border} rounded-2xl p-6 shadow-sm flex items-center gap-5`}>
-      <div className={`relative flex items-center justify-center w-16 h-16 rounded-2xl bg-white dark:bg-slate-900 shadow-sm border ${cfg.border} ${cfg.text}`}>
+    <div className={`mb-6 bg-gradient-to-br ${cfg.bg} border ${cfg.border} rounded-lg p-6 shadow-sm flex items-center gap-5`}>
+      <div className={`relative flex items-center justify-center w-16 h-16 rounded-lg bg-white dark:bg-slate-900 shadow-sm border ${cfg.border} ${cfg.text}`}>
         {cfg.icon}
         <span className={`absolute -top-1 -right-1 w-4 h-4 rounded-full ${cfg.dot} ring-2 ring-white dark:ring-slate-900`} />
       </div>
@@ -199,7 +199,7 @@ function InsightsCard({ rows, overdueByPerson, bySector, isDark }: any) {
   }
 
   return (
-    <div className="mb-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
+    <div className="mb-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-lg p-5 shadow-sm">
       <h3 className="text-xs font-bold text-[#063955] dark:text-white uppercase tracking-widest mb-3 flex items-center gap-2">
         <Zap size={14} className="text-amber-500" /> Insights críticos
       </h3>
@@ -258,7 +258,7 @@ function KPI({
   }
 
   return (
-    <div className="relative hover:z-20 bg-white dark:bg-slate-900 border border-slate-100/50 dark:border-slate-800/50 rounded-2xl p-5 shadow-sm hover:shadow-xl dark:hover:shadow-slate-900/50 hover:-translate-y-0.5 transition-all duration-300">
+    <div className="relative hover:z-20 bg-white dark:bg-slate-900 border border-slate-100/50 dark:border-slate-800/50 rounded-lg p-5 shadow-sm hover:shadow-xl dark:hover:shadow-slate-900/50 hover:-translate-y-0.5 transition-all duration-300">
       <div className="flex justify-between items-start">
         <div className="text-xs font-semibold tracking-wider text-slate-400 dark:text-slate-500 uppercase">{title}</div>
         {info && <InfoTooltip text={info} />}
@@ -327,7 +327,7 @@ function Doughnut({ items, size = 140, colors }: { items: { label: string; value
           return (
             <div 
               key={it.label} 
-              className={`flex items-center justify-between gap-3 text-sm p-1.5 rounded-lg transition-colors cursor-default ${hoverIdx === i ? 'bg-slate-100 dark:bg-slate-800' : ''}`}
+              className={`flex items-center justify-between gap-3 text-sm p-1.5 rounded-md transition-colors cursor-default ${hoverIdx === i ? 'bg-slate-100 dark:bg-slate-800' : ''}`}
               onMouseEnter={() => setHoverIdx(i)}
               onMouseLeave={() => setHoverIdx(null)}
             >
@@ -417,7 +417,7 @@ function LineChart({ points, height = 180, colors }: { points: { x: string; y: n
 
         {hoverIdx !== null && (
           <g transform={`translate(${toX(hoverIdx)}, ${toY(points[hoverIdx].y) - 34})`} className="pointer-events-none transition-transform duration-200 z-[999]">
-            <rect x="-40" y="-40" width="80" height="34" rx="6" fill={colors.darkBlue} className="shadow-2xl" style={{ filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))' }} />
+            <rect x="-40" y="-40" width="80" height="34" rx="6" fill={colors.darkBlue} className="shadow-xl" style={{ filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))' }} />
             <polygon points="-6,-6 6,-6 0,2" fill={colors.darkBlue} />
             <text x="0" y="-24" textAnchor="middle" fill="#fff" fontSize="13" fontWeight="bold">{points[hoverIdx].y} concl.</text>
             <text x="0" y="-12" textAnchor="middle" fill="#94a3b8" fontSize="9" fontWeight="500">Dia {niceLabel(points[hoverIdx].x)}</text>
@@ -436,7 +436,7 @@ function BarList({ items, color, isPerson = false, profilesMap = {}, colors }: {
       {items.map((it) => {
         const w = maxV > 0 ? Math.round((it.value / maxV) * 100) : 0
         return (
-          <div key={it.label} className="flex flex-col gap-1.5 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+          <div key={it.label} className="flex flex-col gap-1.5 p-2 rounded-md hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
             <div className="flex items-center justify-between text-sm font-medium text-slate-700 dark:text-slate-200 gap-3">
               <div className="flex items-center gap-2.5 flex-1 min-w-0">
                 {isPerson && (
@@ -477,7 +477,7 @@ function DoubleBarList({ items, profilesMap, colors }: { items: { name: string, 
         const pctLate = it.total > 0 ? 100 - pctOnTime : 0
         
         return (
-          <div key={it.name} className="flex flex-col gap-2 p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+          <div key={it.name} className="flex flex-col gap-2 p-2.5 rounded-md hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
             <div className="flex items-center justify-between text-sm font-medium text-slate-700 dark:text-slate-200 gap-3">
               <div className="flex items-center gap-2.5 flex-1 min-w-0">
                 {profilesMap[it.name] ? (
@@ -539,7 +539,7 @@ function TwoBars({ onTime, late, colors }: { onTime: number; late: number; color
         </div>
       </div>
       <div className="pt-5 border-t border-slate-100 dark:border-slate-800 text-[11px] font-medium text-slate-500 dark:text-slate-400 flex items-center justify-between">
-        Taxa de pontualidade da equipa: <span className="text-slate-950 dark:text-white font-black text-sm ml-1 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg">{a}%</span>
+        Taxa de pontualidade da equipa: <span className="text-slate-950 dark:text-white font-black text-sm ml-1 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-md">{a}%</span>
       </div>
     </div>
   )
@@ -972,11 +972,11 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-8 font-sans transition-colors duration-300">
       <Toaster position="bottom-right" toastOptions={{ style: { background: isDark ? '#1e293b' : '#031D2D', color: '#fff', borderRadius: '12px' } }} />
 
-      <header className="flex flex-col xl:flex-row xl:justify-between xl:items-center gap-4 mb-8 bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100/50 dark:border-slate-800/50 transition-colors">
+      <header className="flex flex-col xl:flex-row xl:justify-between xl:items-center gap-4 mb-8 bg-white dark:bg-slate-900 p-6 rounded-lg shadow-sm border border-slate-100/50 dark:border-slate-800/50 transition-colors">
         <div>
           <h1 className="text-3xl font-extrabold text-slate-950 dark:text-white tracking-tighter flex items-center gap-3">
             Dashboard de Resultados
-            <span className="text-[10px] uppercase font-bold tracking-widest bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 px-3 py-1.5 rounded-lg mt-1">
+            <span className="text-[10px] uppercase font-bold tracking-widest bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 px-3 py-1.5 rounded-md mt-1">
               {userRole === 'admin' ? 'Visão Global' : 'Meu Desempenho'}
             </span>
           </h1>
@@ -986,7 +986,7 @@ export default function DashboardPage() {
         <div className="flex flex-wrap items-center gap-3">
           
           <select
-            className="bg-slate-50 dark:bg-slate-950 border border-slate-200/60 dark:border-slate-800/60 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-800 dark:text-white outline-none focus:border-slate-400 dark:focus:border-slate-600 cursor-pointer shadow-sm transition-colors"
+            className="bg-slate-50 dark:bg-slate-950 border border-slate-200/60 dark:border-slate-800/60 rounded-md px-4 py-2.5 text-sm font-semibold text-slate-800 dark:text-white outline-none focus:border-slate-400 dark:focus:border-slate-600 cursor-pointer shadow-sm transition-colors"
             value={plannerSel}
             onChange={(e) => setPlannerSel(e.target.value)}
           >
@@ -994,7 +994,7 @@ export default function DashboardPage() {
             {planners.map((p) => <option key={p} value={p}>{p}</option>)}
           </select>
 
-          <div className="flex items-center bg-slate-50 dark:bg-slate-950 border border-slate-200/60 dark:border-slate-800/60 rounded-xl shadow-sm overflow-hidden focus-within:border-slate-400 transition-colors relative z-30">
+          <div className="flex items-center bg-slate-50 dark:bg-slate-950 border border-slate-200/60 dark:border-slate-800/60 rounded-md shadow-sm overflow-hidden focus-within:border-slate-400 transition-colors relative z-30">
             <select
               className="bg-transparent py-2.5 pl-4 pr-2 text-sm font-semibold text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
               value={mesInicio}
@@ -1026,7 +1026,7 @@ export default function DashboardPage() {
           <button 
             onClick={exportarPDF} 
             disabled={gerandoPdf}
-            className="flex items-center gap-2.5 bg-[#C7A77B] hover:bg-[#A68A63] text-[#031D2D] px-6 py-2.5 rounded-xl text-sm font-bold transition-all shadow disabled:opacity-50 tracking-tight"
+            className="flex items-center gap-2.5 bg-[#C7A77B] hover:bg-[#A68A63] text-[#031D2D] px-6 py-2.5 rounded-md text-sm font-bold transition-all shadow disabled:opacity-50 tracking-tight"
           >
             <FileText size={17} />
             {gerandoPdf ? 'A processar...' : 'Gerar Dossiê PDF'}
@@ -1083,16 +1083,16 @@ export default function DashboardPage() {
         </div>
 
         {/* Tab switcher */}
-        <div className="flex gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl mb-6 w-fit">
+        <div className="flex gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-md mb-6 w-fit">
           <button
             onClick={() => setTab('resumo')}
-            className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${tab === 'resumo' ? 'bg-white dark:bg-slate-700 shadow-sm text-[#063955] dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+            className={`px-5 py-2 rounded-md text-sm font-semibold transition-all ${tab === 'resumo' ? 'bg-white dark:bg-slate-700 shadow-sm text-[#063955] dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
           >
             Resumo
           </button>
           <button
             onClick={() => setTab('detalhes')}
-            className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${tab === 'detalhes' ? 'bg-white dark:bg-slate-700 shadow-sm text-[#063955] dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+            className={`px-5 py-2 rounded-md text-sm font-semibold transition-all ${tab === 'detalhes' ? 'bg-white dark:bg-slate-700 shadow-sm text-[#063955] dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
           >
             Detalhes
           </button>
@@ -1119,7 +1119,7 @@ export default function DashboardPage() {
               {deliveriesByPerson.length > 0 ? (
                 <DoubleBarList items={deliveriesByPerson} profilesMap={profilesMap} colors={colors} />
               ) : (
-                <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-100/50 dark:bg-slate-800/50 rounded-xl p-6">Ainda não há tarefas concluídas neste período.</div>
+                <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-100/50 dark:bg-slate-800/50 rounded-md p-6">Ainda não há tarefas concluídas neste período.</div>
               )}
             </Section>
           </div>
@@ -1168,7 +1168,7 @@ export default function DashboardPage() {
             {additionalMetrics.aging.some(a => a.value > 0) ? (
               <BarList items={additionalMetrics.aging} color={colors.warnAmber} colors={colors} />
             ) : (
-              <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-50 dark:bg-slate-800 rounded-xl transition-colors p-10">Nenhum atraso no momento 🎉</div>
+              <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-50 dark:bg-slate-800 rounded-md transition-colors p-10">Nenhum atraso no momento 🎉</div>
             )}
           </Section>
 
@@ -1180,7 +1180,7 @@ export default function DashboardPage() {
             {deliveriesByPerson.length > 0 ? (
                <DoubleBarList items={deliveriesByPerson} profilesMap={profilesMap} colors={colors} />
             ) : (
-               <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-100/50 dark:bg-slate-800/50 rounded-xl p-6 transition-colors">Ainda não há tarefas concluídas neste período.</div>
+               <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-100/50 dark:bg-slate-800/50 rounded-md p-6 transition-colors">Ainda não há tarefas concluídas neste período.</div>
             )}
           </Section>
 
@@ -1199,7 +1199,7 @@ export default function DashboardPage() {
                 subtitle="Volume de demandas por projeto estratégico"
                 info="Identifica quais as iniciativas da empresa que estão a consumir a maior quantidade de tarefas ativas neste momento."
               >
-                {byProject.length ? <BarList items={byProject} color={colors.primaryAccent} colors={colors} /> : <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-100/50 dark:bg-slate-800/50 rounded-xl p-6 transition-colors">Nenhum projeto em curso neste período.</div>}
+                {byProject.length ? <BarList items={byProject} color={colors.primaryAccent} colors={colors} /> : <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-100/50 dark:bg-slate-800/50 rounded-md p-6 transition-colors">Nenhum projeto em curso neste período.</div>}
               </Section>
 
               {/* 💡 COR DA BARRA ALTERADA PARA VERMELHO (dangerRed) */}
@@ -1211,16 +1211,16 @@ export default function DashboardPage() {
                 {overdueByPerson.length ? (
                   <BarList items={overdueByPerson} color={colors.dangerRed} isPerson={true} profilesMap={profilesMap} colors={colors} />
                 ) : (
-                  <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-100/50 dark:bg-slate-800/50 rounded-xl p-6 transition-colors">Nenhuma tarefa atrasada 🎉</div>
+                  <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-100/50 dark:bg-slate-800/50 rounded-md p-6 transition-colors">Nenhuma tarefa atrasada 🎉</div>
                 )}
               </Section>
 
               <Section title="Volume por Setor" subtitle="Demandas ativas no período" info="Mostra quais os departamentos com maior carga de processos neste mês.">
-                {bySector.length ? <BarList items={bySector} color={colors.darkBlue} colors={colors} /> : <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-100/50 dark:bg-slate-800/50 rounded-xl p-6 transition-colors">Sem dados para exibir.</div>}
+                {bySector.length ? <BarList items={bySector} color={colors.darkBlue} colors={colors} /> : <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-100/50 dark:bg-slate-800/50 rounded-md p-6 transition-colors">Sem dados para exibir.</div>}
               </Section>
 
               <Section title="Volume por Colaborador" subtitle="Demandas ativas no período" info="Ranqueia os membros da equipa pela quantidade bruta de responsabilidades que lhes foram atribuídas.">
-                {byPerson.length ? <BarList items={byPerson} color={colors.darkBlue} isPerson={true} profilesMap={profilesMap} colors={colors} /> : <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-100/50 dark:bg-slate-800/50 rounded-xl p-6 transition-colors">Sem dados para exibir.</div>}
+                {byPerson.length ? <BarList items={byPerson} color={colors.darkBlue} isPerson={true} profilesMap={profilesMap} colors={colors} /> : <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-100/50 dark:bg-slate-800/50 rounded-md p-6 transition-colors">Sem dados para exibir.</div>}
               </Section>
 
               <Section 
@@ -1231,7 +1231,7 @@ export default function DashboardPage() {
                 {priorityMix.length > 0 ? (
                   <Doughnut items={priorityMix} size={140} colors={colors} />
                 ) : (
-                  <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-100/50 dark:bg-slate-800/50 rounded-xl p-6 transition-colors">Sem dados de prioridade.</div>
+                  <div className="text-sm font-medium text-slate-500 h-full flex items-center justify-center text-center bg-slate-100/50 dark:bg-slate-800/50 rounded-md p-6 transition-colors">Sem dados de prioridade.</div>
                 )}
               </Section>
             </>

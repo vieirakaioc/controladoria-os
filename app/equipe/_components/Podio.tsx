@@ -33,7 +33,7 @@ export function Podio({ colaboradores }: { colaboradores: ColaboradorRow[] }) {
           return (
             <div
               key={c.responsavel_id}
-              className={`rounded-2xl p-5 border bg-gradient-to-br ${CORES_BG[idx]} relative overflow-hidden`}
+              className={`rounded-lg p-5 border bg-gradient-to-br ${CORES_BG[idx]} relative overflow-hidden`}
             >
               <div className="flex items-start justify-between mb-3">
                 <Icon size={32} className={CORES_ICONE[idx]} />

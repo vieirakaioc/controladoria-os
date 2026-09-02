@@ -51,7 +51,7 @@ export default function PaginaDashboard() {
         </p>
         <Link
           href="/validacao-fiscal/importar"
-          className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#0f88a8] px-5 py-2.5 text-sm font-bold text-white transition-all hover:brightness-110"
+          className="mt-5 inline-flex items-center gap-2 rounded-md bg-[#0f88a8] px-5 py-2.5 text-sm font-bold text-white transition-all hover:brightness-110"
         >
           Importar planilhas
           <ArrowUpRight size={16} />
@@ -92,7 +92,7 @@ export default function PaginaDashboard() {
         <div className="flex flex-wrap items-center gap-3">
           <span className="pl-1 text-sm font-semibold text-[#063955]">Mostrar</span>
 
-          <div className="flex flex-wrap gap-1 rounded-xl bg-slate-100 p-1">
+          <div className="flex flex-wrap gap-1 rounded-md bg-slate-100 p-1">
             {(
               [
                 { valor: 'todos', rotulo: 'Tudo' },
@@ -105,7 +105,7 @@ export default function PaginaDashboard() {
                 type="button"
                 onClick={() => setFluxo(opcao.valor)}
                 aria-pressed={fluxo === opcao.valor}
-                className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-all ${
+                className={`rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
                   fluxo === opcao.valor
                     ? 'bg-white text-[#063955] shadow-sm'
                     : 'text-slate-500 hover:text-[#063955]'
@@ -140,7 +140,7 @@ export default function PaginaDashboard() {
 
           <Link
             href="/validacao-fiscal/matriz"
-            className="mt-6 inline-flex items-center gap-2 self-start rounded-xl border border-[#0f88a8] px-4 py-2 text-sm font-bold text-[#0f88a8] transition-colors hover:bg-[#0f88a8] hover:text-white"
+            className="mt-6 inline-flex items-center gap-2 self-start rounded-md border border-[#0f88a8] px-4 py-2 text-sm font-bold text-[#0f88a8] transition-colors hover:bg-[#0f88a8] hover:text-white"
           >
             Abrir matriz
             <ArrowUpRight size={16} />

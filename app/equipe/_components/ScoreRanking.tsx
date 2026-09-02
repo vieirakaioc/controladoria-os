@@ -18,7 +18,7 @@ export function ScoreRanking({ colaboradores }: { colaboradores: ColaboradorRow[
   }
 
   return (
-    <div className="mb-6 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-6">
+    <div className="mb-6 bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 p-6">
       <h3 className="text-sm font-bold text-[#063955] dark:text-white uppercase tracking-wider mb-5 flex items-center gap-2">
         <BarChart3 size={16} className="text-[#0f88a8]" /> Score por colaborador
       </h3>

@@ -141,7 +141,7 @@ export function FormularioImportacao({
           <div>
             <label
               htmlFor="planilhas"
-              className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center transition-colors hover:border-[#0f88a8] hover:bg-[#0f88a8]/5"
+              className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center transition-colors hover:border-[#0f88a8] hover:bg-[#0f88a8]/5"
             >
               <Upload size={26} className="text-[#0f88a8]" />
               <span className="text-sm font-bold text-[#063955]">
@@ -153,7 +153,7 @@ export function FormularioImportacao({
               </span>
             </label>
 
-            <div className="mt-3 flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+            <div className="mt-3 flex flex-wrap items-center gap-3 rounded-md border border-slate-200 bg-slate-50 px-4 py-3">
               <span className="text-xs text-slate-500 leading-relaxed">
                 Deu erro de estrutura? Baixe o modelo padrão, cole os dados nele e envie — os
                 cabeçalhos já vêm como a importação espera. Os formatos antigos continuam sendo
@@ -171,7 +171,7 @@ export function FormularioImportacao({
                         ? 'Formato anterior — ainda aceito na importação'
                         : 'Formato padrão da planilha geral'
                     }
-                    className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border px-3 py-1.5 text-xs font-bold transition-colors ${
+                    className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-md border px-3 py-1.5 text-xs font-bold transition-colors ${
                       layout.legado
                         ? 'border-slate-200 bg-white text-slate-400 hover:border-slate-300 hover:text-slate-600'
                         : 'border-[#0f88a8] bg-white text-[#0f88a8] hover:bg-[#0f88a8] hover:text-white'
@@ -199,7 +199,7 @@ export function FormularioImportacao({
                 {arquivos.map((a) => (
                   <li
                     key={a.name}
-                    className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
+                    className="flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
                   >
                     <FileSpreadsheet size={16} className="shrink-0 text-[#0f88a8]" />
                     <span className="truncate">{a.name}</span>
@@ -214,7 +214,7 @@ export function FormularioImportacao({
               type="button"
               onClick={importar}
               disabled={enviando || arquivos.length === 0}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#0f88a8] px-5 py-2.5 text-sm font-bold text-white transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex items-center gap-2 rounded-md bg-[#0f88a8] px-5 py-2.5 text-sm font-bold text-white transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {enviando ? (
                 <>
@@ -248,7 +248,7 @@ export function FormularioImportacao({
       {estado.situacao === 'erro' && (
         <div
           role="alert"
-          className="flex items-start gap-3 rounded-2xl border bg-white p-5"
+          className="flex items-start gap-3 rounded-lg border bg-white p-5"
           style={{ borderColor: CORES.critico }}
         >
           <AlertCircle size={20} className="mt-0.5 shrink-0" style={{ color: CORES.critico }} />
@@ -267,7 +267,7 @@ export function FormularioImportacao({
           acao={
             <Link
               href="/validacao-fiscal/matriz"
-              className="rounded-xl border border-[#0f88a8] px-4 py-2 text-sm font-bold text-[#0f88a8] transition-colors hover:bg-[#0f88a8] hover:text-white"
+              className="rounded-md border border-[#0f88a8] px-4 py-2 text-sm font-bold text-[#0f88a8] transition-colors hover:bg-[#0f88a8] hover:text-white"
             >
               Abrir matriz
             </Link>
@@ -275,7 +275,7 @@ export function FormularioImportacao({
         >
           <ul className="space-y-3">
             {estado.resultados.map((r) => (
-              <li key={r.loteId} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <li key={r.loteId} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
                 <div className="flex flex-wrap items-center gap-2">
                   <CheckCircle2 size={16} style={{ color: CORES.bom }} />
                   <span className="font-bold text-[#063955]">{r.arquivo}</span>

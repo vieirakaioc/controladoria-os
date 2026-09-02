@@ -29,7 +29,7 @@ export function ChecklistEditor({ items, onChange }: Props) {
   const doneCount = items.filter(c => c.concluido).length
 
   return (
-    <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700/50">
+    <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-md border border-slate-100 dark:border-slate-700/50">
       <div className="flex justify-between items-center mb-3">
         <label className="text-xs text-[#063955] dark:text-slate-300 font-bold tracking-wide uppercase">
           Subtarefas / Checklist
@@ -43,7 +43,7 @@ export function ChecklistEditor({ items, onChange }: Props) {
 
       <div className="space-y-2 mb-3">
         {items.map(c => (
-          <div key={c.id} className="flex items-center gap-2 bg-white dark:bg-slate-800 p-2 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm group">
+          <div key={c.id} className="flex items-center gap-2 bg-white dark:bg-slate-800 p-2 rounded-md border border-slate-200 dark:border-slate-700 shadow-sm group">
             <input
               type="checkbox"
               checked={c.concluido}
@@ -69,11 +69,11 @@ export function ChecklistEditor({ items, onChange }: Props) {
           onChange={e => setNovo(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && add()}
           placeholder="Adicionar novo passo..."
-          className="flex-1 bg-transparent border border-slate-200 dark:border-slate-700 dark:text-white rounded-lg px-3 py-2 text-sm outline-none focus:border-[#0f88a8]"
+          className="flex-1 bg-transparent border border-slate-200 dark:border-slate-700 dark:text-white rounded-md px-3 py-2 text-sm outline-none focus:border-[#0f88a8]"
         />
         <button
           onClick={add}
-          className="bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 px-3 rounded-lg text-sm font-medium transition-colors"
+          className="bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 px-3 rounded-md text-sm font-medium transition-colors"
         >
           Adicionar
         </button>

@@ -51,7 +51,7 @@ const FILTROS: { valor: FiltroPrazo; rotulo: string }[] = [
 ]
 
 const CAMPO =
-  'rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#0f88a8]'
+  'rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#0f88a8]'
 
 /** Coluna fixa da esquerda: largura travada e sombra marcando a borda de rolagem. */
 const CONGELADA =
@@ -308,7 +308,7 @@ export function Matriz({
     <div className="space-y-4">
       <Painel className="!p-4">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2">
+          <div className="flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2">
             <Search size={16} className="shrink-0 text-slate-400" />
             <input
               type="search"
@@ -321,7 +321,7 @@ export function Matriz({
 
           {/* Entrada e saída são times diferentes: separar antes do prazo evita
               alguém responder o que não é da sua área. */}
-          <div className="flex flex-wrap gap-1 rounded-xl bg-slate-100 p-1">
+          <div className="flex flex-wrap gap-1 rounded-md bg-slate-100 p-1">
             {([
               { valor: 'todos', rotulo: 'Todas' },
               { valor: 'saida', rotulo: 'Saídas' },
@@ -332,7 +332,7 @@ export function Matriz({
                 type="button"
                 onClick={() => setFiltroFluxo(f.valor)}
                 aria-pressed={filtroFluxo === f.valor}
-                className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-all ${
+                className={`rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
                   filtroFluxo === f.valor
                     ? 'bg-white text-[#063955] shadow-sm'
                     : 'text-slate-500 hover:text-[#063955]'
@@ -343,14 +343,14 @@ export function Matriz({
             ))}
           </div>
 
-          <div className="flex flex-wrap gap-1 rounded-xl bg-slate-100 p-1">
+          <div className="flex flex-wrap gap-1 rounded-md bg-slate-100 p-1">
             {FILTROS.map((f) => (
               <button
                 key={f.valor}
                 type="button"
                 onClick={() => setFiltroPrazo(f.valor)}
                 aria-pressed={filtroPrazo === f.valor}
-                className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-all ${
+                className={`rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
                   filtroPrazo === f.valor
                     ? 'bg-white text-[#063955] shadow-sm'
                     : 'text-slate-500 hover:text-[#063955]'
@@ -413,7 +413,7 @@ export function Matriz({
                 type="button"
                 onClick={atribuirVisiveis}
                 disabled={atribuindo}
-                className="inline-flex items-center gap-2 rounded-xl bg-[#0f88a8] px-4 py-2 text-sm font-bold text-white transition-all hover:brightness-110 disabled:opacity-40"
+                className="inline-flex items-center gap-2 rounded-md bg-[#0f88a8] px-4 py-2 text-sm font-bold text-white transition-all hover:brightness-110 disabled:opacity-40"
               >
                 {atribuindo ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />}
                 Confirmar
@@ -434,7 +434,7 @@ export function Matriz({
                 type="button"
                 onClick={() => setConfirmandoLote(true)}
                 disabled={!escolhidoParaLote || visiveis.length === 0}
-                className="inline-flex items-center gap-2 rounded-xl border border-[#0f88a8] px-4 py-2 text-sm font-bold text-[#0f88a8] transition-all hover:bg-[#0f88a8] hover:text-white disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-300 disabled:hover:bg-transparent"
+                className="inline-flex items-center gap-2 rounded-md border border-[#0f88a8] px-4 py-2 text-sm font-bold text-[#0f88a8] transition-all hover:bg-[#0f88a8] hover:text-white disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-300 disabled:hover:bg-transparent"
               >
                 <UserPlus size={15} />
                 Atribuir as {formatarInteiro(visiveis.length)} da tela
@@ -459,7 +459,7 @@ export function Matriz({
         </div>
       </Painel>
 
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="max-h-[70vh] overflow-auto">
           {/*
             w-max em vez de w-full: com w-full o navegador estica as colunas para
@@ -534,7 +534,7 @@ export function Matriz({
                       <button
                         type="button"
                         onClick={() => setEmEdicao(tarefa)}
-                        className={`inline-flex w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border px-3 py-1.5 text-xs font-bold transition-all ${
+                        className={`inline-flex w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-md border px-3 py-1.5 text-xs font-bold transition-all ${
                           finalizada
                             ? 'border-slate-200 text-slate-400 hover:border-slate-300 hover:text-slate-700'
                             : 'border-[#0f88a8] text-[#0f88a8] hover:bg-[#0f88a8] hover:text-white'

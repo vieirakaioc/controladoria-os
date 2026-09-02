@@ -31,7 +31,7 @@ export function Header({
   setMesAlvo, setAnoAlvo, setView, setPlannerSel, onNovaAdHoc, onRefresh, onExportIcs,
 }: Props) {
   return (
-    <header className="flex flex-col xl:flex-row xl:justify-between xl:items-center gap-4 mb-6 bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 transition-colors">
+    <header className="flex flex-col xl:flex-row xl:justify-between xl:items-center gap-4 mb-6 bg-white dark:bg-slate-900 p-5 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 transition-colors">
       <div>
         <h1 className="text-2xl font-semibold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
           Painel de Execução
@@ -47,17 +47,17 @@ export function Header({
       <div className="flex flex-wrap items-center gap-3">
         <button
           onClick={onNovaAdHoc}
-          className="bg-[#0f88a8] hover:bg-[#0c708b] text-white text-sm font-medium py-2 px-4 rounded-xl transition-all shadow-sm"
+          className="bg-[#0f88a8] hover:bg-[#0c708b] text-white text-sm font-medium py-2 px-4 rounded-md transition-all shadow-sm"
         >
           + Nova Ad Hoc
         </button>
 
-        <div className="flex bg-slate-100 dark:bg-slate-800 rounded-xl p-1 border border-slate-200 dark:border-slate-700">
+        <div className="flex bg-slate-100 dark:bg-slate-800 rounded-md p-1 border border-slate-200 dark:border-slate-700">
           {views.map(v => (
             <button
               key={v.id}
               onClick={() => setView(v.id)}
-              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${view === v.id ? 'bg-white dark:bg-slate-700 shadow-sm text-[#063955] dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${view === v.id ? 'bg-white dark:bg-slate-700 shadow-sm text-[#063955] dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}
             >
               {v.label}
             </button>
@@ -65,7 +65,7 @@ export function Header({
         </div>
 
         <select
-          className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 outline-none focus:border-[#0f88a8] transition-colors"
+          className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-md px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 outline-none focus:border-[#0f88a8] transition-colors"
           value={plannerSel}
           onChange={(e) => setPlannerSel(e.target.value)}
         >
@@ -74,7 +74,7 @@ export function Header({
         </select>
 
         <select
-          className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 outline-none focus:border-[#0f88a8] transition-colors"
+          className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-md px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 outline-none focus:border-[#0f88a8] transition-colors"
           value={mesAlvo}
           onChange={(e) => setMesAlvo(Number(e.target.value))}
         >
@@ -82,7 +82,7 @@ export function Header({
         </select>
 
         <input
-          className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 w-24 outline-none focus:border-[#0f88a8] transition-colors"
+          className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-md px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 w-24 outline-none focus:border-[#0f88a8] transition-colors"
           type="number"
           value={anoAlvo}
           onChange={(e) => setAnoAlvo(Number(e.target.value))}
@@ -91,14 +91,14 @@ export function Header({
         <button
           onClick={onExportIcs}
           title="Baixar .ics pra importar no Google Calendar / Outlook"
-          className="flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-sm font-medium py-2 px-3 rounded-xl transition-all shadow-sm"
+          className="flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-sm font-medium py-2 px-3 rounded-md transition-all shadow-sm"
         >
           <Calendar size={14} /> Calendário
         </button>
 
         <button
           onClick={onRefresh}
-          className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-sm font-medium py-2 px-4 rounded-xl transition-all shadow-sm"
+          className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-sm font-medium py-2 px-4 rounded-md transition-all shadow-sm"
         >
           ↻ Atualizar
         </button>

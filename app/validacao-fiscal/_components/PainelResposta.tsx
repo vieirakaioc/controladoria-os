@@ -19,7 +19,7 @@ import {
 import { ChipPrazo } from './Ui'
 
 const CAMPO =
-  'w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-[#0f88a8] focus:ring-2 focus:ring-[#0f88a8]/20'
+  'w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-[#0f88a8] focus:ring-2 focus:ring-[#0f88a8]/20'
 
 const ROTULO = 'text-xs uppercase tracking-wider text-slate-400 font-semibold'
 
@@ -157,7 +157,7 @@ export function PainelResposta({
         role="dialog"
         aria-modal="true"
         aria-label={`Responder correção do documento ${tarefa.documento}`}
-        className="relative flex h-full w-full max-w-xl flex-col bg-slate-50 shadow-2xl"
+        className="relative flex h-full w-full max-w-xl flex-col bg-slate-50 shadow-xl"
       >
         <header className="flex items-start justify-between gap-4 border-b border-slate-200 bg-white p-5">
           <div className="min-w-0">
@@ -165,7 +165,7 @@ export function PainelResposta({
               {tarefa.aba ? `${ROTULO_ORIGEM[tarefa.origem]} · ${tarefa.aba}` : ROTULO_ORIGEM[tarefa.origem]}
             </p>
             <h2 className="mt-1 flex items-center gap-2 text-xl font-bold text-[#063955]">
-              <span className="shrink-0 rounded-lg bg-slate-100 px-2 py-0.5 text-sm tabular-nums text-slate-500">
+              <span className="shrink-0 rounded-md bg-slate-100 px-2 py-0.5 text-sm tabular-nums text-slate-500">
                 Nº {tarefa.numero}
               </span>
               <span className="truncate">Documento {tarefa.documento}</span>
@@ -197,7 +197,7 @@ export function PainelResposta({
             </span>
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200 p-4 space-y-4">
+          <div className="bg-white rounded-lg border border-slate-200 p-4 space-y-4">
             <fieldset>
               <legend className="text-xs uppercase tracking-wider text-slate-400 font-semibold">
                 Situação da tarefa
@@ -213,7 +213,7 @@ export function PainelResposta({
                       type="button"
                       onClick={() => setStatus(estado.valor)}
                       aria-pressed={ativo}
-                      className={`rounded-xl border px-3 py-2.5 text-left text-sm font-semibold transition-all ${
+                      className={`rounded-md border px-3 py-2.5 text-left text-sm font-semibold transition-all ${
                         ativo
                           ? 'border-[#0f88a8] bg-[#0f88a8]/10 text-[#063955]'
                           : 'border-slate-200 text-slate-500 hover:border-slate-300 hover:text-[#063955]'
@@ -313,7 +313,7 @@ export function PainelResposta({
             )}
           </div>
 
-          <section className="rounded-2xl border border-slate-200 bg-white p-4">
+          <section className="rounded-lg border border-slate-200 bg-white p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h3 className="text-sm font-bold text-[#063955]">Dados da tarefa</h3>
@@ -326,7 +326,7 @@ export function PainelResposta({
                 type="button"
                 onClick={() => setEditando((atual) => !atual)}
                 aria-pressed={editando}
-                className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold transition-colors ${
+                className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-bold transition-colors ${
                   editando
                     ? 'border-[#0f88a8] bg-[#0f88a8]/10 text-[#063955]'
                     : 'border-slate-300 text-slate-500 hover:border-[#0f88a8] hover:text-[#0f88a8]'
@@ -436,7 +436,7 @@ export function PainelResposta({
               Todos os campos preenchidos na exportação original.
             </p>
 
-            <dl className="mt-3 divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-white">
+            <dl className="mt-3 divide-y divide-slate-100 rounded-lg border border-slate-200 bg-white">
               {Object.entries(tarefa.dados).map(([campo, valor]) => (
                 <div key={campo} className="flex gap-4 px-4 py-2.5">
                   <dt className="w-2/5 shrink-0 text-xs text-slate-400">{campo}</dt>
@@ -454,7 +454,7 @@ export function PainelResposta({
             type="button"
             onClick={enviar}
             disabled={salvando}
-            className="inline-flex items-center gap-2 rounded-xl bg-[#0f88a8] px-5 py-2.5 text-sm font-bold text-white transition-all hover:brightness-110 disabled:opacity-40"
+            className="inline-flex items-center gap-2 rounded-md bg-[#0f88a8] px-5 py-2.5 text-sm font-bold text-white transition-all hover:brightness-110 disabled:opacity-40"
           >
             {salvando ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
             {encerrando ? `Encerrar como ${ROTULO_STATUS[status].toLowerCase()}` : 'Salvar resposta'}
@@ -464,7 +464,7 @@ export function PainelResposta({
             type="button"
             onClick={aoFechar}
             disabled={salvando}
-            className="rounded-xl border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-40"
+            className="rounded-md border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-40"
           >
             Cancelar
           </button>
@@ -487,7 +487,7 @@ export function PainelResposta({
                   type="button"
                   onClick={remover}
                   disabled={excluindo}
-                  className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold text-white transition-all hover:brightness-110 disabled:opacity-40"
+                  className="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-bold text-white transition-all hover:brightness-110 disabled:opacity-40"
                   style={{ background: CORES.critico }}
                 >
                   {excluindo ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
@@ -508,7 +508,7 @@ export function PainelResposta({
                 type="button"
                 onClick={() => setConfirmandoExclusao(true)}
                 disabled={salvando}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-400 transition-colors hover:border-[#b1272d] hover:text-[#b1272d] disabled:opacity-40"
+                className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-400 transition-colors hover:border-[#b1272d] hover:text-[#b1272d] disabled:opacity-40"
               >
                 <Trash2 size={15} />
                 Excluir

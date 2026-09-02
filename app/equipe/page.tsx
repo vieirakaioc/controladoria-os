@@ -168,7 +168,7 @@ export default function EquipePage() {
         </p>
         <button
           onClick={() => router.push('/tarefas')}
-          className="mt-6 bg-[#0f88a8] hover:bg-[#0c708b] text-white px-6 py-2.5 rounded-xl font-medium shadow-sm"
+          className="mt-6 bg-[#0f88a8] hover:bg-[#0c708b] text-white px-6 py-2.5 rounded-md font-medium shadow-sm"
         >
           Voltar ao Kanban
         </button>
@@ -179,9 +179,9 @@ export default function EquipePage() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-8 font-sans transition-colors">
       {/* Header */}
-      <header className="mb-6 bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col xl:flex-row xl:justify-between xl:items-center gap-4">
+      <header className="mb-6 bg-white dark:bg-slate-900 p-6 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col xl:flex-row xl:justify-between xl:items-center gap-4">
         <div className="flex items-center gap-4">
-          <div className="bg-[#0f88a8]/10 dark:bg-[#38bdf8]/10 p-3 rounded-xl text-[#0f88a8] dark:text-[#38bdf8]">
+          <div className="bg-[#0f88a8]/10 dark:bg-[#38bdf8]/10 p-3 rounded-md text-[#0f88a8] dark:text-[#38bdf8]">
             <Users size={32} />
           </div>
           <div>
@@ -202,7 +202,7 @@ export default function EquipePage() {
           <select
             value={filtroPlanner}
             onChange={(e) => setFiltroPlanner(e.target.value)}
-            className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 outline-none focus:border-[#0f88a8] min-w-[150px]"
+            className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-md px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 outline-none focus:border-[#0f88a8] min-w-[150px]"
           >
             <option value="Todos">Planner: Todos</option>
             {plannerOptions.map(p => <option key={p} value={p}>{p}</option>)}
@@ -210,7 +210,7 @@ export default function EquipePage() {
           <select
             value={filtroSetor}
             onChange={(e) => setFiltroSetor(e.target.value)}
-            className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 outline-none focus:border-[#0f88a8] min-w-[150px]"
+            className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-md px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 outline-none focus:border-[#0f88a8] min-w-[150px]"
           >
             <option value="Todos">Setor: Todos</option>
             {setorOptions.map(s => <option key={s} value={s}>{s}</option>)}
@@ -235,7 +235,7 @@ export default function EquipePage() {
           <select
             value={mesAlvo}
             onChange={(e) => setMesAlvo(Number(e.target.value))}
-            className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 outline-none focus:border-[#0f88a8]"
+            className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-md px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 outline-none focus:border-[#0f88a8]"
           >
             {MESES.map(m => <option key={m.v} value={m.v}>{m.n}</option>)}
           </select>
@@ -243,14 +243,14 @@ export default function EquipePage() {
             type="number"
             value={anoAlvo}
             onChange={(e) => setAnoAlvo(Number(e.target.value))}
-            className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 w-24 outline-none focus:border-[#0f88a8]"
+            className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-md px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 w-24 outline-none focus:border-[#0f88a8]"
           />
 
           <div className="flex items-center gap-2 ml-1">
             <button
               onClick={handleExportXLSX}
               disabled={exporting !== null || colaboradores.length === 0}
-              className="flex items-center gap-1.5 bg-[#2d6943] hover:bg-[#204e31] text-white px-3 py-2 rounded-xl text-xs font-bold transition-colors shadow-sm disabled:opacity-50"
+              className="flex items-center gap-1.5 bg-[#2d6943] hover:bg-[#204e31] text-white px-3 py-2 rounded-md text-xs font-bold transition-colors shadow-sm disabled:opacity-50"
               title="Exportar Excel com Mensal + Destaque Semana + Histórico"
             >
               <Download size={13} /> {exporting === 'xlsx' ? '...' : 'Excel'}
@@ -258,7 +258,7 @@ export default function EquipePage() {
             <button
               onClick={handleExportPDF}
               disabled={exporting !== null || colaboradores.length === 0}
-              className="flex items-center gap-1.5 bg-[#C7A77B] hover:bg-[#A68A63] text-[#031D2D] px-3 py-2 rounded-xl text-xs font-bold transition-colors shadow-sm disabled:opacity-50"
+              className="flex items-center gap-1.5 bg-[#C7A77B] hover:bg-[#A68A63] text-[#031D2D] px-3 py-2 rounded-md text-xs font-bold transition-colors shadow-sm disabled:opacity-50"
               title="Exportar a vista atual em PDF"
             >
               <FileText size={13} /> {exporting === 'pdf' ? '...' : 'PDF'}
@@ -289,22 +289,22 @@ export default function EquipePage() {
       />
 
       {/* Tab switcher entre vista mensal e histórico */}
-      <div className="flex gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl mb-6 w-fit">
+      <div className="flex gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-md mb-6 w-fit">
         <button
           onClick={() => setTab('mensal')}
-          className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${tab === 'mensal' ? 'bg-white dark:bg-slate-700 shadow-sm text-[#063955] dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+          className={`px-5 py-2 rounded-md text-sm font-semibold transition-all ${tab === 'mensal' ? 'bg-white dark:bg-slate-700 shadow-sm text-[#063955] dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
         >
           Mensal
         </button>
         <button
           onClick={() => setTab('historico')}
-          className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${tab === 'historico' ? 'bg-white dark:bg-slate-700 shadow-sm text-[#063955] dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+          className={`px-5 py-2 rounded-md text-sm font-semibold transition-all ${tab === 'historico' ? 'bg-white dark:bg-slate-700 shadow-sm text-[#063955] dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
         >
           Histórico (6 meses)
         </button>
         <button
           onClick={() => setTab('atividade')}
-          className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${tab === 'atividade' ? 'bg-white dark:bg-slate-700 shadow-sm text-[#063955] dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+          className={`px-5 py-2 rounded-md text-sm font-semibold transition-all ${tab === 'atividade' ? 'bg-white dark:bg-slate-700 shadow-sm text-[#063955] dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
         >
           Atividade (30 dias)
         </button>
@@ -320,7 +320,7 @@ export default function EquipePage() {
 
       {/* Vista Mensal: alerta de erro + tabela detalhada */}
       {tab === 'mensal' && erro && (
-        <div className="mb-4 p-4 rounded-xl bg-[#b43a3d]/10 border border-[#b43a3d]/30 text-[#b43a3d] text-sm">
+        <div className="mb-4 p-4 rounded-md bg-[#b43a3d]/10 border border-[#b43a3d]/30 text-[#b43a3d] text-sm">
           <strong>Erro:</strong> {erro}
         </div>
       )}
@@ -328,7 +328,7 @@ export default function EquipePage() {
       {tab === 'historico' ? (
         <>
           {historico.erro && (
-            <div className="mb-4 p-4 rounded-xl bg-[#b43a3d]/10 border border-[#b43a3d]/30 text-[#b43a3d] text-sm">
+            <div className="mb-4 p-4 rounded-md bg-[#b43a3d]/10 border border-[#b43a3d]/30 text-[#b43a3d] text-sm">
               <strong>Erro:</strong> {historico.erro}
             </div>
           )}
@@ -345,7 +345,7 @@ export default function EquipePage() {
           totalEventos={heatmap.totalEventos}
         />
       ) : (
-      <main className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden">
+      <main className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden">
         {loading ? (
           <div className="p-12 text-center text-[#0f88a8] dark:text-[#38bdf8] font-medium animate-pulse">
             A agregar métricas da equipe...
@@ -459,7 +459,7 @@ export default function EquipePage() {
       </div>{/* fim do equipe-content (área capturada no PDF) */}
 
       {/* Legenda */}
-      <div className="mt-6 p-4 bg-white/50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-xl text-xs text-slate-500 dark:text-slate-400">
+      <div className="mt-6 p-4 bg-white/50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-md text-xs text-slate-500 dark:text-slate-400">
         <strong className="text-slate-700 dark:text-slate-300">Score atual:</strong>{' '}
         {weights.conclusao}% Conclusão + {weights.volume}% Volume + {weights.pontualidade}% Pontualidade + {weights.aderencia}% Aderência + {weights.uso}% Uso.
         Editável no painel "Configuração do Score" acima.
@@ -485,7 +485,7 @@ function KpiCard({ label, value, icon, suffix = '', accent = 'default' }: {
     : 'text-slate-900 dark:text-white'
 
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
+    <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-lg p-4 shadow-sm">
       <div className="flex justify-between items-start mb-2">
         <span className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">{label}</span>
         <span className="text-slate-400">{icon}</span>

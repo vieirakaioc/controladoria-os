@@ -12,7 +12,7 @@ type Props = {
 
 export function ListView({ rows, excluirTarefa, abrirDrawer }: Props) {
   return (
-    <main className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden transition-colors">
+    <main className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden transition-colors">
       <div className="overflow-x-auto">
         <table className="w-full text-left">
           <thead>

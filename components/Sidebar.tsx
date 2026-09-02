@@ -215,7 +215,7 @@ export default function Sidebar() {
   const navItems = allNavItems.filter(item => !item.adminOnly || userRole === 'admin')
 
   return (
-    <aside className={`relative bg-[#063955] text-white transition-all duration-300 ease-in-out flex flex-col shadow-2xl z-50 ${isExpanded ? 'w-64' : 'w-20'}`}>
+    <aside className={`relative bg-[#063955] text-white transition-all duration-300 ease-in-out flex flex-col shadow-xl z-50 ${isExpanded ? 'w-64' : 'w-20'}`}>
       
       <div className="h-24 flex items-center justify-center border-b border-white/10 px-4 shrink-0">
         {isExpanded ? (
@@ -254,7 +254,7 @@ export default function Sidebar() {
             <Link 
               key={item.href} 
               href={item.href}
-              className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${
+              className={`flex items-center gap-3 px-3 py-3 rounded-md transition-all ${
                 isActive ? 'bg-[#0f88a8] text-white shadow-md' : 'text-[#818284] hover:bg-white/5 hover:text-white'
               } ${!isExpanded && 'justify-center'}`}
               title={!isExpanded ? item.name : ''}
@@ -278,7 +278,7 @@ export default function Sidebar() {
               pedirPermissaoNotificacoes()
             }
           }}
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all w-full relative ${
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-all w-full relative ${
             notifOpen ? 'bg-[#0f88a8] text-white shadow-md' : 'text-[#818284] hover:bg-white/5 hover:text-white'
           } ${!isExpanded && 'justify-center'}`}
           title={!isExpanded ? 'Notificações' : ''}
@@ -300,7 +300,7 @@ export default function Sidebar() {
         </button>
 
         {notifOpen && (
-          <div className="absolute bottom-4 left-full ml-4 w-80 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[450px] z-[100]">
+          <div className="absolute bottom-4 left-full ml-4 w-80 bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden flex flex-col max-h-[450px] z-[100]">
             <div className="p-4 bg-[#063955] flex justify-between items-center text-white shrink-0">
               <span className="font-bold text-sm">Central de Alertas</span>
               {unreadCount > 0 && (
@@ -314,7 +314,7 @@ export default function Sidebar() {
                 <div 
                   key={n.id} 
                   onClick={() => handleClickNotificacao(n)}
-                  className={`p-3 rounded-xl cursor-pointer transition-all ${n.lida ? 'bg-white opacity-60 hover:opacity-100' : 'bg-[#0f88a8]/10 border border-[#0f88a8]/20 shadow-sm'}`}
+                  className={`p-3 rounded-md cursor-pointer transition-all ${n.lida ? 'bg-white opacity-60 hover:opacity-100' : 'bg-[#0f88a8]/10 border border-[#0f88a8]/20 shadow-sm'}`}
                 >
                   <h4 className={`text-xs ${n.lida ? 'font-semibold text-slate-700' : 'font-bold text-[#063955]'}`}>{n.titulo}</h4>
                   <p className="text-xs text-slate-600 mt-1 leading-relaxed">{n.mensagem}</p>
@@ -331,7 +331,7 @@ export default function Sidebar() {
           </div>
         )}
 
-        <Link href="/profile" className={`flex items-center gap-3 mb-2 rounded-xl transition-all hover:bg-white/5 p-2 ${!isExpanded && 'justify-center'}`}>
+        <Link href="/profile" className={`flex items-center gap-3 mb-2 rounded-md transition-all hover:bg-white/5 p-2 ${!isExpanded && 'justify-center'}`}>
           {avatarUrl ? (
             <img src={avatarUrl} alt="Avatar" className="w-9 h-9 rounded-full object-cover shrink-0 border border-[#efc486]" />
           ) : (
@@ -349,7 +349,7 @@ export default function Sidebar() {
 
         <Link 
           href="/logout"
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-[#818284] hover:bg-[#b43a3d]/20 hover:text-[#b43a3d] transition-all ${!isExpanded && 'justify-center'}`}
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-[#818284] hover:bg-[#b43a3d]/20 hover:text-[#b43a3d] transition-all ${!isExpanded && 'justify-center'}`}
           title={!isExpanded ? 'Sair' : ''}
         >
           <LogOut size={18} className="shrink-0" />

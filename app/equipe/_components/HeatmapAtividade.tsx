@@ -34,7 +34,7 @@ export function HeatmapAtividade({
 }: Props) {
   if (loading) {
     return (
-      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-12 text-center text-[#0f88a8] dark:text-[#38bdf8] font-medium animate-pulse">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 p-12 text-center text-[#0f88a8] dark:text-[#38bdf8] font-medium animate-pulse">
         A calcular padrão de atividade dos últimos 30 dias...
       </div>
     )
@@ -42,7 +42,7 @@ export function HeatmapAtividade({
 
   if (totalEventos === 0) {
     return (
-      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-12 text-center text-slate-500 dark:text-slate-400">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 p-12 text-center text-slate-500 dark:text-slate-400">
         Sem dados de atividade ainda. Rode <code>docs/user-activity-schema.sql</code> no Supabase pra começar o tracking.
       </div>
     )
@@ -57,10 +57,10 @@ export function HeatmapAtividade({
   return (
     <div className="space-y-6">
       {/* Cabeçalho com info do período */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-5">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 p-5">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
-            <div className="bg-emerald-500/10 dark:bg-emerald-500/20 p-2.5 rounded-xl text-emerald-600 dark:text-emerald-400">
+            <div className="bg-emerald-500/10 dark:bg-emerald-500/20 p-2.5 rounded-md text-emerald-600 dark:text-emerald-400">
               <Activity size={20} />
             </div>
             <div>
@@ -73,7 +73,7 @@ export function HeatmapAtividade({
             </div>
           </div>
           {pico.valor > 0 && (
-            <div className="text-xs text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 rounded-lg px-3 py-2 border border-slate-200 dark:border-slate-700">
+            <div className="text-xs text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 rounded-md px-3 py-2 border border-slate-200 dark:border-slate-700">
               <Clock size={11} className="inline mr-1 text-emerald-500" />
               <strong>Pico:</strong> {pico.dia}, {String(pico.hora).padStart(2, '0')}h ({pico.valor} interações)
             </div>
@@ -82,7 +82,7 @@ export function HeatmapAtividade({
       </div>
 
       {/* Heatmap principal: 7 linhas × 24 colunas */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-6">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 p-6">
         <h4 className="text-sm font-bold text-[#063955] dark:text-white uppercase tracking-wider mb-4">
           Quando a equipe trabalha
         </h4>
@@ -133,7 +133,7 @@ export function HeatmapAtividade({
 
       {/* Por colaborador: strip de 24h */}
       {porColaborador.length > 0 && (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-6">
+        <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 p-6">
           <h4 className="text-sm font-bold text-[#063955] dark:text-white uppercase tracking-wider mb-4">
             Horários preferidos de cada colaborador
           </h4>

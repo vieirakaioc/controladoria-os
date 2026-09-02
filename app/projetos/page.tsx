@@ -191,7 +191,7 @@ export default function ProjetosPage() {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-8 font-sans">
       <Toaster position="bottom-right" toastOptions={{ style: { background: '#031D2D', color: '#fff' } }} />
 
-      <header className="flex justify-between items-center mb-8 bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100/50 dark:border-slate-800/50">
+      <header className="flex justify-between items-center mb-8 bg-white dark:bg-slate-900 p-6 rounded-lg shadow-sm border border-slate-100/50 dark:border-slate-800/50">
         <div>
           <h1 className="text-3xl font-extrabold text-slate-950 dark:text-white tracking-tighter flex items-center gap-3">
             <Briefcase className="text-[#C7A77B]" size={28} /> Gestão de Projetos
@@ -200,7 +200,7 @@ export default function ProjetosPage() {
         </div>
 
         {isAdmin && (
-          <button onClick={abrirCriacao} className="flex items-center gap-2 bg-[#031D2D] hover:bg-[#063955] text-[#E5D6A7] px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-md">
+          <button onClick={abrirCriacao} className="flex items-center gap-2 bg-[#031D2D] hover:bg-[#063955] text-[#E5D6A7] px-6 py-3 rounded-md text-sm font-bold transition-all shadow-md">
             <Plus size={18} /> Novo Projeto
           </button>
         )}
@@ -214,7 +214,7 @@ export default function ProjetosPage() {
             const isExpanded = expandedProjId === proj.id
             
             return (
-              <div key={proj.id} className="bg-white dark:bg-slate-900 border border-slate-100/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col relative overflow-hidden group">
+              <div key={proj.id} className="bg-white dark:bg-slate-900 border border-slate-100/80 dark:border-slate-800 rounded-lg p-6 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col relative overflow-hidden group">
                 <div className={`absolute top-0 left-0 w-full h-1.5 ${proj.status === 'Concluído' ? 'bg-[#5A755C]' : 'bg-[#C7A77B]'}`}></div>
                 
                 <div className="flex justify-between items-start mb-4 pt-2 gap-3">
@@ -227,14 +227,14 @@ export default function ProjetosPage() {
                       <>
                         <button
                           onClick={() => abrirEdicao(proj)}
-                          className="text-slate-400 hover:text-[#0f88a8] dark:hover:text-[#38bdf8] hover:bg-slate-100 dark:hover:bg-slate-800 p-1.5 rounded-lg transition-colors"
+                          className="text-slate-400 hover:text-[#0f88a8] dark:hover:text-[#38bdf8] hover:bg-slate-100 dark:hover:bg-slate-800 p-1.5 rounded-md transition-colors"
                           title="Editar projeto"
                         >
                           <Pencil size={14} />
                         </button>
                         <button
                           onClick={() => apagarProjeto(proj)}
-                          className="text-slate-400 hover:text-[#b43a3d] dark:hover:text-[#f87171] hover:bg-slate-100 dark:hover:bg-slate-800 p-1.5 rounded-lg transition-colors"
+                          className="text-slate-400 hover:text-[#b43a3d] dark:hover:text-[#f87171] hover:bg-slate-100 dark:hover:bg-slate-800 p-1.5 rounded-md transition-colors"
                           title="Apagar projeto"
                         >
                           <Trash2 size={14} />
@@ -247,7 +247,7 @@ export default function ProjetosPage() {
                 <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 line-clamp-2 min-h-[40px]">{proj.descricao || 'Sem descrição'}</p>
 
                 <div className="mt-auto space-y-6">
-                  <div className="flex justify-between text-xs font-semibold text-slate-500 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                  <div className="flex justify-between text-xs font-semibold text-slate-500 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-md border border-slate-100 dark:border-slate-800">
                     <div className="flex items-center gap-1.5"><Calendar size={14} className="text-[#C7A77B]"/> Início: {formatarData(proj.data_inicio)}</div>
                     <div className="flex items-center gap-1.5"><Clock size={14} className="text-[#031D2D] dark:text-white"/> Prazo: {formatarData(proj.data_fim_prevista)}</div>
                   </div>
@@ -287,7 +287,7 @@ export default function ProjetosPage() {
                           const nomes = respsList.length > 0 ? respsList.map((res:any) => res.nome).join(', ') : 'Sem Responsável';
                           
                           return (
-                            <div key={t.id} className="bg-slate-50 dark:bg-slate-800/40 p-3 rounded-xl border border-slate-100 dark:border-slate-700/50 flex flex-col gap-2 hover:border-[#0f88a8]/30 transition-colors">
+                            <div key={t.id} className="bg-slate-50 dark:bg-slate-800/40 p-3 rounded-md border border-slate-100 dark:border-slate-700/50 flex flex-col gap-2 hover:border-[#0f88a8]/30 transition-colors">
                               <div className="flex justify-between items-start gap-3">
                                 <span className="text-sm font-semibold text-slate-800 dark:text-white leading-tight">
                                   {t.atividades?.nome_atividade || 'Tarefa sem nome'}
@@ -310,7 +310,7 @@ export default function ProjetosPage() {
                           )
                         })}
                         {(!proj.tarefas || proj.tarefas.length === 0) && (
-                          <div className="text-center py-6 bg-slate-50 dark:bg-slate-800/30 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
+                          <div className="text-center py-6 bg-slate-50 dark:bg-slate-800/30 rounded-md border border-dashed border-slate-200 dark:border-slate-700">
                             <p className="text-xs text-slate-400 font-medium">Nenhuma tarefa vinculada a este projeto ainda.</p>
                           </div>
                         )}
@@ -329,7 +329,7 @@ export default function ProjetosPage() {
           })}
           
           {projetos.length === 0 && (
-            <div className="col-span-full text-center py-20 text-slate-500 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 shadow-sm">
+            <div className="col-span-full text-center py-20 text-slate-500 bg-white dark:bg-slate-900 rounded-lg border border-dashed border-slate-200 dark:border-slate-800 shadow-sm">
               Nenhum projeto ativo no momento. 
               {isAdmin && <span className="block mt-2 font-semibold text-[#031D2D] dark:text-white">Clique no botão "Novo Projeto" lá no topo para começar.</span>}
             </div>
@@ -340,7 +340,7 @@ export default function ProjetosPage() {
       {/* MODAL NOVO PROJETO (Apenas Admin) */}
       {modalOpen && isAdmin && (
         <div className="fixed inset-0 bg-[#031D2D]/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-950/50">
               <h2 className="text-xl font-bold text-slate-900 dark:text-white">{editingId ? 'Editar Projeto' : 'Criar Novo Projeto'}</h2>
               <button onClick={() => { setModalOpen(false); setEditingId(null) }} className="text-slate-400 hover:text-slate-600 bg-white dark:bg-slate-800 rounded-full p-1 border border-slate-200 dark:border-slate-700 transition-colors">✕</button>
@@ -348,20 +348,20 @@ export default function ProjetosPage() {
             <div className="p-6 space-y-5">
               <div>
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Nome do Projeto</label>
-                <input value={novoNome} onChange={e => setNovoNome(e.target.value)} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 rounded-xl px-4 py-3 outline-none focus:border-[#C7A77B] text-slate-800 dark:text-white font-medium transition-colors" placeholder="Ex: Construção Dormitório..." />
+                <input value={novoNome} onChange={e => setNovoNome(e.target.value)} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 rounded-md px-4 py-3 outline-none focus:border-[#C7A77B] text-slate-800 dark:text-white font-medium transition-colors" placeholder="Ex: Construção Dormitório..." />
               </div>
               <div>
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Descrição / Objetivo</label>
-                <textarea value={novaDesc} onChange={e => setNovaDesc(e.target.value)} rows={3} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 rounded-xl px-4 py-3 outline-none focus:border-[#C7A77B] text-slate-800 dark:text-white font-medium resize-none transition-colors" placeholder="Qual o grande objetivo desta iniciativa?" />
+                <textarea value={novaDesc} onChange={e => setNovaDesc(e.target.value)} rows={3} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 rounded-md px-4 py-3 outline-none focus:border-[#C7A77B] text-slate-800 dark:text-white font-medium resize-none transition-colors" placeholder="Qual o grande objetivo desta iniciativa?" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Data Início</label>
-                  <input type="date" value={novoInicio} onChange={e => setNovoInicio(e.target.value)} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 rounded-xl px-4 py-3 outline-none focus:border-[#C7A77B] text-slate-800 dark:text-white font-medium transition-colors" />
+                  <input type="date" value={novoInicio} onChange={e => setNovoInicio(e.target.value)} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 rounded-md px-4 py-3 outline-none focus:border-[#C7A77B] text-slate-800 dark:text-white font-medium transition-colors" />
                 </div>
                 <div>
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Previsão Fim</label>
-                  <input type="date" value={novoFim} onChange={e => setNovoFim(e.target.value)} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 rounded-xl px-4 py-3 outline-none focus:border-[#C7A77B] text-slate-800 dark:text-white font-medium transition-colors" />
+                  <input type="date" value={novoFim} onChange={e => setNovoFim(e.target.value)} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 rounded-md px-4 py-3 outline-none focus:border-[#C7A77B] text-slate-800 dark:text-white font-medium transition-colors" />
                 </div>
               </div>
               <div>
@@ -369,7 +369,7 @@ export default function ProjetosPage() {
                 <select
                   value={novoStatus}
                   onChange={e => setNovoStatus(e.target.value)}
-                  className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 rounded-xl px-4 py-3 outline-none focus:border-[#C7A77B] text-slate-800 dark:text-white font-medium transition-colors"
+                  className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 rounded-md px-4 py-3 outline-none focus:border-[#C7A77B] text-slate-800 dark:text-white font-medium transition-colors"
                 >
                   <option value="Em Andamento" className="dark:bg-slate-900">Em Andamento</option>
                   <option value="Concluído" className="dark:bg-slate-900">Concluído</option>
@@ -379,8 +379,8 @@ export default function ProjetosPage() {
               </div>
             </div>
             <div className="p-6 bg-slate-50/50 dark:bg-slate-950/50 flex justify-end gap-3 border-t border-slate-100 dark:border-slate-800">
-              <button onClick={() => { setModalOpen(false); setEditingId(null) }} className="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-200 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">Cancelar</button>
-              <button onClick={salvarProjeto} disabled={salvando} className="bg-[#C7A77B] hover:bg-[#A68A63] text-[#031D2D] px-6 py-2.5 rounded-xl text-sm font-bold shadow-md transition-colors disabled:opacity-50 tracking-tight">
+              <button onClick={() => { setModalOpen(false); setEditingId(null) }} className="px-5 py-2.5 rounded-md text-sm font-semibold text-slate-600 hover:bg-slate-200 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">Cancelar</button>
+              <button onClick={salvarProjeto} disabled={salvando} className="bg-[#C7A77B] hover:bg-[#A68A63] text-[#031D2D] px-6 py-2.5 rounded-md text-sm font-bold shadow-md transition-colors disabled:opacity-50 tracking-tight">
                 {salvando ? 'A processar...' : (editingId ? 'Salvar Alterações' : 'Salvar Projeto')}
               </button>
             </div>

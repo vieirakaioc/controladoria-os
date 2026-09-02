@@ -39,7 +39,7 @@ export function BoardColumn({ status, tasks, statuses, statusOrderMap, setStatus
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className={`rounded-2xl border flex-1 min-w-[320px] flex flex-col max-h-[75vh] transition-colors ${isOver ? 'bg-[#0f88a8]/10 dark:bg-[#0f88a8]/20 border-[#0f88a8]/50 border-dashed' : 'bg-slate-100/50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800'}`}
+      className={`rounded-lg border flex-1 min-w-[320px] flex flex-col max-h-[75vh] transition-colors ${isOver ? 'bg-[#0f88a8]/10 dark:bg-[#0f88a8]/20 border-[#0f88a8]/50 border-dashed' : 'bg-slate-100/50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800'}`}
     >
       <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-100/80 dark:bg-slate-800/80 rounded-t-2xl">
         <span className={`font-medium ${isOver ? 'text-[#0f88a8] dark:text-[#7dd3fc]' : 'text-slate-700 dark:text-slate-200'}`}>{status}</span>

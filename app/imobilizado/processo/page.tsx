@@ -148,11 +148,11 @@ export default function PaginaProcesso() {
             {pessoas.map((p) => (
               <li
                 key={p.id}
-                className={`flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 ${
+                className={`flex items-center gap-3 rounded-md border border-slate-200 bg-white px-3 py-2.5 ${
                   p.ativo ? '' : 'opacity-50'
                 }`}
               >
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-400">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-400">
                   <Users size={15} />
                 </span>
                 <div className="min-w-0 flex-1">
@@ -247,7 +247,7 @@ function CampoPrazo({
           if (e.key === 'Escape') setRascunho(String(valor))
         }}
         aria-label={`Prazo da etapa em dias úteis`}
-        className="w-16 rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm tabular-nums text-slate-700 outline-none focus:border-[#0f88a8]"
+        className="w-16 rounded-md border border-slate-300 bg-white px-2 py-1 text-sm tabular-nums text-slate-700 outline-none focus:border-[#0f88a8]"
       />
       <span className="text-xs text-slate-400">d.u.</span>
       {salvando && <Loader2 size={13} className="animate-spin text-slate-400" />}

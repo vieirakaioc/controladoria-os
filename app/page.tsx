@@ -927,7 +927,7 @@ export default function Home() {
         <ShieldAlert size={64} className="text-[#b43a3d] dark:text-[#f87171] mb-4 opacity-80" />
         <h1 className="text-2xl font-bold text-[#063955] dark:text-white">Acesso Restrito</h1>
         <p className="text-slate-500 dark:text-slate-400 mt-2 max-w-md">Apenas administradores podem aceder à Central de Sincronização.</p>
-        <button onClick={() => router.push('/tarefas')} className="mt-6 bg-[#0f88a8] hover:bg-[#0c708b] dark:hover:bg-[#0284c7] text-white px-6 py-2.5 rounded-xl font-medium shadow-sm transition-colors">
+        <button onClick={() => router.push('/tarefas')} className="mt-6 bg-[#0f88a8] hover:bg-[#0c708b] dark:hover:bg-[#0284c7] text-white px-6 py-2.5 rounded-md font-medium shadow-sm transition-colors">
           Ir para o Kanban
         </button>
       </div>
@@ -940,7 +940,7 @@ export default function Home() {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-8 font-sans transition-colors duration-300">
       <Toaster position="bottom-right" toastOptions={{ style: { background: '#063955', color: '#fff', borderRadius: '12px' } }} />
 
-      <header className="mb-8 bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors">
+      <header className="mb-8 bg-white dark:bg-slate-900 p-6 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors">
         <div>
           <h1 className="text-2xl font-bold text-[#063955] dark:text-white tracking-tight flex items-center gap-2">
             <RefreshCw className="text-[#0f88a8] dark:text-[#38bdf8]" /> Central de Sincronização
@@ -949,11 +949,11 @@ export default function Home() {
         </div>
         
         <div className="flex items-center gap-3">
-          <button onClick={exportarParaExcel} className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-4 py-2 rounded-xl text-sm font-medium transition-colors">
+          <button onClick={exportarParaExcel} className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-4 py-2 rounded-md text-sm font-medium transition-colors">
             <Download size={16} /> Exportar
           </button>
           
-          <label className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-[#0f88a8] text-[#0f88a8] dark:text-[#38bdf8] hover:bg-[#0f88a8]/5 dark:hover:bg-white/5 px-4 py-2 rounded-xl text-sm font-medium cursor-pointer transition-colors shadow-sm">
+          <label className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-[#0f88a8] text-[#0f88a8] dark:text-[#38bdf8] hover:bg-[#0f88a8]/5 dark:hover:bg-white/5 px-4 py-2 rounded-md text-sm font-medium cursor-pointer transition-colors shadow-sm">
             <Upload size={16} /> {fazendoUpload ? 'A ler XLS...' : 'Importar Excel'}
             <input type="file" className="hidden" onChange={handleFileUpload} disabled={fazendoUpload} accept=".xlsx,.xls" />
           </label>
@@ -962,20 +962,20 @@ export default function Home() {
 
       {/* DASHBOARD DO ROBÔ */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-8 shadow-sm flex flex-col h-full transition-colors">
+        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-lg p-8 shadow-sm flex flex-col h-full transition-colors">
           <div className="mb-6">
             <h2 className="text-lg font-bold text-[#063955] dark:text-white mb-1">Cálculo de Prazos</h2>
             <p className="text-sm text-slate-500 dark:text-slate-400 mb-5">Selecione o mês para projetar os novos dias úteis e feriados.</p>
             
             <div className="flex gap-4">
-              <select value={mesAlvo} onChange={(e) => setMesAlvo(Number(e.target.value))} className="flex-1 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-200 outline-none focus:border-[#0f88a8] transition-colors">
+              <select value={mesAlvo} onChange={(e) => setMesAlvo(Number(e.target.value))} className="flex-1 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-md px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-200 outline-none focus:border-[#0f88a8] transition-colors">
                 {MESES.map((m) => <option key={m.v} value={m.v}>{m.n}</option>)}
               </select>
-              <input type="number" value={anoAlvo} onChange={(e) => setAnoAlvo(Number(e.target.value))} className="w-32 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-200 outline-none focus:border-[#0f88a8] transition-colors" />
+              <input type="number" value={anoAlvo} onChange={(e) => setAnoAlvo(Number(e.target.value))} className="w-32 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-md px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-200 outline-none focus:border-[#0f88a8] transition-colors" />
             </div>
           </div>
 
-          <div className="mt-auto bg-slate-50 dark:bg-slate-950 p-5 rounded-xl border border-slate-100 dark:border-slate-800 transition-colors">
+          <div className="mt-auto bg-slate-50 dark:bg-slate-950 p-5 rounded-md border border-slate-100 dark:border-slate-800 transition-colors">
             <h3 className="text-sm font-bold text-[#063955] dark:text-white mb-2 flex items-center gap-2">
               <ShieldAlert size={16} className="text-[#efc486] dark:text-amber-400" /> Motor Inteligente
             </h3>
@@ -985,12 +985,12 @@ export default function Home() {
             </p>
           </div>
 
-          <button onClick={gerarCicloDoMes} disabled={gerandoCiclo || fazendoUpload || atividades.length === 0} className="mt-6 w-full flex items-center justify-center gap-2 bg-[#063955] dark:bg-[#38bdf8] hover:bg-[#042436] dark:hover:bg-[#0284c7] text-white dark:text-slate-950 font-semibold py-4 rounded-xl shadow-md transition-all disabled:opacity-50">
+          <button onClick={gerarCicloDoMes} disabled={gerandoCiclo || fazendoUpload || atividades.length === 0} className="mt-6 w-full flex items-center justify-center gap-2 bg-[#063955] dark:bg-[#38bdf8] hover:bg-[#042436] dark:hover:bg-[#0284c7] text-white dark:text-slate-950 font-semibold py-4 rounded-md shadow-md transition-all disabled:opacity-50">
             {gerandoCiclo ? <span className="animate-pulse">A calcular rotinas...</span> : <><Play size={18} className="text-[#efc486] dark:text-slate-950" /> Executar Sincronização Mensal</>}
           </button>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-8 shadow-sm flex flex-col items-center justify-center text-center transition-colors">
+        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-lg p-8 shadow-sm flex flex-col items-center justify-center text-center transition-colors">
           <div className="w-48 h-48 relative mb-6">
             <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
               <path className="text-slate-100 dark:text-slate-800" strokeWidth="3" stroke="currentColor" fill="none" strokeLinecap="round" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
@@ -1004,33 +1004,33 @@ export default function Home() {
           <h2 className="text-xl font-bold text-[#063955] dark:text-white">{progresso >= 100 ? 'Cronograma Fechado!' : 'Aguardando Geração'}</h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 mb-6">Para <strong>{MESES[mesAlvo].n} de {anoAlvo}</strong>.</p>
           <div className="flex gap-4 w-full">
-            <div className="flex-1 bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-100 dark:border-slate-800 text-center transition-colors"><span className="block text-2xl font-bold text-[#063955] dark:text-white mb-1">{stats.rotinasAtivas}</span><span className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Base</span></div>
-            <div className="flex-1 bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-100 dark:border-slate-800 text-center transition-colors"><span className={`block text-2xl font-bold mb-1 ${stats.geradasNoMes >= stats.rotinasAtivas ? 'text-[#2d6943] dark:text-[#4ade80]' : 'text-[#0f88a8] dark:text-[#38bdf8]'}`}>{stats.geradasNoMes}</span><span className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Geradas</span></div>
+            <div className="flex-1 bg-slate-50 dark:bg-slate-950 p-4 rounded-md border border-slate-100 dark:border-slate-800 text-center transition-colors"><span className="block text-2xl font-bold text-[#063955] dark:text-white mb-1">{stats.rotinasAtivas}</span><span className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Base</span></div>
+            <div className="flex-1 bg-slate-50 dark:bg-slate-950 p-4 rounded-md border border-slate-100 dark:border-slate-800 text-center transition-colors"><span className={`block text-2xl font-bold mb-1 ${stats.geradasNoMes >= stats.rotinasAtivas ? 'text-[#2d6943] dark:text-[#4ade80]' : 'text-[#0f88a8] dark:text-[#38bdf8]'}`}>{stats.geradasNoMes}</span><span className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Geradas</span></div>
           </div>
         </div>
       </div>
 
       {/* ZONA DE PERIGO */}
-      <div className="mb-8 p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 transition-colors">
+      <div className="mb-8 p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-lg shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 transition-colors">
         <div>
           <h3 className="text-base font-bold text-[#063955] dark:text-white">Manutenção de Dados (Zona de Perigo)</h3>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Limpe o banco em caso de erro na importação da planilha ou acúmulo de Ad Hocs antigos.</p>
         </div>
         <div className="flex flex-wrap gap-3">
-          <button onClick={limparAdHoc} disabled={fazendoUpload} className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-[#efc486] dark:border-amber-500/50 text-[#063955] dark:text-amber-400 hover:bg-[#efc486]/20 dark:hover:bg-amber-500/10 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50">
+          <button onClick={limparAdHoc} disabled={fazendoUpload} className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-[#efc486] dark:border-amber-500/50 text-[#063955] dark:text-amber-400 hover:bg-[#efc486]/20 dark:hover:bg-amber-500/10 px-4 py-2.5 rounded-md text-sm font-semibold transition-colors disabled:opacity-50">
             <Trash2 size={16} className="text-[#efc486] dark:text-amber-400" /> Limpar Ad Hocs
           </button>
           <button
             onClick={() => { setRespDelOpen(true); setRespDelId(''); setRespDelEscopo('todas'); setRespDelPreview(null) }}
             disabled={fazendoUpload}
-            className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-[#0f88a8] dark:border-[#38bdf8]/50 text-[#0f88a8] dark:text-[#38bdf8] hover:bg-[#0f88a8]/10 dark:hover:bg-[#38bdf8]/10 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-[#0f88a8] dark:border-[#38bdf8]/50 text-[#0f88a8] dark:text-[#38bdf8] hover:bg-[#0f88a8]/10 dark:hover:bg-[#38bdf8]/10 px-4 py-2.5 rounded-md text-sm font-semibold transition-colors disabled:opacity-50"
           >
             <UserX size={16} /> Apagar por Responsável
           </button>
           <button
             onClick={() => { setBaseDelOpen(true); setBaseDelMes(-1); setBaseDelPreview(null); carregarPreviewBaseDel(-1, baseDelAno) }}
             disabled={fazendoUpload}
-            className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-[#b43a3d] dark:border-[#f87171]/50 text-[#b43a3d] dark:text-[#f87171] hover:bg-[#b43a3d]/10 dark:hover:bg-[#f87171]/10 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-[#b43a3d] dark:border-[#f87171]/50 text-[#b43a3d] dark:text-[#f87171] hover:bg-[#b43a3d]/10 dark:hover:bg-[#f87171]/10 px-4 py-2.5 rounded-md text-sm font-semibold transition-colors disabled:opacity-50"
           >
             <Trash2 size={16} /> Apagar Base Sincronizada
           </button>
@@ -1038,7 +1038,7 @@ export default function Home() {
       </div>
 
       {/* TABELA DE VISUALIZAÇÃO */}
-      <main className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden transition-colors">
+      <main className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden transition-colors">
         <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex justify-between items-center transition-colors">
           <span className="text-sm font-semibold text-[#063955] dark:text-white">Dicionário de Atividades ({atividades.length})</span>
         </div>
@@ -1088,7 +1088,7 @@ export default function Home() {
             className="absolute inset-0 bg-[#031D2D]/60 dark:bg-black/80 backdrop-blur-md transition-opacity"
             onClick={() => !respDelSaving && setRespDelOpen(false)}
           />
-          <div className="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-100 dark:border-slate-800 animate-in zoom-in-95 duration-200">
+          <div className="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-lg shadow-xl flex flex-col overflow-hidden border border-slate-100 dark:border-slate-800 animate-in zoom-in-95 duration-200">
             <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-start bg-slate-50/50 dark:bg-slate-950/50">
               <div>
                 <span className="text-xs text-[#b43a3d] dark:text-[#f87171] font-semibold tracking-wide uppercase">Zona de Perigo</span>
@@ -1124,7 +1124,7 @@ export default function Home() {
                     else setRespDelPreview(null)
                   }}
                   disabled={respDelSaving}
-                  className="w-full bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-xl px-3 py-3 text-sm outline-none focus:border-[#0f88a8] disabled:opacity-50"
+                  className="w-full bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-md px-3 py-3 text-sm outline-none focus:border-[#0f88a8] disabled:opacity-50"
                 >
                   <option value="" className="dark:bg-slate-900">— Selecione —</option>
                   {respsLista.map(r => (
@@ -1154,7 +1154,7 @@ export default function Home() {
                         setRespDelEscopo(opt.v)
                         if (respDelId) carregarPreviewExclusaoResp(respDelId, opt.v, respDelMes, respDelAno)
                       }}
-                      className={`p-3 rounded-xl border text-left transition-colors disabled:opacity-50 ${
+                      className={`p-3 rounded-md border text-left transition-colors disabled:opacity-50 ${
                         respDelEscopo === opt.v
                           ? 'border-[#0f88a8] bg-[#0f88a8]/10 dark:bg-[#38bdf8]/10'
                           : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
@@ -1183,7 +1183,7 @@ export default function Home() {
                       if (respDelId) carregarPreviewExclusaoResp(respDelId, respDelEscopo, m, respDelAno)
                     }}
                     disabled={respDelSaving}
-                    className="flex-1 bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#0f88a8] disabled:opacity-50"
+                    className="flex-1 bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-md px-3 py-2.5 text-sm outline-none focus:border-[#0f88a8] disabled:opacity-50"
                   >
                     <option value={-1} className="dark:bg-slate-900">Todos os meses (apaga matriz)</option>
                     {MESES.map(m => <option key={m.v} value={m.v} className="dark:bg-slate-900">{m.n}</option>)}
@@ -1197,7 +1197,7 @@ export default function Home() {
                       if (respDelId && respDelMes >= 0) carregarPreviewExclusaoResp(respDelId, respDelEscopo, respDelMes, a)
                     }}
                     disabled={respDelSaving || respDelMes < 0}
-                    className="w-24 bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#0f88a8] disabled:opacity-50"
+                    className="w-24 bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-md px-3 py-2.5 text-sm outline-none focus:border-[#0f88a8] disabled:opacity-50"
                   />
                 </div>
                 {respDelMes >= 0 && (
@@ -1208,7 +1208,7 @@ export default function Home() {
               </div>
 
               {respDelId && (
-                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-100 dark:border-slate-700/50">
+                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-md p-4 border border-slate-100 dark:border-slate-700/50">
                   {respDelLoading ? (
                     <div className="text-sm text-slate-500 dark:text-slate-400 animate-pulse">A calcular impacto...</div>
                   ) : respDelPreview ? (
@@ -1242,14 +1242,14 @@ export default function Home() {
               <button
                 onClick={() => setRespDelOpen(false)}
                 disabled={respDelSaving}
-                className="px-5 py-3 rounded-xl text-sm font-semibold text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors disabled:opacity-50"
+                className="px-5 py-3 rounded-md text-sm font-semibold text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors disabled:opacity-50"
               >
                 Cancelar
               </button>
               <button
                 onClick={apagarPorResponsavel}
                 disabled={respDelSaving || !respDelId || !respDelPreview || (respDelPreview.atividades === 0 && respDelPreview.tarefas === 0)}
-                className="bg-[#b43a3d] hover:bg-[#9a2f31] text-white px-5 py-3 rounded-xl text-sm font-semibold transition-colors shadow-sm disabled:opacity-50"
+                className="bg-[#b43a3d] hover:bg-[#9a2f31] text-white px-5 py-3 rounded-md text-sm font-semibold transition-colors shadow-sm disabled:opacity-50"
               >
                 {respDelSaving ? 'A apagar...' : 'Apagar Atividades'}
               </button>
@@ -1265,7 +1265,7 @@ export default function Home() {
             className="absolute inset-0 bg-[#031D2D]/60 dark:bg-black/80 backdrop-blur-md transition-opacity"
             onClick={() => !baseDelSaving && setBaseDelOpen(false)}
           />
-          <div className="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-100 dark:border-slate-800 animate-in zoom-in-95 duration-200">
+          <div className="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-lg shadow-xl flex flex-col overflow-hidden border border-slate-100 dark:border-slate-800 animate-in zoom-in-95 duration-200">
             <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-start bg-slate-50/50 dark:bg-slate-950/50">
               <div>
                 <span className="text-xs text-[#b43a3d] dark:text-[#f87171] font-semibold tracking-wide uppercase">Zona de Perigo</span>
@@ -1295,7 +1295,7 @@ export default function Home() {
                       carregarPreviewBaseDel(m, baseDelAno)
                     }}
                     disabled={baseDelSaving}
-                    className="flex-1 bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#0f88a8] disabled:opacity-50"
+                    className="flex-1 bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-md px-3 py-2.5 text-sm outline-none focus:border-[#0f88a8] disabled:opacity-50"
                   >
                     <option value={-1} className="dark:bg-slate-900">Todos os meses (apaga matriz)</option>
                     {MESES.map(m => <option key={m.v} value={m.v} className="dark:bg-slate-900">{m.n}</option>)}
@@ -1309,7 +1309,7 @@ export default function Home() {
                       if (baseDelMes >= 0) carregarPreviewBaseDel(baseDelMes, a)
                     }}
                     disabled={baseDelSaving || baseDelMes < 0}
-                    className="w-24 bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#0f88a8] disabled:opacity-50"
+                    className="w-24 bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-md px-3 py-2.5 text-sm outline-none focus:border-[#0f88a8] disabled:opacity-50"
                   />
                 </div>
                 {baseDelMes >= 0 && (
@@ -1324,7 +1324,7 @@ export default function Home() {
                 )}
               </div>
 
-              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-100 dark:border-slate-700/50">
+              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-md p-4 border border-slate-100 dark:border-slate-700/50">
                 {baseDelLoading ? (
                   <div className="text-sm text-slate-500 dark:text-slate-400 animate-pulse">A calcular impacto...</div>
                 ) : baseDelPreview ? (
@@ -1355,14 +1355,14 @@ export default function Home() {
               <button
                 onClick={() => setBaseDelOpen(false)}
                 disabled={baseDelSaving}
-                className="px-5 py-3 rounded-xl text-sm font-semibold text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors disabled:opacity-50"
+                className="px-5 py-3 rounded-md text-sm font-semibold text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors disabled:opacity-50"
               >
                 Cancelar
               </button>
               <button
                 onClick={apagarBaseComMes}
                 disabled={baseDelSaving || !baseDelPreview || (baseDelPreview.atividades === 0 && baseDelPreview.tarefas === 0)}
-                className="bg-[#b43a3d] hover:bg-[#9a2f31] text-white px-5 py-3 rounded-xl text-sm font-semibold transition-colors shadow-sm disabled:opacity-50"
+                className="bg-[#b43a3d] hover:bg-[#9a2f31] text-white px-5 py-3 rounded-md text-sm font-semibold transition-colors shadow-sm disabled:opacity-50"
               >
                 {baseDelSaving ? 'A apagar...' : 'Apagar Base'}
               </button>

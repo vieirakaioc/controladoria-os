@@ -40,7 +40,7 @@ export function AdHocModal(props: Props) {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
       <div className="absolute inset-0 bg-[#031D2D]/60 dark:bg-black/80 backdrop-blur-md transition-opacity" onClick={onClose} />
-      <div className="relative bg-white dark:bg-slate-900 w-full max-w-2xl max-h-[95vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-100 dark:border-slate-800 animate-in zoom-in-95 duration-200">
+      <div className="relative bg-white dark:bg-slate-900 w-full max-w-2xl max-h-[95vh] rounded-lg shadow-xl flex flex-col overflow-hidden border border-slate-100 dark:border-slate-800 animate-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-start bg-slate-50/50 dark:bg-slate-950/50 shrink-0">
           <div>
@@ -57,7 +57,7 @@ export function AdHocModal(props: Props) {
             <input
               value={adhocNome}
               onChange={(e) => setAdhocNome(e.target.value)}
-              className="w-full bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-xl px-4 py-3 text-sm outline-none focus:border-[#0f88a8]"
+              className="w-full bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-md px-4 py-3 text-sm outline-none focus:border-[#0f88a8]"
               placeholder="Ex: Ajustar lançamento X..."
             />
           </div>
@@ -67,7 +67,7 @@ export function AdHocModal(props: Props) {
             <select
               value={adhocSetorId}
               onChange={(e) => setAdhocSetorId(e.target.value)}
-              className="w-full bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-xl px-3 py-3 text-sm outline-none focus:border-[#0f88a8]"
+              className="w-full bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-md px-3 py-3 text-sm outline-none focus:border-[#0f88a8]"
             >
               <option value="" className="dark:bg-slate-900">(sem setor)</option>
               {setoresDb.map(s => <option key={s.id} value={s.id} className="dark:bg-slate-900">{s.nome}</option>)}
@@ -79,7 +79,7 @@ export function AdHocModal(props: Props) {
               <span>Envolvidos na Tarefa</span>
               <span className="text-[#0f88a8] font-bold">{adhocResps.length} selecionado(s)</span>
             </label>
-            <div className="border rounded-xl p-2 max-h-36 overflow-y-auto bg-transparent border-slate-200 dark:border-slate-800 custom-scrollbar">
+            <div className="border rounded-md p-2 max-h-36 overflow-y-auto bg-transparent border-slate-200 dark:border-slate-800 custom-scrollbar">
               {respsDb.map(r => {
                 const isChecked = adhocResps.some(dr => dr.id === r.id)
                 return (
@@ -107,7 +107,7 @@ export function AdHocModal(props: Props) {
                 type="date"
                 value={adhocVenc}
                 onChange={(e) => setAdhocVenc(e.target.value)}
-                className="w-full bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-xl px-4 py-3 text-sm outline-none focus:border-[#0f88a8]"
+                className="w-full bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-md px-4 py-3 text-sm outline-none focus:border-[#0f88a8]"
               />
             </div>
             <div>
@@ -115,7 +115,7 @@ export function AdHocModal(props: Props) {
               <select
                 value={adhocPrioridade}
                 onChange={(e) => setAdhocPrioridade(e.target.value)}
-                className="w-full bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-xl px-3 py-3 text-sm outline-none focus:border-[#0f88a8]"
+                className="w-full bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-md px-3 py-3 text-sm outline-none focus:border-[#0f88a8]"
               >
                 <option value="Baixa" className="dark:bg-slate-900">Baixa</option>
                 <option value="Média" className="dark:bg-slate-900">Média</option>
@@ -129,7 +129,7 @@ export function AdHocModal(props: Props) {
             <select
               value={adhocClassificacao}
               onChange={(e) => setAdhocClassificacao(e.target.value)}
-              className="w-full bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-xl px-3 py-3 text-sm outline-none focus:border-[#0f88a8]"
+              className="w-full bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-md px-3 py-3 text-sm outline-none focus:border-[#0f88a8]"
             >
               <option value="" className="dark:bg-slate-900">(Nenhuma)</option>
               {classificacoesDb.map(c => <option key={c.id} value={c.nome} className="dark:bg-slate-900">{c.nome}</option>)}
@@ -141,7 +141,7 @@ export function AdHocModal(props: Props) {
             <select
               value={adhocProjetoId}
               onChange={(e) => setAdhocProjetoId(e.target.value)}
-              className="w-full bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-xl px-3 py-3 text-sm outline-none focus:border-[#0f88a8]"
+              className="w-full bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-md px-3 py-3 text-sm outline-none focus:border-[#0f88a8]"
             >
               <option value="" className="dark:bg-slate-900">(Sem Projeto - Tarefa Solta)</option>
               {projetosDb.map(p => <option key={p.id} value={p.id} className="dark:bg-slate-900">{p.nome}</option>)}
@@ -154,7 +154,7 @@ export function AdHocModal(props: Props) {
               value={adhocObs}
               onChange={(e) => setAdhocObs(e.target.value)}
               rows={4}
-              className="w-full bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-xl px-4 py-3 text-sm outline-none focus:border-[#0f88a8] resize-none"
+              className="w-full bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-md px-4 py-3 text-sm outline-none focus:border-[#0f88a8] resize-none"
               placeholder="Forneça instruções, links ou contexto adicional para quem vai executar a tarefa..."
             />
           </div>
@@ -162,10 +162,10 @@ export function AdHocModal(props: Props) {
 
         {/* Footer */}
         <div className="p-5 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2 bg-slate-50 dark:bg-slate-950 shrink-0">
-          <button onClick={onClose} className="px-5 py-3 rounded-xl text-sm font-semibold text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors">
+          <button onClick={onClose} className="px-5 py-3 rounded-md text-sm font-semibold text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors">
             Cancelar
           </button>
-          <button onClick={onCriar} disabled={savingAdhoc} className="bg-[#0f88a8] text-white px-5 py-3 rounded-xl text-sm font-semibold hover:bg-[#0c708b] transition-colors shadow-sm disabled:opacity-50">
+          <button onClick={onCriar} disabled={savingAdhoc} className="bg-[#0f88a8] text-white px-5 py-3 rounded-md text-sm font-semibold hover:bg-[#0c708b] transition-colors shadow-sm disabled:opacity-50">
             {savingAdhoc ? 'A processar...' : 'Criar Tarefa'}
           </button>
         </div>

@@ -52,7 +52,7 @@ export function CalendarioFerias({ ausencias, mes, ano }: Props) {
 
   if (porPessoa.length === 0) {
     return (
-      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-12 text-center text-slate-500 dark:text-slate-400">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 p-12 text-center text-slate-500 dark:text-slate-400">
         Ninguém tem ausência cadastrada nesse mês.
       </div>
     )
@@ -70,7 +70,7 @@ export function CalendarioFerias({ ausencias, mes, ano }: Props) {
   }
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden">
+    <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden">
       <div className="overflow-x-auto">
         <table className="min-w-full">
           <thead className="bg-slate-50 dark:bg-slate-950">

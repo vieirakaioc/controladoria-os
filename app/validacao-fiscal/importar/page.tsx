@@ -134,7 +134,7 @@ export default function PaginaImportar() {
                           type="button"
                           onClick={() => pedirExclusao(lote)}
                           aria-label={`Excluir a importação ${lote.arquivo}`}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-500 transition-colors hover:border-[#b1272d] hover:text-[#b1272d]"
+                          className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-500 transition-colors hover:border-[#b1272d] hover:text-[#b1272d]"
                         >
                           <Trash2 size={13} />
                           Excluir
@@ -161,7 +161,7 @@ export default function PaginaImportar() {
             role="dialog"
             aria-modal="true"
             aria-label="Confirmar exclusão da importação"
-            className="relative w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl"
+            className="relative w-full max-w-lg rounded-lg border border-slate-200 bg-white p-6 shadow-xl"
           >
             <div className="flex items-start gap-3">
               <AlertTriangle size={22} className="mt-0.5 shrink-0" style={{ color: CORES.critico }} />
@@ -171,7 +171,7 @@ export default function PaginaImportar() {
               </div>
             </div>
 
-            <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-relaxed text-slate-600">
+            <div className="mt-4 rounded-md border border-slate-200 bg-slate-50 p-4 text-sm leading-relaxed text-slate-600">
               {contagem === null ? (
                 <span className="flex items-center gap-2 text-slate-400">
                   <Loader2 size={14} className="animate-spin" />
@@ -212,7 +212,7 @@ export default function PaginaImportar() {
                 type="button"
                 onClick={() => setAlvo(null)}
                 disabled={excluindo}
-                className="rounded-xl border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-40"
+                className="rounded-md border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-40"
               >
                 Cancelar
               </button>
@@ -221,7 +221,7 @@ export default function PaginaImportar() {
                 type="button"
                 onClick={confirmarExclusao}
                 disabled={excluindo || contagem === null}
-                className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-white transition-all hover:brightness-110 disabled:opacity-40"
+                className="inline-flex items-center gap-2 rounded-md px-5 py-2.5 text-sm font-bold text-white transition-all hover:brightness-110 disabled:opacity-40"
                 style={{ background: CORES.critico }}
               >
                 {excluindo ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}

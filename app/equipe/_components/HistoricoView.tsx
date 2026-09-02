@@ -32,7 +32,7 @@ function trend(linha: LinhaHistorico) {
 export function HistoricoView({ linhas, meses, loading }: Props) {
   if (loading) {
     return (
-      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-12 text-center text-[#0f88a8] dark:text-[#38bdf8] font-medium animate-pulse">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 p-12 text-center text-[#0f88a8] dark:text-[#38bdf8] font-medium animate-pulse">
         A carregar histórico de 6 meses...
       </div>
     )
@@ -40,7 +40,7 @@ export function HistoricoView({ linhas, meses, loading }: Props) {
 
   if (linhas.length === 0) {
     return (
-      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-12 text-center text-slate-500 dark:text-slate-400">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 p-12 text-center text-slate-500 dark:text-slate-400">
         Sem dados nos últimos meses pra mostrar histórico.
       </div>
     )
@@ -53,7 +53,7 @@ export function HistoricoView({ linhas, meses, loading }: Props) {
         <span>Heatmap de score por colaborador nos últimos {meses.length} meses. Cinza = não teve tarefa no mês.</span>
       </div>
 
-      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead className="bg-slate-50 dark:bg-slate-950">
@@ -79,7 +79,7 @@ export function HistoricoView({ linhas, meses, loading }: Props) {
                     {linha.scores.map((s, i) => (
                       <td key={i} className="px-2 py-3 text-center">
                         <div
-                          className={`mx-auto w-12 h-9 flex items-center justify-center rounded-lg font-bold text-sm tabular-nums ${corDoScore(s?.total)}`}
+                          className={`mx-auto w-12 h-9 flex items-center justify-center rounded-md font-bold text-sm tabular-nums ${corDoScore(s?.total)}`}
                           title={s ? `Conclusão ${s.conclusao}% · Volume ${s.volume}% · Pontualidade ${s.pontualidade}% · Aderência ${s.aderencia}% · Uso ${s.uso}%` : 'Sem tarefas neste mês'}
                         >
                           {s ? s.total : '—'}

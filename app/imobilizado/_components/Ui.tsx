@@ -19,7 +19,7 @@ export function Painel({
   className?: string
 }) {
   return (
-    <section className={`rounded-2xl border border-slate-200 bg-white p-5 shadow-sm ${className}`}>
+    <section className={`rounded-lg border border-slate-200 bg-white p-5 shadow-sm ${className}`}>
       {(titulo || acao) && (
         <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -48,7 +48,7 @@ export function Kpi({
   const cor = { neutro: '#063955', bom: CORES.bom, atencao: CORES.atencao, critico: CORES.critico }[tom]
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
       <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">{rotulo}</p>
       <p className="mt-2 text-3xl font-bold leading-none" style={{ color: cor }}>
         {valor}
@@ -62,7 +62,7 @@ export function Carregando({ linhas = 3 }: { linhas?: number }) {
   return (
     <div className="animate-pulse space-y-4">
       {Array.from({ length: linhas }).map((_, i) => (
-        <div key={i} className="h-24 rounded-2xl border border-slate-200 bg-white" />
+        <div key={i} className="h-24 rounded-lg border border-slate-200 bg-white" />
       ))}
     </div>
   )
@@ -74,7 +74,7 @@ export function AvisoErro({ mensagem }: { mensagem: string }) {
   return (
     <Painel>
       <div className="flex items-start gap-4">
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-3">
+        <div className="rounded-md border border-amber-200 bg-amber-50 p-3">
           <Database size={22} style={{ color: CORES.atencao }} />
         </div>
         <div className="min-w-0 flex-1">
@@ -99,8 +99,8 @@ export function AvisoErro({ mensagem }: { mensagem: string }) {
 
 export function SemAcesso() {
   return (
-    <div className="mx-auto flex max-w-xl flex-col items-center gap-4 rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
-      <div className="rounded-xl bg-slate-100 p-3 text-slate-400">
+    <div className="mx-auto flex max-w-xl flex-col items-center gap-4 rounded-lg border border-slate-200 bg-white p-10 text-center shadow-sm">
+      <div className="rounded-md bg-slate-100 p-3 text-slate-400">
         <Lock size={22} />
       </div>
       <h1 className="text-xl font-bold text-[#063955]">Acesso restrito</h1>

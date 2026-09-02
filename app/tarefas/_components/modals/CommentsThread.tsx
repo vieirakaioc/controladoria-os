@@ -118,7 +118,7 @@ export function CommentsThread({ tarefa, userId, userName, userEmail, respsDb, o
       </label>
 
       {mentionOpen && (
-        <div className="absolute bottom-full mb-2 left-0 w-64 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl overflow-hidden z-50">
+        <div className="absolute bottom-full mb-2 left-0 w-64 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md shadow-xl overflow-hidden z-50">
           <div className="bg-[#063955] dark:bg-slate-900 text-white text-xs font-bold px-4 py-2">Mencionar Colaborador</div>
           <div className="max-h-40 overflow-y-auto custom-scrollbar">
             {filtradosMention.map(r => (
@@ -145,16 +145,16 @@ export function CommentsThread({ tarefa, userId, userName, userEmail, respsDb, o
           onChange={handleInput}
           onKeyDown={e => e.key === 'Enter' && !mentionOpen && enviar()}
           placeholder="Escreva algo... (ex: @Patricia valida isto?)"
-          className="flex-1 bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-[#0f88a8] transition-colors"
+          className="flex-1 bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-md px-3 py-2 text-sm outline-none focus:border-[#0f88a8] transition-colors"
         />
-        <button onClick={enviar} className="bg-[#0f88a8] text-white px-4 rounded-xl text-sm font-medium hover:bg-[#0c708b] transition-colors">
+        <button onClick={enviar} className="bg-[#0f88a8] text-white px-4 rounded-md text-sm font-medium hover:bg-[#0c708b] transition-colors">
           Enviar
         </button>
       </div>
 
       <div className="mt-4 space-y-2">
         {comentarios.map(c => (
-          <div key={c.id} className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-100 dark:border-slate-700/50">
+          <div key={c.id} className="bg-slate-50 dark:bg-slate-800/50 rounded-md p-3 border border-slate-100 dark:border-slate-700/50">
             <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
               <span className="font-bold text-[#063955] dark:text-slate-200">{c.autor || 'Usuário'}</span>
               <span>{String(c.created_at).slice(0, 16).replace('T', ' ')}</span>

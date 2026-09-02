@@ -151,11 +151,11 @@ export function TutorialBoasVindas() {
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-[#031D2D]/70 dark:bg-black/90 backdrop-blur-md" onClick={fechar} />
 
-      <div className="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-slate-100 dark:border-slate-800 animate-in zoom-in-95 duration-200">
+      <div className="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-xl shadow-xl flex flex-col overflow-hidden border border-slate-100 dark:border-slate-800 animate-in zoom-in-95 duration-200">
         {/* Botão fechar */}
         <button
           onClick={fechar}
-          className="absolute top-4 right-4 z-10 text-slate-400 hover:text-[#063955] dark:hover:text-white p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          className="absolute top-4 right-4 z-10 text-slate-400 hover:text-[#063955] dark:hover:text-white p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           aria-label="Fechar tutorial"
         >
           <X size={18} />
@@ -163,7 +163,7 @@ export function TutorialBoasVindas() {
 
         {/* Slide content */}
         <div className="p-8 pt-12">
-          <div className="bg-gradient-to-br from-[#0f88a8]/10 to-[#063955]/10 dark:from-[#38bdf8]/15 dark:to-[#063955]/30 w-16 h-16 rounded-2xl flex items-center justify-center text-[#0f88a8] dark:text-[#38bdf8] mb-5">
+          <div className="bg-gradient-to-br from-[#0f88a8]/10 to-[#063955]/10 dark:from-[#38bdf8]/15 dark:to-[#063955]/30 w-16 h-16 rounded-lg flex items-center justify-center text-[#0f88a8] dark:text-[#38bdf8] mb-5">
             {slide.icon}
           </div>
           <h2 className="text-2xl font-bold text-[#063955] dark:text-white tracking-tight mb-3">
@@ -201,7 +201,7 @@ export function TutorialBoasVindas() {
             {step > 0 && (
               <button
                 onClick={() => setStep(s => s - 1)}
-                className="flex items-center gap-1 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 px-3 py-2 rounded-lg transition-colors"
+                className="flex items-center gap-1 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 px-3 py-2 rounded-md transition-colors"
               >
                 <ChevronLeft size={14} /> Voltar
               </button>
@@ -210,14 +210,14 @@ export function TutorialBoasVindas() {
               <Link
                 href="/ajuda"
                 onClick={fechar}
-                className="flex items-center gap-1.5 bg-[#063955] hover:bg-[#042436] text-white px-5 py-2 rounded-xl text-sm font-semibold transition-colors shadow-sm"
+                className="flex items-center gap-1.5 bg-[#063955] hover:bg-[#042436] text-white px-5 py-2 rounded-md text-sm font-semibold transition-colors shadow-sm"
               >
                 <BookOpen size={14} /> Ver Manual
               </Link>
             ) : (
               <button
                 onClick={() => setStep(s => Math.min(s + 1, total - 1))}
-                className="flex items-center gap-1 bg-[#0f88a8] hover:bg-[#0c708b] text-white px-5 py-2 rounded-xl text-sm font-semibold transition-colors shadow-sm"
+                className="flex items-center gap-1 bg-[#0f88a8] hover:bg-[#0c708b] text-white px-5 py-2 rounded-md text-sm font-semibold transition-colors shadow-sm"
               >
                 Próximo <ChevronRight size={14} />
               </button>
@@ -225,7 +225,7 @@ export function TutorialBoasVindas() {
             {ultimo && (
               <button
                 onClick={fechar}
-                className="bg-[#0f88a8] hover:bg-[#0c708b] text-white px-5 py-2 rounded-xl text-sm font-semibold transition-colors shadow-sm"
+                className="bg-[#0f88a8] hover:bg-[#0c708b] text-white px-5 py-2 rounded-md text-sm font-semibold transition-colors shadow-sm"
               >
                 Pronto 🚀
               </button>

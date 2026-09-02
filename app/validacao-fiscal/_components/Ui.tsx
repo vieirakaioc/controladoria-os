@@ -21,7 +21,7 @@ export function Painel({
   className?: string
 }) {
   return (
-    <section className={`bg-white rounded-2xl border border-slate-200 shadow-sm p-5 ${className}`}>
+    <section className={`bg-white rounded-lg border border-slate-200 shadow-sm p-5 ${className}`}>
       {(titulo || acao) && (
         <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -56,7 +56,7 @@ export function Kpi({
   }[tom]
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+    <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-4">
       <p className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">{rotulo}</p>
       <p className="mt-2 text-3xl font-bold leading-none" style={{ color: cor }}>
         {valor}
@@ -203,7 +203,7 @@ export function AvisoErro({ mensagem }: { mensagem: string }) {
   return (
     <Painel>
       <div className="flex items-start gap-4">
-        <div className="rounded-xl bg-amber-50 border border-amber-200 p-3">
+        <div className="rounded-md bg-amber-50 border border-amber-200 p-3">
           <Database size={22} style={{ color: CORES.atencao }} />
         </div>
 
@@ -233,7 +233,7 @@ export function Carregando({ linhas = 3 }: { linhas?: number }) {
   return (
     <div className="space-y-4 animate-pulse">
       {Array.from({ length: linhas }).map((_, i) => (
-        <div key={i} className="h-24 rounded-2xl bg-white border border-slate-200" />
+        <div key={i} className="h-24 rounded-lg bg-white border border-slate-200" />
       ))}
     </div>
   )

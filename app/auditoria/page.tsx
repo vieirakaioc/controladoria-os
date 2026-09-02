@@ -80,7 +80,7 @@ export default function AuditoriaPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 p-8 font-sans">
-      <header className="mb-8 bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <header className="mb-8 bg-white p-6 rounded-lg shadow-sm border border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">Trilha de Auditoria (Logs)</h1>
           <p className="text-slate-500 text-sm mt-1">Histórico de exclusões e edições críticas do sistema</p>
@@ -90,19 +90,19 @@ export default function AuditoriaPage() {
           <button 
             onClick={exportarParaCSV}
             disabled={logs.length === 0 || loading}
-            className="flex items-center gap-2 bg-[#0f88a8] hover:bg-[#0f88a8]/90 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors shadow-sm disabled:opacity-50"
+            className="flex items-center gap-2 bg-[#0f88a8] hover:bg-[#0f88a8]/90 text-white px-4 py-2 rounded-md text-sm font-semibold transition-colors shadow-sm disabled:opacity-50"
           >
             <Download size={16} />
             Exportar CSV
           </button>
 
-          <div className="bg-slate-100 text-slate-700 px-4 py-2 rounded-xl text-sm font-semibold tracking-wide uppercase shadow-sm">
+          <div className="bg-slate-100 text-slate-700 px-4 py-2 rounded-md text-sm font-semibold tracking-wide uppercase shadow-sm">
             Acesso Restrito
           </div>
         </div>
       </header>
 
-      <main className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+      <main className="bg-white rounded-lg shadow-sm border border-slate-100 overflow-hidden">
         {loading ? (
           <div className="p-8 text-center text-slate-500 font-medium">A encriptar e a carregar logs...</div>
         ) : (

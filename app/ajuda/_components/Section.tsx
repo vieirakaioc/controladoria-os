@@ -20,7 +20,7 @@ export function Section({ id, title, subtitle, children }: Props) {
   return (
     <section
       id={id}
-      className="scroll-mt-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden mb-6"
+      className="scroll-mt-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-lg shadow-sm overflow-hidden mb-6"
     >
       <header className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50">
         <div className="flex items-baseline gap-3">

@@ -87,7 +87,7 @@ export default function AcessosPage() {
         <ShieldAlert size={64} className="text-[#b43a3d] dark:text-[#f87171] mb-4 opacity-80" />
         <h1 className="text-2xl font-bold text-[#063955] dark:text-white">Acesso Restrito</h1>
         <p className="text-slate-500 dark:text-slate-400 mt-2 max-w-md">Esta área é um cofre de segurança. Apenas administradores do portal podem gerir os acessos da equipa.</p>
-        <button onClick={() => router.push('/tarefas')} className="mt-6 bg-[#0f88a8] hover:bg-[#0c708b] dark:hover:bg-[#0284c7] transition-colors text-white px-6 py-2.5 rounded-xl font-medium shadow-sm">
+        <button onClick={() => router.push('/tarefas')} className="mt-6 bg-[#0f88a8] hover:bg-[#0c708b] dark:hover:bg-[#0284c7] transition-colors text-white px-6 py-2.5 rounded-md font-medium shadow-sm">
           Voltar ao Kanban
         </button>
       </div>
@@ -98,8 +98,8 @@ export default function AcessosPage() {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-8 font-sans transition-colors duration-300">
       <Toaster position="bottom-right" toastOptions={{ style: { background: '#063955', color: '#fff', borderRadius: '12px' } }} />
 
-      <header className="mb-8 bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex items-center gap-4 transition-colors">
-        <div className="bg-[#0f88a8]/10 dark:bg-[#38bdf8]/10 p-3 rounded-xl text-[#0f88a8] dark:text-[#38bdf8]">
+      <header className="mb-8 bg-white dark:bg-slate-900 p-6 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 flex items-center gap-4 transition-colors">
+        <div className="bg-[#0f88a8]/10 dark:bg-[#38bdf8]/10 p-3 rounded-md text-[#0f88a8] dark:text-[#38bdf8]">
           <ShieldCheck size={32} />
         </div>
         <div>
@@ -108,7 +108,7 @@ export default function AcessosPage() {
         </div>
       </header>
 
-      <main className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden transition-colors">
+      <main className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden transition-colors">
         <div className="p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex justify-between items-center transition-colors">
           <span className="text-sm font-semibold text-[#063955] dark:text-white flex items-center gap-2">
             <Users size={16} className="text-[#0f88a8] dark:text-[#38bdf8]" /> Utilizadores Registados ({profiles.length})
@@ -164,7 +164,7 @@ export default function AcessosPage() {
                       value={p.role}
                       onChange={(e) => alterarRole(p.id, e.target.value)}
                       disabled={p.id === currentUserId || updating === p.id}
-                      className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-lg px-3 py-2 outline-none focus:border-[#0f88a8] dark:focus:border-[#38bdf8] focus:ring-1 focus:ring-[#0f88a8] transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                      className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-md px-3 py-2 outline-none focus:border-[#0f88a8] dark:focus:border-[#38bdf8] focus:ring-1 focus:ring-[#0f88a8] transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                     >
                       <option value="membro">Membro (Padrão)</option>
                       <option value="admin">Administrador</option>

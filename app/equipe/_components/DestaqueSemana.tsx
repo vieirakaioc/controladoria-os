@@ -30,7 +30,7 @@ export function DestaqueSemana({ top, semanaLabel, mensagem, loading }: Props) {
 
   if (loading) {
     return (
-      <div className="mb-6 bg-gradient-to-br from-amber-50 to-white dark:from-amber-500/10 dark:to-slate-900 border border-amber-200 dark:border-amber-500/30 rounded-2xl p-6 animate-pulse">
+      <div className="mb-6 bg-gradient-to-br from-amber-50 to-white dark:from-amber-500/10 dark:to-slate-900 border border-amber-200 dark:border-amber-500/30 rounded-lg p-6 animate-pulse">
         <div className="h-6 w-48 bg-amber-200/50 dark:bg-amber-500/20 rounded mb-3" />
         <div className="h-4 w-32 bg-amber-100 dark:bg-amber-500/10 rounded" />
       </div>
@@ -38,11 +38,11 @@ export function DestaqueSemana({ top, semanaLabel, mensagem, loading }: Props) {
   }
 
   return (
-    <div className="mb-6 bg-gradient-to-br from-amber-50 via-white to-amber-50/50 dark:from-amber-500/10 dark:via-slate-900 dark:to-amber-500/5 border-2 border-amber-200 dark:border-amber-500/30 rounded-2xl p-6 shadow-sm">
+    <div className="mb-6 bg-gradient-to-br from-amber-50 via-white to-amber-50/50 dark:from-amber-500/10 dark:via-slate-900 dark:to-amber-500/5 border-2 border-amber-200 dark:border-amber-500/30 rounded-lg p-6 shadow-sm">
       {/* Header com botões */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
         <div className="flex items-center gap-3">
-          <div className="bg-amber-500/20 dark:bg-amber-500/30 p-2.5 rounded-xl text-amber-600 dark:text-amber-400">
+          <div className="bg-amber-500/20 dark:bg-amber-500/30 p-2.5 rounded-md text-amber-600 dark:text-amber-400">
             <Trophy size={22} />
           </div>
           <div>
@@ -60,13 +60,13 @@ export function DestaqueSemana({ top, semanaLabel, mensagem, loading }: Props) {
         <div className="flex gap-2">
           <button
             onClick={copiarMensagem}
-            className="flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-3 py-2 rounded-xl text-xs font-semibold transition-colors shadow-sm"
+            className="flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-3 py-2 rounded-md text-xs font-semibold transition-colors shadow-sm"
           >
             <Copy size={13} /> Copiar
           </button>
           <button
             onClick={compartilharWhatsApp}
-            className="flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-2 rounded-xl text-xs font-bold transition-colors shadow-sm"
+            className="flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-2 rounded-md text-xs font-bold transition-colors shadow-sm"
           >
             <Share2 size={13} /> Compartilhar no WhatsApp
           </button>
@@ -89,7 +89,7 @@ export function DestaqueSemana({ top, semanaLabel, mensagem, loading }: Props) {
             return (
               <div
                 key={d.responsavel_id}
-                className={`bg-white dark:bg-slate-900 rounded-xl p-4 ring-2 ${ringColor} relative`}
+                className={`bg-white dark:bg-slate-900 rounded-md p-4 ring-2 ${ringColor} relative`}
               >
                 <div className="flex items-start gap-3">
                   <span className="text-3xl">{medalha}</span>

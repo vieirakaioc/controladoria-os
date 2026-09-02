@@ -174,9 +174,9 @@ export default function FeriasPage() {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-8 font-sans transition-colors">
       <Toaster position="bottom-right" toastOptions={{ style: { background: '#063955', color: '#fff', borderRadius: '12px' } }} />
 
-      <header className="mb-6 bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col xl:flex-row xl:justify-between xl:items-center gap-4">
+      <header className="mb-6 bg-white dark:bg-slate-900 p-6 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col xl:flex-row xl:justify-between xl:items-center gap-4">
         <div className="flex items-center gap-4">
-          <div className="bg-amber-500/10 dark:bg-amber-500/20 p-3 rounded-xl text-amber-600 dark:text-amber-400">
+          <div className="bg-amber-500/10 dark:bg-amber-500/20 p-3 rounded-md text-amber-600 dark:text-amber-400">
             <Plane size={32} />
           </div>
           <div>
@@ -190,7 +190,7 @@ export default function FeriasPage() {
           {meuResponsavelId && (
             <button
               onClick={() => { setModalEditing(null); setModalRespFixoId(meuResponsavelId); setModalOpen(true) }}
-              className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-5 py-2.5 rounded-xl font-semibold transition-colors shadow-sm"
+              className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-5 py-2.5 rounded-md font-semibold transition-colors shadow-sm"
             >
               <Plus size={16} /> Solicitar minha ausência
             </button>
@@ -198,7 +198,7 @@ export default function FeriasPage() {
           {isAdmin && (
             <button
               onClick={() => { setModalEditing(null); setModalRespFixoId(undefined); setModalOpen(true) }}
-              className="flex items-center gap-2 bg-[#063955] hover:bg-[#042436] text-white px-5 py-2.5 rounded-xl font-semibold transition-colors shadow-sm"
+              className="flex items-center gap-2 bg-[#063955] hover:bg-[#042436] text-white px-5 py-2.5 rounded-md font-semibold transition-colors shadow-sm"
             >
               <Plus size={16} /> Nova ausência (qualquer)
             </button>
@@ -219,7 +219,7 @@ export default function FeriasPage() {
         />
 
         {/* Card: Próximas da Equipe (top 3) */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-5">
+        <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 p-5">
           <h3 className="text-xs font-bold text-[#063955] dark:text-white uppercase tracking-widest mb-3 flex items-center gap-2">
             <Calendar size={13} className="text-[#0f88a8]" /> Próximas da Equipe <span className="text-slate-300">(top 3)</span>
           </h3>
@@ -240,7 +240,7 @@ export default function FeriasPage() {
       </div>
 
       {/* Calendário do mês */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-5 mb-3 flex items-center justify-between">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 p-5 mb-3 flex items-center justify-between">
         <h3 className="text-base font-bold text-[#063955] dark:text-white flex items-center gap-2">
           <Calendar size={18} className="text-[#0f88a8]" />
           {MESES_NOMES[mesAlvo]} {anoAlvo}
@@ -248,20 +248,20 @@ export default function FeriasPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => navMes(-1)}
-            className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors"
+            className="p-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors"
             title="Mês anterior"
           >
             <ChevronLeft size={18} />
           </button>
           <button
             onClick={() => { setMesAlvo(new Date().getMonth()); setAnoAlvo(new Date().getFullYear()) }}
-            className="px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+            className="px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-colors"
           >
             Hoje
           </button>
           <button
             onClick={() => navMes(1)}
-            className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors"
+            className="p-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors"
             title="Próximo mês"
           >
             <ChevronRight size={18} />
@@ -277,7 +277,7 @@ export default function FeriasPage() {
           <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-3">
             Todas as Ausências ({ausencias.length})
           </h3>
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead className="bg-slate-50 dark:bg-slate-950">
@@ -308,10 +308,10 @@ export default function FeriasPage() {
                       <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400 max-w-xs truncate" title={a.observacao || ''}>{a.observacao || '—'}</td>
                       <td className="px-4 py-3 text-right">
                         <div className="inline-flex items-center gap-1">
-                          <button onClick={() => editar(a)} className="text-slate-300 hover:text-[#0f88a8] dark:hover:text-[#38bdf8] transition-colors p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800" title="Editar">
+                          <button onClick={() => editar(a)} className="text-slate-300 hover:text-[#0f88a8] dark:hover:text-[#38bdf8] transition-colors p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800" title="Editar">
                             <Pencil size={14} />
                           </button>
-                          <button onClick={() => remover(a)} className="text-slate-300 hover:text-[#b43a3d] dark:hover:text-[#f87171] transition-colors p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800" title="Remover">
+                          <button onClick={() => remover(a)} className="text-slate-300 hover:text-[#b43a3d] dark:hover:text-[#f87171] transition-colors p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800" title="Remover">
                             <Trash2 size={14} />
                           </button>
                         </div>
@@ -381,7 +381,7 @@ function ItemAusencia({
       : 'bg-slate-50 dark:bg-slate-800/30 border-slate-100 dark:border-slate-700/50 opacity-60'
 
   return (
-    <div className={`flex items-start justify-between gap-3 p-3 rounded-xl border ${bg} group`}>
+    <div className={`flex items-start justify-between gap-3 p-3 rounded-md border ${bg} group`}>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 text-sm font-bold text-[#063955] dark:text-white">
           {a.responsaveis?.nome || 'Sem nome'}
@@ -403,7 +403,7 @@ function ItemAusencia({
         {podeEditar && onEditar && (
           <button
             onClick={onEditar}
-            className="text-slate-400 hover:text-[#0f88a8] dark:hover:text-[#38bdf8] hover:bg-white dark:hover:bg-slate-800 transition-colors p-1.5 rounded-lg"
+            className="text-slate-400 hover:text-[#0f88a8] dark:hover:text-[#38bdf8] hover:bg-white dark:hover:bg-slate-800 transition-colors p-1.5 rounded-md"
             title="Editar"
           >
             <Pencil size={13} />
@@ -412,7 +412,7 @@ function ItemAusencia({
         {podeRemover && (
           <button
             onClick={onRemover}
-            className="text-slate-400 hover:text-[#b43a3d] dark:hover:text-[#f87171] hover:bg-white dark:hover:bg-slate-800 transition-colors p-1.5 rounded-lg"
+            className="text-slate-400 hover:text-[#b43a3d] dark:hover:text-[#f87171] hover:bg-white dark:hover:bg-slate-800 transition-colors p-1.5 rounded-md"
             title="Remover"
           >
             <Trash2 size={13} />
@@ -455,7 +455,7 @@ function MinhasAusenciasCard({
 
   if (meuResponsavelId == null) {
     return (
-      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-5">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 p-5">
         <h3 className="text-xs font-bold text-[#063955] dark:text-white uppercase tracking-widest mb-3 flex items-center gap-2">
           <UserCheck size={13} className="text-amber-500" /> Minhas Ausências
         </h3>
@@ -468,7 +468,7 @@ function MinhasAusenciasCard({
 
   if (minhas.length === 0) {
     return (
-      <div className="bg-gradient-to-br from-amber-50 via-white to-amber-50/30 dark:from-amber-500/10 dark:via-slate-900 dark:to-amber-500/5 border border-amber-200 dark:border-amber-500/30 rounded-2xl shadow-sm p-6">
+      <div className="bg-gradient-to-br from-amber-50 via-white to-amber-50/30 dark:from-amber-500/10 dark:via-slate-900 dark:to-amber-500/5 border border-amber-200 dark:border-amber-500/30 rounded-lg shadow-sm p-6">
         <h3 className="text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-widest mb-2 flex items-center gap-2">
           <Plane size={13} /> Minhas Ausências
         </h3>
@@ -477,7 +477,7 @@ function MinhasAusenciasCard({
         </p>
         <button
           onClick={onSolicitar}
-          className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors shadow-sm"
+          className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-md text-sm font-semibold transition-colors shadow-sm"
         >
           <Plus size={14} /> Cadastrar agora
         </button>
@@ -486,7 +486,7 @@ function MinhasAusenciasCard({
   }
 
   return (
-    <div className="bg-gradient-to-br from-amber-50 via-white to-amber-50/30 dark:from-amber-500/10 dark:via-slate-900 dark:to-amber-500/5 border border-amber-200 dark:border-amber-500/30 rounded-2xl shadow-sm p-5">
+    <div className="bg-gradient-to-br from-amber-50 via-white to-amber-50/30 dark:from-amber-500/10 dark:via-slate-900 dark:to-amber-500/5 border border-amber-200 dark:border-amber-500/30 rounded-lg shadow-sm p-5">
       <div className="flex items-start justify-between mb-3">
         <h3 className="text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-widest flex items-center gap-2">
           <Plane size={13} /> Minhas Ausências
@@ -499,7 +499,7 @@ function MinhasAusenciasCard({
 
       {/* Destaque (ativa ou próxima) */}
       {destaque && (
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-amber-200 dark:border-amber-500/30 p-3 mb-3 group">
+        <div className="bg-white dark:bg-slate-900 rounded-md border border-amber-200 dark:border-amber-500/30 p-3 mb-3 group">
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
@@ -521,10 +521,10 @@ function MinhasAusenciasCard({
               </div>
             </div>
             <div className="flex items-center gap-0.5 opacity-60 group-hover:opacity-100 transition-opacity">
-              <button onClick={() => onEditar(destaque)} className="text-slate-400 hover:text-[#0f88a8] hover:bg-slate-100 dark:hover:bg-slate-800 p-1.5 rounded-lg transition-colors" title="Editar">
+              <button onClick={() => onEditar(destaque)} className="text-slate-400 hover:text-[#0f88a8] hover:bg-slate-100 dark:hover:bg-slate-800 p-1.5 rounded-md transition-colors" title="Editar">
                 <Pencil size={13} />
               </button>
-              <button onClick={() => onRemover(destaque)} className="text-slate-400 hover:text-[#b43a3d] hover:bg-slate-100 dark:hover:bg-slate-800 p-1.5 rounded-lg transition-colors" title="Remover">
+              <button onClick={() => onRemover(destaque)} className="text-slate-400 hover:text-[#b43a3d] hover:bg-slate-100 dark:hover:bg-slate-800 p-1.5 rounded-md transition-colors" title="Remover">
                 <Trash2 size={13} />
               </button>
             </div>
@@ -537,7 +537,7 @@ function MinhasAusenciasCard({
         <div className="space-y-1.5">
           <div className="text-[10px] uppercase font-bold tracking-widest text-slate-500 dark:text-slate-400 px-1">Outros períodos</div>
           {outras.map(a => (
-            <div key={a.id} className="bg-white/60 dark:bg-slate-900/60 rounded-lg px-3 py-2 flex items-center justify-between gap-2 group hover:bg-white dark:hover:bg-slate-900 transition-colors">
+            <div key={a.id} className="bg-white/60 dark:bg-slate-900/60 rounded-md px-3 py-2 flex items-center justify-between gap-2 group hover:bg-white dark:hover:bg-slate-900 transition-colors">
               <div className="flex-1 text-xs tabular-nums text-slate-600 dark:text-slate-300">
                 {fmtBR(a.data_inicio)} → {fmtBR(a.data_fim)}{' '}
                 <span className="text-slate-400">· {a.motivo || 'ausência'}</span>

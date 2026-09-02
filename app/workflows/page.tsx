@@ -264,7 +264,7 @@ export default function WorkflowsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-8 font-sans">
-      <header className="flex justify-between items-center mb-6 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+      <header className="flex justify-between items-center mb-6 bg-white p-6 rounded-lg shadow-sm border border-gray-100">
         <div>
           <h1 className="text-3xl font-black text-indigo-950 uppercase tracking-tighter">Workflows</h1>
           <p className="text-gray-500 font-medium">Status por Planner</p>
@@ -274,17 +274,17 @@ export default function WorkflowsPage() {
           {mensagem && <span className="text-sm font-bold text-indigo-600 animate-pulse">{mensagem}</span>}
           <button
             onClick={loadWorkflows}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-5 rounded-xl transition-all shadow-md active:scale-95"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-5 rounded-md transition-all shadow-md active:scale-95"
           >
             ↻ Atualizar
           </button>
         </div>
       </header>
 
-      <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 mb-6 flex flex-wrap gap-3 items-center">
+      <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 mb-6 flex flex-wrap gap-3 items-center">
         <div className="font-black text-gray-900">Planner</div>
         <select
-          className="bg-white border border-gray-200 rounded-xl px-3 py-2 font-bold text-gray-700"
+          className="bg-white border border-gray-200 rounded-md px-3 py-2 font-bold text-gray-700"
           value={plannerSel}
           onChange={(e) => setPlannerSel(e.target.value)}
         >
@@ -298,25 +298,25 @@ export default function WorkflowsPage() {
         </div>
       </div>
 
-      <main className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+      <main className="bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden">
         <div className="p-6 border-b border-gray-100 flex flex-wrap gap-3 items-center">
           <input
             value={novoStatus}
             onChange={(e) => setNovoStatus(e.target.value)}
             placeholder="Novo status (ex: Revisão, Bloqueado...)"
-            className="border border-gray-200 rounded-xl px-4 py-2 w-full md:w-96 font-semibold"
+            className="border border-gray-200 rounded-md px-4 py-2 w-full md:w-96 font-semibold"
           />
           <button
             onClick={addStatus}
             disabled={!novoStatus.trim()}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white font-black py-2 px-5 rounded-xl transition-all shadow-md disabled:opacity-50"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white font-black py-2 px-5 rounded-md transition-all shadow-md disabled:opacity-50"
           >
             + Adicionar
           </button>
 
           <button
             onClick={() => normalizeOrders(statuses)}
-            className="bg-white border border-gray-200 hover:bg-gray-50 font-black py-2 px-5 rounded-xl transition-all"
+            className="bg-white border border-gray-200 hover:bg-gray-50 font-black py-2 px-5 rounded-md transition-all"
           >
             Organizar Ordem
           </button>
@@ -345,7 +345,7 @@ export default function WorkflowsPage() {
                           const v = e.target.value
                           if (v.trim() !== s.status_name) renameStatus(s.id, v)
                         }}
-                        className="border border-gray-200 rounded-xl px-4 py-2 w-full md:w-96 font-black text-gray-900"
+                        className="border border-gray-200 rounded-md px-4 py-2 w-full md:w-96 font-black text-gray-900"
                       />
                       <div className="text-xs text-gray-500 font-semibold mt-1">
                         (edita e sai do campo pra salvar)
@@ -356,20 +356,20 @@ export default function WorkflowsPage() {
                         <button
                           onClick={() => moveUp(idx)}
                           disabled={idx === 0}
-                          className="bg-white border border-gray-200 hover:bg-gray-50 font-black py-2 px-3 rounded-xl transition-all disabled:opacity-40"
+                          className="bg-white border border-gray-200 hover:bg-gray-50 font-black py-2 px-3 rounded-md transition-all disabled:opacity-40"
                         >
                           ▲
                         </button>
                         <button
                           onClick={() => moveDown(idx)}
                           disabled={idx === statuses.length - 1}
-                          className="bg-white border border-gray-200 hover:bg-gray-50 font-black py-2 px-3 rounded-xl transition-all disabled:opacity-40"
+                          className="bg-white border border-gray-200 hover:bg-gray-50 font-black py-2 px-3 rounded-md transition-all disabled:opacity-40"
                         >
                           ▼
                         </button>
                         <button
                           onClick={() => deleteStatus(s.id)}
-                          className="bg-red-600 hover:bg-red-700 text-white font-black py-2 px-4 rounded-xl transition-all shadow-md"
+                          className="bg-red-600 hover:bg-red-700 text-white font-black py-2 px-4 rounded-md transition-all shadow-md"
                         >
                           🗑
                         </button>
