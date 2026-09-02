@@ -7,6 +7,7 @@ import { Boxes } from 'lucide-react'
 const ABAS = [
   { href: '/imobilizado', rotulo: 'Fila' },
   { href: '/imobilizado/quadro', rotulo: 'Quadro' },
+  { href: '/imobilizado/matriz', rotulo: 'Matriz' },
   { href: '/imobilizado/novo', rotulo: 'Novo item' },
   { href: '/imobilizado/processo', rotulo: 'Processo' },
 ]
@@ -44,8 +45,13 @@ export default function LayoutImobilizado({ children }: { children: React.ReactN
                   key={aba.href}
                   href={aba.href}
                   aria-current={ativa ? 'page' : undefined}
-                  className={`rounded-md px-4 py-2 text-sm font-semibold transition-all ${
-                    ativa ? 'bg-white text-navy-700 shadow-sm' : 'text-ink-500 hover:text-navy-700'
+                  // Sobre a faixa navy, cinza médio some. navy-100 é claro o
+                  // bastante para ler sem esforço, e a hierarquia continua vindo
+                  // da pastilha branca da ativa — não de apagar as outras.
+                  className={`rounded px-4 py-1.5 text-[13px] font-semibold transition-all ${
+                    ativa
+                      ? 'bg-white text-navy-700 shadow-sm'
+                      : 'text-navy-100 hover:bg-white/10 hover:text-white'
                   }`}
                 >
                   {aba.rotulo}

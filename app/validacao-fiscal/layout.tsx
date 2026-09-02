@@ -42,10 +42,12 @@ export default function LayoutValidacaoFiscal({ children }: { children: React.Re
                   key={aba.href}
                   href={aba.href}
                   aria-current={ativa ? 'page' : undefined}
-                  className={`rounded-md px-4 py-2 text-sm font-semibold transition-all ${
+                  // Sobre a faixa navy, cinza médio some. navy-100 é claro o
+                  // bastante para ler sem esforço.
+                  className={`rounded px-4 py-1.5 text-[13px] font-semibold transition-all ${
                     ativa
                       ? 'bg-white text-navy-700 shadow-sm'
-                      : 'text-ink-500 hover:text-navy-700'
+                      : 'text-navy-100 hover:bg-white/10 hover:text-white'
                   }`}
                 >
                   {aba.rotulo}
