@@ -56,6 +56,7 @@ function mapearEtapa(l: LinhaEtapa): Etapa {
     paralela: Boolean(l.paralela),
     exigeAnexo: Boolean(l.exige_anexo),
     exigeCampo: ouNulo(l.exige_campo),
+    prazoAPartirDe: ouNulo(l.prazo_a_partir_de),
     status: (l.status as StatusEtapa) ?? 'bloqueada',
     // responsaveis.id é bigint: o PostgREST devolve número, e o <select> da
     // tela compara com texto.
@@ -120,6 +121,7 @@ export async function listarModelo(): Promise<ModeloEtapa[]> {
     paralela: Boolean(l.paralela),
     exigeAnexo: Boolean(l.exige_anexo),
     exigeCampo: ouNulo(l.exige_campo),
+    prazoAPartirDe: ouNulo(l.prazo_a_partir_de),
     prazoDiasUteis: Number(l.prazo_dias_uteis ?? 1),
     responsavelId: l.responsavel_id === null ? null : String(l.responsavel_id),
     ativo: Boolean(l.ativo),
@@ -345,12 +347,14 @@ export async function criarItem(entrada: NovoItem, usuario: string): Promise<Ite
   const aplicaveis = modelo.filter((m) => m.ativo && (!m.soFrota || entrada.ehFrota))
 
   // A primeira etapa de trabalho já nasce aberta; as demais esperam a anterior.
-  // As paralelas nascem abertas também: não dependem de ninguém, é o que as
-  // torna paralelas.
+  //
+  // Paralela nasce aberta SÓ quando não depende de ninguém. A do cadastro da
+  // placa depende do ATPV, então nasce bloqueada: aberta desde o início, ela
+  // ficaria meses na fila de alguém sem que houvesse o que fazer.
   const primeiraSequencial = aplicaveis.filter((m) => !m.paralela).sort((a, b) => a.ordem - b.ordem)[0]
 
   const linhas = aplicaveis.map((m) => {
-    const abre = m.paralela || m.chave === primeiraSequencial?.chave
+    const abre = (m.paralela && !m.prazoAPartirDe) || m.chave === primeiraSequencial?.chave
     return {
       item_id: criado.id,
       chave: m.chave,
@@ -360,6 +364,7 @@ export async function criarItem(entrada: NovoItem, usuario: string): Promise<Ite
       paralela: m.paralela,
       exige_anexo: m.exigeAnexo,
       exige_campo: m.exigeCampo,
+      prazo_a_partir_de: m.prazoAPartirDe,
       responsavel_id: m.responsavelId,
       status: abre ? 'aberta' : 'bloqueada',
       prazo: abre ? somarDiasUteis(dataDeHoje(), m.prazoDiasUteis) : null,
@@ -465,6 +470,36 @@ export async function concluirEtapa(params: {
     await supabase.from(TAB_ITENS).update(carimbo).eq('id', item.id)
   }
 
+  // Etapas cujo prazo conta a partir DESTA: ganham a data agora, e a paralela
+  // que esperava por ela abre junto. É o que faz "10 dias após o centro de
+  // custo" e "1 dia após o ATPV" serem prazos de verdade, e não a distância
+  // até a vez da etapa na fila.
+  const dependentes = item.etapas.filter(
+    (e) => e.prazoAPartirDe === etapa.chave && e.status !== 'concluida',
+  )
+
+  if (dependentes.length > 0) {
+    const modelo = await listarModelo()
+
+    for (const dependente of dependentes) {
+      const dias = modelo.find((m) => m.chave === dependente.chave)?.prazoDiasUteis ?? 1
+      const prazo = somarDiasUteis(hoje, dias)
+      const abre = dependente.paralela && dependente.status === 'bloqueada'
+
+      await supabase
+        .from(TAB_ETAPAS)
+        .update({
+          prazo,
+          ...(abre ? { status: 'aberta', aberta_em: agora } : {}),
+        })
+        .eq('id', dependente.id)
+
+      if (abre) {
+        await avisarEtapaAberta(item, { ...dependente, status: 'aberta', prazo }, usuario)
+      }
+    }
+  }
+
   if (!etapa.paralela) {
     const seguinte = item.etapas
       .filter((e) => !e.paralela && e.status === 'bloqueada' && e.ordem > etapa.ordem)
@@ -474,7 +509,10 @@ export async function concluirEtapa(params: {
       const modelo = await listarModelo()
       const dias = modelo.find((m) => m.chave === seguinte.chave)?.prazoDiasUteis ?? 1
 
-      const prazo = somarDiasUteis(hoje, dias)
+      // Prazo já calculado por gatilho não é recontado ao abrir: o ATPV é
+      // cobrado desde o centro de custo, e reiniciar a conta aqui apagaria
+      // justamente o tempo que se quer medir.
+      const prazo = seguinte.prazo ?? somarDiasUteis(hoje, dias)
 
       await supabase
         .from(TAB_ETAPAS)

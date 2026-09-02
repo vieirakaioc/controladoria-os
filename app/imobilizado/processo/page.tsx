@@ -100,7 +100,7 @@ export default function PaginaProcesso() {
                     </div>
                   </td>
                   <td className="whitespace-nowrap px-3 py-3 text-ink-700">{etapa.area || '—'}</td>
-                  <td className="whitespace-nowrap px-3 py-3">
+                  <td className="px-3 py-3">
                     {acesso === 'admin' ? (
                       <CampoPrazo
                         chave={etapa.chave}
@@ -108,8 +108,19 @@ export default function PaginaProcesso() {
                         aoSalvar={carregar}
                       />
                     ) : (
-                      <span className="tabular-nums text-ink-700">{etapa.prazoDiasUteis} d.u.</span>
+                      <span className="num text-ink-700">{etapa.prazoDiasUteis} d.u.</span>
                     )}
+
+                    {/* De onde a contagem sai. Sem isso o número sozinho mente:
+                        "10 d.u." parece contar da vez da etapa na fila. */}
+                    <div className="mt-1 whitespace-nowrap text-[11px] text-ink-400">
+                      {etapa.prazoAPartirDe
+                        ? `após concluir ${
+                            modelo.find((m) => m.chave === etapa.prazoAPartirDe)?.titulo ??
+                            etapa.prazoAPartirDe
+                          }`
+                        : 'a partir da abertura'}
+                    </div>
                   </td>
                   <td className="px-3 py-3 text-xs text-ink-500">
                     {[

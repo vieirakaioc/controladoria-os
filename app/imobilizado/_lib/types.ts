@@ -27,6 +27,14 @@ export type ModeloEtapa = {
   exigeAnexo: boolean
   /** Campo do item que precisa estar preenchido para concluir (ex.: oc_numero). */
   exigeCampo: string | null
+  /**
+   * De onde o prazo conta. `null` = de quando a própria etapa abre.
+   *
+   * Com uma chave aqui, a contagem começa na conclusão daquela outra etapa: o
+   * ATPV é cobrado a partir do centro de custo, não de quando chega a vez dele
+   * na fila, e a placa a partir do ATPV.
+   */
+  prazoAPartirDe: string | null
   prazoDiasUteis: number
   responsavelId: string | null
   ativo: boolean
@@ -42,6 +50,8 @@ export type Etapa = {
   paralela: boolean
   exigeAnexo: boolean
   exigeCampo: string | null
+  /** Etapa cuja conclusão dispara a contagem do prazo desta. */
+  prazoAPartirDe: string | null
   status: StatusEtapa
   responsavelId: string | null
   responsavelNome: string | null

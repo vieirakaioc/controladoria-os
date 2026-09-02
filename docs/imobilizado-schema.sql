@@ -126,9 +126,17 @@ create table if not exists public.imobilizado_modelo_etapas (
   -- Campo do item que precisa estar preenchido para concluir (ex.: oc_numero).
   exige_campo       text,
   prazo_dias_uteis  integer     not null default 1,
+  -- De onde o prazo conta. Null = de quando a própria etapa abre, que é o
+  -- normal. Com uma chave aqui, a contagem começa na CONCLUSÃO daquela outra
+  -- etapa — o ATPV é cobrado a partir do centro de custo, não de quando chega
+  -- a vez dele na fila, e a placa a partir do ATPV.
+  prazo_a_partir_de text,
   responsavel_id    bigint      references public.responsaveis (id) on delete set null,
   ativo             boolean     not null default true
 );
+
+alter table public.imobilizado_modelo_etapas
+  add column if not exists prazo_a_partir_de text;
 
 -- Para quem rodou uma versão anterior deste arquivo.
 alter table public.imobilizado_modelo_etapas
@@ -198,6 +206,7 @@ create table if not exists public.imobilizado_etapas (
   paralela         boolean     not null default false,
   exige_anexo      boolean     not null default false,
   exige_campo      text,
+  prazo_a_partir_de text,
   -- bloqueada = a anterior ainda não terminou. Só a aberta aceita conclusão.
   status           text        not null default 'bloqueada'
                      check (status in ('bloqueada', 'aberta', 'concluida', 'dispensada')),
@@ -213,6 +222,9 @@ create table if not exists public.imobilizado_etapas (
 
 alter table public.imobilizado_etapas
   add column if not exists area text not null default '';
+
+alter table public.imobilizado_etapas
+  add column if not exists prazo_a_partir_de text;
 
 create index if not exists imob_etapas_item_idx   on public.imobilizado_etapas (item_id);
 create index if not exists imob_etapas_status_idx on public.imobilizado_etapas (status);
@@ -295,48 +307,49 @@ create trigger imob_itens_touch
 -- ativo: esses são ajustados pela tela de configuração, e rodar o script de
 -- novo não pode desfazer o ajuste de quem usa.
 insert into public.imobilizado_modelo_etapas
-  (chave, ordem, titulo, descricao, area, so_frota, paralela, exige_anexo, exige_campo, prazo_dias_uteis)
+  (chave, ordem, titulo, descricao, area, so_frota, paralela, exige_anexo, exige_campo,
+   prazo_dias_uteis, prazo_a_partir_de)
 values
   ('cadastro_item', 1, 'Anexar a nota fiscal',
    'O item já foi criado no formulário; aqui a NF é anexada à pasta e o cadastro é conferido.',
-   'Patrimônio', false, false, true, null, 1),
+   'Patrimônio', false, false, true, null, 1, null),
 
   -- Só frota: o conteúdo desta etapa é criar o centro de custo do veículo.
   -- Para item que não é frota ela não tem o que fazer, e uma etapa sem
   -- conteúdo vira clique vazio — quem preenche aprende a clicar sem ler.
   ('cadastro', 2, 'Cadastro',
    'Cria o centro de custo do veículo e informa o código aqui.',
-   'Patrimônio', true, false, false, 'centro_custo', 1),
+   'Patrimônio', true, false, false, 'centro_custo', 1, null),
 
   ('ordem_compra', 3, 'Ordem de compra',
    'Se já existe OC, informa o número. Se não existe, cria a OC e informa o número gerado.',
-   'Patrimônio', false, false, false, 'oc_numero', 1),
+   'Patrimônio', false, false, false, 'oc_numero', 1, null),
 
   ('lancar_nf', 4, 'Lançar NF',
    'Patrimônio lança a nota no Sênior.',
-   'Patrimônio', false, false, false, null, 1),
+   'Patrimônio', false, false, false, null, 1, null),
 
   ('seguro', 5, 'Seguro',
    'Depois do lançamento: anexa a apólice e os demais documentos do bem.',
-   'Seguros', false, false, true, null, 1),
+   'Seguros', false, false, true, null, 1, null),
 
   ('dossie', 6, 'Pasta dossiê',
    'Confere a pasta do item: se faltar documento de alguma etapa, a tela aponta qual.',
-   'Patrimônio', false, false, false, null, 1),
+   'Patrimônio', false, false, false, null, 1, null),
 
   ('atpv', 7, 'Frota · ATPV',
    'Anexa ATPV e demais documentos da frota. A data do ATPV abre o aging da placa.',
-   'Frota', true, false, true, null, 1),
+   'Frota', true, false, true, null, 10, 'cadastro'),
 
   ('baixa', 8, 'Baixa',
    'Dar baixa antes de encerrar. Fecha o aging do processo.',
-   'Cadastro', false, false, false, null, 1),
+   'Cadastro', false, false, false, null, 1, null),
 
   -- Paralela: nasce junto da etapa 2 e não bloqueia ninguém. Fecha o aging da
   -- placa quando concluída, mesmo que o item já esteja finalizado.
   ('placa', 9, 'Cadastrar placa',
    'Atividade paralela: cadastra a placa do veículo e avisa o responsável por e-mail.',
-   'Frota', true, true, false, 'placa', 10)
+   'Frota', true, true, false, 'placa', 1, 'atpv')
 on conflict (chave) do update
   set ordem       = excluded.ordem,
       titulo      = excluded.titulo,
@@ -345,14 +358,20 @@ on conflict (chave) do update
       so_frota    = excluded.so_frota,
       paralela    = excluded.paralela,
       exige_anexo = excluded.exige_anexo,
-      exige_campo = excluded.exige_campo;
+      exige_campo = excluded.exige_campo,
+      prazo_a_partir_de = excluded.prazo_a_partir_de;
 
 -- O prazo é ajustado pela tela e o "do update" acima não o toca de propósito.
--- Esta linha existe só para corrigir quem rodou o arquivo antes de a placa
--- ganhar prazo próprio: se alguém já mexeu no valor, ela não faz nada.
+-- Estas duas linhas corrigem quem rodou o arquivo antes de a contagem passar
+-- a sair de outra etapa. Cada uma só age se o valor ainda for o antigo — quem
+-- já ajustou pela tela não é sobrescrito.
 update public.imobilizado_modelo_etapas
    set prazo_dias_uteis = 10
- where chave = 'placa' and prazo_dias_uteis = 1;
+ where chave = 'atpv' and prazo_dias_uteis = 1;
+
+update public.imobilizado_modelo_etapas
+   set prazo_dias_uteis = 1
+ where chave = 'placa' and prazo_dias_uteis = 10;
 
 
 -- ─── 7.1 CORREÇÃO DE ITENS JÁ CRIADOS ───────────────────────────────────────
