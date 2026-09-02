@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
-import { ArrowUpRight, Search, Truck } from 'lucide-react'
+import { ArrowUpRight, Loader2, Search, Trash2, Truck } from 'lucide-react'
 
 import { formatarInteiro, formatarMoeda } from '@/app/validacao-fiscal/_lib/formato'
 import { formatarData, hoje as dataDeHoje } from '@/app/validacao-fiscal/_lib/prazo'
@@ -10,6 +10,8 @@ import { formatarData, hoje as dataDeHoje } from '@/app/validacao-fiscal/_lib/pr
 import { AvisoErro, Carregando, ChipPrazo, Kpi, Painel, SemAcesso } from './_components/Ui'
 import { useImobilizado } from './_hooks/useImobilizado'
 import { agingPlaca, agingProcesso, textoAging } from './_lib/aging'
+import { descreverErro, excluirItem, listarAnexos } from './_lib/api'
+import { podeAgir } from './_lib/types'
 import type { Etapa, Item } from './_lib/types'
 
 type Filtro = 'andamento' | 'atrasados' | 'frota' | 'finalizados' | 'todos'
@@ -39,8 +41,97 @@ function temAtraso(item: Item, hoje: string): boolean {
   return item.etapas.some((e) => e.status === 'aberta' && e.prazo !== null && e.prazo < hoje)
 }
 
+/**
+ * Abrir e excluir, no fim da linha.
+ *
+ * A exclusão pede confirmação na própria linha em vez de um alerta do
+ * navegador: o número do item continua à vista enquanto se decide, que é
+ * justamente o que se precisa conferir antes de apagar algo sem volta.
+ *
+ * Os anexos são buscados só na hora de apagar — carregá-los para todas as
+ * linhas da fila seria uma consulta por item só para o caso raro de alguém
+ * excluir.
+ */
+function AcoesDaLinha({
+  item,
+  podeExcluir,
+  aoExcluir,
+}: {
+  item: Item
+  podeExcluir: boolean
+  aoExcluir: (id: string) => void
+}) {
+  const [confirmando, setConfirmando] = useState(false)
+  const [excluindo, setExcluindo] = useState(false)
+  const [erro, setErro] = useState<string | null>(null)
+
+  const remover = async () => {
+    setExcluindo(true)
+    setErro(null)
+    try {
+      const anexos = await listarAnexos(item.id)
+      await excluirItem(item, anexos)
+      aoExcluir(item.id)
+    } catch (falha) {
+      setErro(descreverErro(falha))
+      setExcluindo(false)
+      setConfirmando(false)
+    }
+  }
+
+  if (confirmando) {
+    return (
+      <div className="flex items-center justify-end gap-1.5">
+        <span className="text-[11px] font-semibold text-ink-500">Excluir nº {item.numero}?</span>
+        <button
+          type="button"
+          onClick={remover}
+          disabled={excluindo}
+          className="inline-flex items-center gap-1 rounded-md bg-negativo px-2.5 py-1.5 text-xs font-bold text-white transition-all hover:brightness-110 disabled:opacity-40"
+        >
+          {excluindo ? <Loader2 size={12} className="animate-spin" /> : null}
+          Sim
+        </button>
+        <button
+          type="button"
+          onClick={() => setConfirmando(false)}
+          disabled={excluindo}
+          className="rounded-md border border-line-strong px-2.5 py-1.5 text-xs font-semibold text-ink-500 transition-colors hover:text-navy-700"
+        >
+          Não
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex items-center justify-end gap-1.5">
+      {erro && <span className="text-[11px] font-semibold text-negativo">{erro}</span>}
+
+      <Link
+        href={`/imobilizado/${item.id}`}
+        className="inline-flex items-center gap-1.5 rounded-md border border-teal-500 px-3 py-1.5 text-xs font-bold text-teal-600 transition-all hover:bg-teal-600 hover:text-white"
+      >
+        Abrir
+      </Link>
+
+      {podeExcluir && (
+        <button
+          type="button"
+          onClick={() => setConfirmando(true)}
+          aria-label={`Excluir o item nº ${item.numero}`}
+          title="Excluir item"
+          className="inline-flex items-center rounded-md border border-line-strong p-1.5 text-ink-400 transition-colors hover:border-negativo hover:text-negativo"
+        >
+          <Trash2 size={14} />
+        </button>
+      )}
+    </div>
+  )
+}
+
 export default function PaginaFila() {
-  const { itens, acesso, carregando, erro } = useImobilizado()
+  const { itens, acesso, carregando, erro, removerItem } = useImobilizado()
   const [filtro, setFiltro] = useState<Filtro>('andamento')
   const [filtroFilial, setFiltroFilial] = useState('todas')
   const [busca, setBusca] = useState('')
@@ -308,12 +399,11 @@ export default function PaginaFila() {
                     </td>
 
                     <td className="whitespace-nowrap px-4 py-3 text-right align-top">
-                      <Link
-                        href={`/imobilizado/${item.id}`}
-                        className="inline-flex items-center gap-1.5 rounded-md border border-teal-500 px-3 py-1.5 text-xs font-bold text-teal-600 transition-all hover:bg-teal-600 hover:text-white"
-                      >
-                        Abrir
-                      </Link>
+                      <AcoesDaLinha
+                        item={item}
+                        podeExcluir={podeAgir(acesso)}
+                        aoExcluir={removerItem}
+                      />
                     </td>
                   </tr>
                 )

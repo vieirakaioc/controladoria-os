@@ -51,5 +51,18 @@ export function useImobilizado() {
     setItens((atuais) => atuais.map((i) => (i.id === atualizado.id ? atualizado : i)))
   }, [])
 
-  return { itens, responsaveis, acesso, carregando, erro, recarregar: carregar, aplicarItem }
+  const removerItem = useCallback((id: string) => {
+    setItens((atuais) => atuais.filter((i) => i.id !== id))
+  }, [])
+
+  return {
+    itens,
+    responsaveis,
+    acesso,
+    carregando,
+    erro,
+    recarregar: carregar,
+    aplicarItem,
+    removerItem,
+  }
 }
