@@ -297,13 +297,16 @@ create trigger imob_itens_touch
 insert into public.imobilizado_modelo_etapas
   (chave, ordem, titulo, descricao, area, so_frota, paralela, exige_anexo, exige_campo, prazo_dias_uteis)
 values
-  ('cadastro_item', 1, 'Cadastro do item',
-   'Identifica a nota de patrimônio, marca se é frota e anexa a NF. A pasta do imobilizado nasce aqui.',
+  ('cadastro_item', 1, 'Anexar a nota fiscal',
+   'O item já foi criado no formulário; aqui a NF é anexada à pasta e o cadastro é conferido.',
    'Patrimônio', false, false, true, null, 1),
 
+  -- Só frota: o conteúdo desta etapa é criar o centro de custo do veículo.
+  -- Para item que não é frota ela não tem o que fazer, e uma etapa sem
+  -- conteúdo vira clique vazio — quem preenche aprende a clicar sem ler.
   ('cadastro', 2, 'Cadastro',
-   'Cria o centro de custo quando o item é frota e dispara a atividade de cadastro da placa.',
-   'Patrimônio', false, false, false, null, 1),
+   'Cria o centro de custo do veículo e informa o código aqui.',
+   'Patrimônio', true, false, false, 'centro_custo', 1),
 
   ('ordem_compra', 3, 'Ordem de compra',
    'Se já existe OC, informa o número. Se não existe, cria a OC e informa o número gerado.',
@@ -350,6 +353,37 @@ on conflict (chave) do update
 update public.imobilizado_modelo_etapas
    set prazo_dias_uteis = 10
  where chave = 'placa' and prazo_dias_uteis = 1;
+
+
+-- ─── 7.1 CORREÇÃO DE ITENS JÁ CRIADOS ───────────────────────────────────────
+-- A etapa 'cadastro' passou a ser só de frota. Itens não-frota criados antes
+-- disso ficaram com ela em aberto, sem nada para fazer. Some com essas — e só
+-- com essas: etapa já concluída é histórico e não se apaga.
+delete from public.imobilizado_etapas e
+ using public.imobilizado_itens i
+ where e.item_id = i.id
+   and e.chave = 'cadastro'
+   and i.eh_frota = false
+   and e.status <> 'concluida';
+
+-- Se a etapa apagada era a que estava aberta, o item ficaria travado sem
+-- nenhuma etapa ativa. Abre a próxima bloqueada de cada item nessa situação.
+update public.imobilizado_etapas alvo
+   set status = 'aberta', aberta_em = now()
+  from (
+    select distinct on (e.item_id) e.id
+      from public.imobilizado_etapas e
+      join public.imobilizado_itens i on i.id = e.item_id
+     where i.status = 'em_andamento'
+       and e.status = 'bloqueada'
+       and not e.paralela
+       and not exists (
+         select 1 from public.imobilizado_etapas a
+          where a.item_id = e.item_id and a.status = 'aberta' and not a.paralela
+       )
+     order by e.item_id, e.ordem
+  ) proxima
+ where alvo.id = proxima.id;
 
 
 -- ─── 8. RLS ─────────────────────────────────────────────────────────────────
