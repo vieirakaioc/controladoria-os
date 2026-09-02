@@ -329,13 +329,18 @@ values
    'Patrimônio lança a nota no Sênior.',
    'Patrimônio', false, false, false, null, 1, null),
 
+  -- Compras negocia; quem guarda o documento é a etapa seguinte. Por isso
+  -- esta não exige anexo: cobrar arquivo de quem está negociando trava a
+  -- etapa por um papel que ainda não existe.
   ('seguro', 5, 'Seguro',
-   'Depois do lançamento: anexa a apólice e os demais documentos do bem.',
-   'Seguros', false, false, true, null, 1, null),
+   'Negocia a apólice do bem com a corretora e registra o resultado na observação.',
+   'Compras', false, false, false, null, 1, null),
 
+  -- É aqui que a apólice entra na pasta, então o anexo é obrigatório: sem
+  -- ele, a etapa seria um "ok" sobre documento nenhum.
   ('dossie', 6, 'Pasta dossiê',
-   'Confere a pasta do item: se faltar documento de alguma etapa, a tela aponta qual.',
-   'Patrimônio', false, false, false, null, 1, null),
+   'Insere na pasta do item a apólice e os demais documentos do seguro.',
+   'Frota', false, false, true, null, 1, null),
 
   ('atpv', 7, 'Frota · ATPV',
    'Anexa ATPV e demais documentos da frota. A data do ATPV abre o aging da placa.',
