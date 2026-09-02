@@ -21,8 +21,14 @@ export function useImobilizado() {
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
 
-  const carregar = useCallback(async () => {
-    setCarregando(true)
+  /**
+   * `silencioso` recarrega sem acender o esqueleto de carregamento. Serve para
+   * quando a tela já mostrou o resultado da ação (a linha excluída sumiu) e só
+   * falta acertar o resto — piscar a página inteira aí faria parecer que algo
+   * deu errado.
+   */
+  const carregar = useCallback(async (silencioso = false) => {
+    if (!silencioso) setCarregando(true)
     setErro(null)
     try {
       const tipo = await meuAcesso()

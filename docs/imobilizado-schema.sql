@@ -471,6 +471,44 @@ $fn$;
 grant execute on function public.imob_pode_agir() to authenticated;
 
 
+-- Renumera os itens pela ordem atual, fechando os buracos que a exclusão deixa.
+-- Numa transação só, e passando pelos negativos, porque o índice único de
+-- `numero` não deixaria 3 virar 2 enquanto o 2 ainda existe. A pasta no Storage
+-- não acompanha: ela é o endereço dos arquivos, não a posição na fila.
+create or replace function public.imob_renumerar_itens()
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $fn$
+declare
+  ultimo bigint;
+begin
+  if not public.imob_pode_agir() then
+    raise exception 'Sem permissão para renumerar os itens do imobilizado.';
+  end if;
+
+  with ordem as (
+    select id, row_number() over (order by numero) as pos
+      from public.imobilizado_itens
+  )
+  update public.imobilizado_itens i
+     set numero = -o.pos
+    from ordem o
+   where i.id = o.id
+     and i.numero <> o.pos;
+
+  update public.imobilizado_itens
+     set numero = -numero
+   where numero < 0;
+
+  select coalesce(max(numero), 0) into ultimo from public.imobilizado_itens;
+  perform setval('public.imobilizado_itens_numero_seq', greatest(ultimo, 1), ultimo > 0);
+end;
+$fn$;
+grant execute on function public.imob_renumerar_itens() to authenticated;
+
+
 -- Modelo das etapas: quem está no processo lê; só admin muda o desenho.
 drop policy if exists "imob_modelo_select" on public.imobilizado_modelo_etapas;
 create policy "imob_modelo_select"

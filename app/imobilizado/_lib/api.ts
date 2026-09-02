@@ -394,11 +394,17 @@ export async function criarItem(entrada: NovoItem, usuario: string): Promise<Ite
 }
 
 /**
- * Apaga o item inteiro.
+ * Apaga o item inteiro e fecha o buraco que ele deixa na numeração.
  *
  * Etapas, anexos e histórico caem junto pela cascata do banco. Os arquivos no
  * Storage são removidos antes: sem isso ficariam órfãos ocupando espaço, sem
  * nenhuma linha apontando para eles.
+ *
+ * A renumeração é uma função do banco, não um laço aqui: numa transação só,
+ * ninguém vê a fila pela metade, e o índice único de `numero` não aceitaria a
+ * atualização feita linha a linha. A pasta no Storage não acompanha o número
+ * novo — ela é onde os documentos estão gravados, e renomeá-la partiria a
+ * pasta em duas.
  */
 export async function excluirItem(item: Item, anexos: Anexo[]): Promise<void> {
   if (anexos.length > 0) {
@@ -407,6 +413,19 @@ export async function excluirItem(item: Item, anexos: Anexo[]): Promise<void> {
 
   const { error } = await supabase.from(TAB_ITENS).delete().eq('id', item.id)
   if (error) throw error
+
+  await renumerarItens()
+}
+
+/**
+ * Reatribui os números pela ordem atual, sem buracos, e reposiciona a sequence.
+ *
+ * Falha aqui não desfaz a exclusão — o item já saiu, e a numeração torta se
+ * corrige na próxima exclusão ou rodando a função no banco. Derrubar a tela
+ * por causa disso faria parecer que a exclusão não aconteceu.
+ */
+export async function renumerarItens(): Promise<void> {
+  await supabase.rpc('imob_renumerar_itens')
 }
 
 /** O que impede uma etapa de ser concluída. Vazio = pode concluir. */

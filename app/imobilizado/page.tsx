@@ -51,15 +51,20 @@ function temAtraso(item: Item, hoje: string): boolean {
  * Os anexos são buscados só na hora de apagar — carregá-los para todas as
  * linhas da fila seria uma consulta por item só para o caso raro de alguém
  * excluir.
+ *
+ * Excluir renumera os itens no banco, então a fila é relida em seguida: a
+ * linha some na hora e os números dos outros já aparecem certos.
  */
 function AcoesDaLinha({
   item,
   podeExcluir,
   aoExcluir,
+  recarregar,
 }: {
   item: Item
   podeExcluir: boolean
   aoExcluir: (id: string) => void
+  recarregar: (silencioso?: boolean) => void
 }) {
   const [confirmando, setConfirmando] = useState(false)
   const [excluindo, setExcluindo] = useState(false)
@@ -72,6 +77,7 @@ function AcoesDaLinha({
       const anexos = await listarAnexos(item.id)
       await excluirItem(item, anexos)
       aoExcluir(item.id)
+      recarregar(true)
     } catch (falha) {
       setErro(descreverErro(falha))
       setExcluindo(false)
@@ -131,7 +137,7 @@ function AcoesDaLinha({
 }
 
 export default function PaginaFila() {
-  const { itens, acesso, carregando, erro, removerItem } = useImobilizado()
+  const { itens, acesso, carregando, erro, removerItem, recarregar } = useImobilizado()
   const [filtro, setFiltro] = useState<Filtro>('andamento')
   const [filtroFilial, setFiltroFilial] = useState('todas')
   const [busca, setBusca] = useState('')
@@ -403,6 +409,7 @@ export default function PaginaFila() {
                         item={item}
                         podeExcluir={podeAgir(acesso)}
                         aoExcluir={removerItem}
+                        recarregar={recarregar}
                       />
                     </td>
                   </tr>
