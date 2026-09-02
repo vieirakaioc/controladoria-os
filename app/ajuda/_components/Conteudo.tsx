@@ -66,7 +66,7 @@ export function Conteudo() {
         title="Importar Atividades"
         subtitle="Como subir a base de rotinas via Excel — esse é o fluxo principal."
       >
-        <h3 className="text-base font-bold text-[#063955] dark:text-white">
+        <h3 className="text-base font-bold text-navy-700 dark:text-white">
           📌 Recomendação: <em>sempre</em> exporta antes de importar
         </h3>
         <p>
@@ -74,19 +74,19 @@ export function Conteudo() {
           O arquivo gerado já vem com a estrutura certinha — duas abas, todas as colunas, dados atuais. Use ele como modelo:
           edita o que precisar, salva, e importa de volta com <Inline icon={<Upload size={14} />}>Importar Excel</Inline>.
         </p>
-        <p className="text-xs text-slate-500 dark:text-slate-400 italic">
+        <p className="text-xs text-ink-500 dark:text-slate-400 italic">
           ⚠️ Se você criar uma planilha do zero, vai dar erro "Aba ListBox não encontrada".
           A planilha precisa de duas abas: <code>Lista</code> e <code>ListBox</code>.
         </p>
 
-        <h3 className="text-base font-bold text-[#063955] dark:text-white mt-6">Aba <code>Lista</code> — as atividades</h3>
+        <h3 className="text-base font-bold text-navy-700 dark:text-white mt-6">Aba <code>Lista</code> — as atividades</h3>
         <p>Cada linha é uma rotina. Colunas:</p>
         <div className="not-prose my-4 overflow-x-auto">
           <table className="w-full text-sm border-collapse">
-            <thead className="bg-slate-50 dark:bg-slate-800 text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              <tr><th className="text-left p-2 border border-slate-200 dark:border-slate-700">Coluna</th><th className="text-left p-2 border border-slate-200 dark:border-slate-700">Obrigatório</th><th className="text-left p-2 border border-slate-200 dark:border-slate-700">O que é</th></tr>
+            <thead className="bg-navy-50 dark:bg-slate-800 text-xs uppercase tracking-wider text-ink-500 dark:text-slate-400">
+              <tr><th className="text-left p-2 border border-line dark:border-slate-700">Coluna</th><th className="text-left p-2 border border-line dark:border-slate-700">Obrigatório</th><th className="text-left p-2 border border-line dark:border-slate-700">O que é</th></tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-200">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-ink-700 dark:text-slate-200">
               <Coluna nome="Task_ID" obrig="Recomendado" desc='ID único da atividade. Se omitir, o sistema gera um. Mantenha o ID se for ATUALIZAR uma atividade existente.' />
               <Coluna nome="Planner Name" obrig="Sim" desc="Departamento/área. Ex: Fiscal, Contábil." />
               <Coluna nome="Setor" obrig="Sim" desc="Setor responsável (precisa existir na ListBox)." />
@@ -103,7 +103,7 @@ export function Conteudo() {
           </table>
         </div>
 
-        <h3 className="text-base font-bold text-[#063955] dark:text-white mt-6">Aba <code>ListBox</code> — parâmetros</h3>
+        <h3 className="text-base font-bold text-navy-700 dark:text-white mt-6">Aba <code>ListBox</code> — parâmetros</h3>
         <p>É a "memória" do sistema: dropdowns disponíveis na Lista. Colunas:</p>
         <ul>
           <li><strong>Setor</strong> — uma linha por setor.</li>
@@ -138,13 +138,13 @@ export function Conteudo() {
           <FreqCard nome="Ad Hoc" regra="Não gera automaticamente. Criada manualmente pelo botão '+ Nova Ad Hoc' em Tarefas." />
         </div>
 
-        <h3 className="text-base font-bold text-[#063955] dark:text-white mt-6">🛡️ Proteção Anti-Atraso</h3>
+        <h3 className="text-base font-bold text-navy-700 dark:text-white mt-6">🛡️ Proteção Anti-Atraso</h3>
         <p>
           Quando você executa a Sincronização do mês atual, o sistema <strong>não cria tarefas com data anterior a hoje</strong>.
           Isso evita que rotinas que cairiam dia 1, 2, 3... apareçam já em atraso quando você roda a sincronização no dia 15.
         </p>
 
-        <h3 className="text-base font-bold text-[#063955] dark:text-white mt-6">🎄 Feriados</h3>
+        <h3 className="text-base font-bold text-navy-700 dark:text-white mt-6">🎄 Feriados</h3>
         <p>
           Os feriados vêm da ListBox (coluna <code>Feriado</code>). Qualquer regra que cair num feriado é
           empurrada pro próximo dia útil — exceto Diária, que simplesmente pula.
@@ -159,7 +159,7 @@ export function Conteudo() {
       >
         <ol>
           <li>
-            Acesse <Link href="/" className="text-[#0f88a8] dark:text-[#38bdf8] font-semibold">Início (Sincronizar)</Link>.
+            Acesse <Link href="/" className="text-teal-600 dark:text-[#38bdf8] font-semibold">Início (Sincronizar)</Link>.
           </li>
           <li>Selecione o <strong>mês</strong> e <strong>ano</strong> alvo (default = mês atual).</li>
           <li>
@@ -173,14 +173,14 @@ export function Conteudo() {
           <code> upsert on conflict(atividade_id, data_vencimento)</code> — se já existe, mantém o status atual.
         </Aviso>
 
-        <h3 className="text-base font-bold text-[#063955] dark:text-white mt-6">Zona de Perigo</h3>
+        <h3 className="text-base font-bold text-navy-700 dark:text-white mt-6">Zona de Perigo</h3>
         <p>Na mesma página tem 3 botões destrutivos:</p>
         <ul>
           <li><strong>Limpar Ad Hocs</strong> — apaga todas as tarefas Ad Hoc.</li>
           <li><strong>Apagar por Responsável</strong> — apaga tudo de uma pessoa (Ad Hoc, Base, ou ambos).</li>
           <li><strong>Apagar Base Sincronizada</strong> — apaga as rotinas matrizes (não toca Ad Hoc).</li>
         </ul>
-        <p className="text-xs text-slate-500 dark:text-slate-400 italic">
+        <p className="text-xs text-ink-500 dark:text-slate-400 italic">
           Todas as exclusões fazem cascade: tarefas diárias → comentários → atividade matriz.
         </p>
       </Section>
@@ -221,7 +221,7 @@ export function Conteudo() {
         title="Monitor da Equipe & Score 0-100"
         subtitle="3 abas de visualização, score em 5 dimensões e reconhecimento semanal."
       >
-        <h3 className="text-base font-bold text-[#063955] dark:text-white">Score 0-100 — 5 dimensões</h3>
+        <h3 className="text-base font-bold text-navy-700 dark:text-white">Score 0-100 — 5 dimensões</h3>
         <p>Cada colaborador recebe um score calculado a partir destas 5 dimensões com pesos configuráveis:</p>
         <div className="not-prose grid sm:grid-cols-2 gap-3 my-4">
           <DimensaoCard nome="Conclusão" formula="concluídas / atribuídas" peso="default 45%" />
@@ -237,41 +237,41 @@ export function Conteudo() {
 
         <p className="text-sm">
           A soma dos 5 pesos sempre dá 100. Pra alterar: vai em
-          <Link href="/equipe" className="text-[#0f88a8] dark:text-[#38bdf8] font-semibold"> Monitor da Equipe</Link>,
+          <Link href="/equipe" className="text-teal-600 dark:text-[#38bdf8] font-semibold"> Monitor da Equipe</Link>,
           abre o painel <strong>Configuração do Score</strong> no topo, mexe nos sliders, clica em
           <Inline icon={<BarChart3 size={14} />}>Normalizar pra 100</Inline> se precisar e salva.
         </p>
 
-        <h3 className="text-base font-bold text-[#063955] dark:text-white mt-6">Faixas</h3>
+        <h3 className="text-base font-bold text-navy-700 dark:text-white mt-6">Faixas</h3>
         <ul>
           <li><strong className="text-emerald-600 dark:text-emerald-400">85+</strong> Excelente</li>
-          <li><strong className="text-[#0f88a8] dark:text-[#38bdf8]">70-84</strong> Bom</li>
+          <li><strong className="text-teal-600 dark:text-[#38bdf8]">70-84</strong> Bom</li>
           <li><strong className="text-amber-700 dark:text-amber-400">50-69</strong> Regular</li>
           <li><strong className="text-[#b43a3d] dark:text-[#f87171]">0-49</strong> Atenção</li>
         </ul>
 
-        <h3 className="text-base font-bold text-[#063955] dark:text-white mt-6">3 Abas de Visualização</h3>
+        <h3 className="text-base font-bold text-navy-700 dark:text-white mt-6">3 Abas de Visualização</h3>
         <ul>
           <li><strong>Mensal</strong> — pódio Top 3 + ranking visual + tabela detalhada</li>
           <li><strong>Histórico (6 meses)</strong> — heatmap por colaborador com tendência ↑↓</li>
           <li><strong>Atividade (30 dias)</strong> — heatmap 7×24 mostrando quando a equipe é mais ativa no app + strip individual por colaborador</li>
         </ul>
 
-        <h3 className="text-base font-bold text-[#063955] dark:text-white mt-6">🏆 Destaque da Semana</h3>
+        <h3 className="text-base font-bold text-navy-700 dark:text-white mt-6">🏆 Destaque da Semana</h3>
         <p>
           Card dourado no topo do Monitor que mostra o Top 3 da semana corrente (seg-sex) com botões
           <Inline>📋 Copiar mensagem</Inline> e <Inline>📱 Compartilhar no WhatsApp</Inline> — abre o WhatsApp
           com texto pronto pra colar no grupo da equipe.
         </p>
 
-        <h3 className="text-base font-bold text-[#063955] dark:text-white mt-6">Filtros & Export</h3>
+        <h3 className="text-base font-bold text-navy-700 dark:text-white mt-6">Filtros & Export</h3>
         <ul>
           <li>Filtros por <strong>Planner</strong> e <strong>Setor</strong> recortam o score (KPIs, pódio, ranking, tabela)</li>
           <li>Toggle <strong>Esconder em férias</strong> remove quem está ausente hoje</li>
           <li>Botões <strong>Excel</strong> (3 abas) e <strong>PDF</strong> exportam tudo</li>
         </ul>
 
-        <h3 className="text-base font-bold text-[#063955] dark:text-white mt-6">Bolinha de presença</h3>
+        <h3 className="text-base font-bold text-navy-700 dark:text-white mt-6">Bolinha de presença</h3>
         <ul>
           <li><span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse mr-1" /> &lt;1h → ativo agora</li>
           <li><span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 mr-1" /> hoje</li>
@@ -288,12 +288,12 @@ export function Conteudo() {
         subtitle="Períodos de ausência com redirecionamento opcional de tarefas."
       >
         <p>
-          Em <Link href="/ferias" className="text-[#0f88a8] dark:text-[#38bdf8] font-semibold">Férias da Equipe</Link>,
+          Em <Link href="/ferias" className="text-teal-600 dark:text-[#38bdf8] font-semibold">Férias da Equipe</Link>,
           qualquer colaborador pode cadastrar a própria ausência (férias, licença, atestado, afastamento).
           Admin pode cadastrar pra qualquer um.
         </p>
 
-        <h3 className="text-base font-bold text-[#063955] dark:text-white mt-6">O que acontece no score</h3>
+        <h3 className="text-base font-bold text-navy-700 dark:text-white mt-6">O que acontece no score</h3>
         <p>Quando alguém está dentro de um período de ausência:</p>
         <ul>
           <li>Tarefas com <code>data_vencimento</code> dentro do período <strong>não contam pro score dele</strong></li>
@@ -301,7 +301,7 @@ export function Conteudo() {
           <li>No Monitor, aparece badge <strong>🌴 férias</strong> e bolinha amarela "Em férias"</li>
         </ul>
 
-        <h3 className="text-base font-bold text-[#063955] dark:text-white mt-6 flex items-center gap-2">
+        <h3 className="text-base font-bold text-navy-700 dark:text-white mt-6 flex items-center gap-2">
           <UserCheck size={18} className="text-emerald-600" /> Substituto (redirecionamento)
         </h3>
         <p>
@@ -315,7 +315,7 @@ export function Conteudo() {
           (a partir do dia seguinte ao <code>data_fim</code>).
         </Aviso>
 
-        <h3 className="text-base font-bold text-[#063955] dark:text-white mt-6">Calendário visual</h3>
+        <h3 className="text-base font-bold text-navy-700 dark:text-white mt-6">Calendário visual</h3>
         <p>
           A página <code>/ferias</code> mostra um calendário grid (linhas = pessoas, colunas = dias do mês)
           com células coloridas indicando ausências. Cor por motivo:
@@ -324,10 +324,10 @@ export function Conteudo() {
           <li><span className="inline-block w-3 h-3 rounded bg-amber-500 align-middle mr-1" /> férias</li>
           <li><span className="inline-block w-3 h-3 rounded bg-violet-500 align-middle mr-1" /> licença</li>
           <li><span className="inline-block w-3 h-3 rounded bg-rose-500 align-middle mr-1" /> atestado</li>
-          <li><span className="inline-block w-3 h-3 rounded bg-slate-500 align-middle mr-1" /> afastamento</li>
+          <li><span className="inline-block w-3 h-3 rounded bg-navy-500 align-middle mr-1" /> afastamento</li>
         </ul>
 
-        <h3 className="text-base font-bold text-[#063955] dark:text-white mt-6">Lembrete automático</h3>
+        <h3 className="text-base font-bold text-navy-700 dark:text-white mt-6">Lembrete automático</h3>
         <p>
           Toda vez que o <strong>admin abre o app</strong>, o sistema checa se alguém volta de férias amanhã
           (ou seja, <code>data_fim = hoje</code>). Se sim, envia um email com a lista pro próprio admin.
@@ -339,14 +339,14 @@ export function Conteudo() {
       <Section id="permissoes" title="Permissões" subtitle="Membro × Admin">
         <div className="not-prose overflow-x-auto my-4">
           <table className="w-full text-sm border-collapse">
-            <thead className="bg-slate-50 dark:bg-slate-800 text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            <thead className="bg-navy-50 dark:bg-slate-800 text-xs uppercase tracking-wider text-ink-500 dark:text-slate-400">
               <tr>
-                <th className="text-left p-2 border border-slate-200 dark:border-slate-700">Ação</th>
-                <th className="text-center p-2 border border-slate-200 dark:border-slate-700">Membro</th>
-                <th className="text-center p-2 border border-slate-200 dark:border-slate-700">Admin</th>
+                <th className="text-left p-2 border border-line dark:border-slate-700">Ação</th>
+                <th className="text-center p-2 border border-line dark:border-slate-700">Membro</th>
+                <th className="text-center p-2 border border-line dark:border-slate-700">Admin</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-200">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-ink-700 dark:text-slate-200">
               <Permissao acao="Ver suas próprias tarefas no Kanban" m={true} a={true} />
               <Permissao acao="Concluir / atualizar status / comentar" m={true} a={true} />
               <Permissao acao="Criar tarefa Ad Hoc" m={true} a={true} />
@@ -366,8 +366,8 @@ export function Conteudo() {
 
       {/* 9. FAQ */}
       <Section id="faq" title="Perguntas Frequentes">
-        <details className="border border-slate-100 dark:border-slate-800 rounded-md p-4 mb-3 group">
-          <summary className="font-semibold cursor-pointer text-[#063955] dark:text-white">
+        <details className="border border-line dark:border-slate-800 rounded-md p-4 mb-3 group">
+          <summary className="font-semibold cursor-pointer text-navy-700 dark:text-white">
             Importei a planilha mas as tarefas não aparecem no Kanban.
           </summary>
           <p className="mt-3 text-sm">
@@ -376,8 +376,8 @@ export function Conteudo() {
           </p>
         </details>
 
-        <details className="border border-slate-100 dark:border-slate-800 rounded-md p-4 mb-3 group">
-          <summary className="font-semibold cursor-pointer text-[#063955] dark:text-white">
+        <details className="border border-line dark:border-slate-800 rounded-md p-4 mb-3 group">
+          <summary className="font-semibold cursor-pointer text-navy-700 dark:text-white">
             Erro "Aba ListBox não encontrada" ao importar.
           </summary>
           <p className="mt-3 text-sm">
@@ -387,8 +387,8 @@ export function Conteudo() {
           </p>
         </details>
 
-        <details className="border border-slate-100 dark:border-slate-800 rounded-md p-4 mb-3 group">
-          <summary className="font-semibold cursor-pointer text-[#063955] dark:text-white">
+        <details className="border border-line dark:border-slate-800 rounded-md p-4 mb-3 group">
+          <summary className="font-semibold cursor-pointer text-navy-700 dark:text-white">
             Como adicionar uma frequência nova (ex: Quinzenal)?
           </summary>
           <p className="mt-3 text-sm">
@@ -398,8 +398,8 @@ export function Conteudo() {
           </p>
         </details>
 
-        <details className="border border-slate-100 dark:border-slate-800 rounded-md p-4 mb-3 group">
-          <summary className="font-semibold cursor-pointer text-[#063955] dark:text-white">
+        <details className="border border-line dark:border-slate-800 rounded-md p-4 mb-3 group">
+          <summary className="font-semibold cursor-pointer text-navy-700 dark:text-white">
             O "Dias ativos" do colaborador no Monitor está zerado.
           </summary>
           <p className="mt-3 text-sm">
@@ -409,18 +409,18 @@ export function Conteudo() {
           </p>
         </details>
 
-        <details className="border border-slate-100 dark:border-slate-800 rounded-md p-4 mb-3 group">
-          <summary className="font-semibold cursor-pointer text-[#063955] dark:text-white">
+        <details className="border border-line dark:border-slate-800 rounded-md p-4 mb-3 group">
+          <summary className="font-semibold cursor-pointer text-navy-700 dark:text-white">
             Como mudar quem é admin?
           </summary>
           <p className="mt-3 text-sm">
-            Acessa <Link href="/acessos" className="text-[#0f88a8] dark:text-[#38bdf8] font-semibold">Gestão de Acessos</Link>
+            Acessa <Link href="/acessos" className="text-teal-600 dark:text-[#38bdf8] font-semibold">Gestão de Acessos</Link>
             {' '}(só admin atual vê), e troca o nível no select. Não dá pra mudar seu próprio nível.
           </p>
         </details>
 
-        <details className="border border-slate-100 dark:border-slate-800 rounded-md p-4 mb-3 group">
-          <summary className="font-semibold cursor-pointer text-[#063955] dark:text-white">
+        <details className="border border-line dark:border-slate-800 rounded-md p-4 mb-3 group">
+          <summary className="font-semibold cursor-pointer text-navy-700 dark:text-white">
             Cadastrei minha férias mas o calendário não me mostra.
           </summary>
           <p className="mt-3 text-sm">
@@ -431,8 +431,8 @@ export function Conteudo() {
           </p>
         </details>
 
-        <details className="border border-slate-100 dark:border-slate-800 rounded-md p-4 mb-3 group">
-          <summary className="font-semibold cursor-pointer text-[#063955] dark:text-white">
+        <details className="border border-line dark:border-slate-800 rounded-md p-4 mb-3 group">
+          <summary className="font-semibold cursor-pointer text-navy-700 dark:text-white">
             Cadastrei substituto mas as tarefas continuam aparecendo pra mim no Kanban.
           </summary>
           <p className="mt-3 text-sm">
@@ -451,12 +451,12 @@ export function Conteudo() {
 
 function ConceitoCard({ icone, termo, desc }: { icone: React.ReactNode; termo: string; desc: string }) {
   return (
-    <div className="p-4 border border-slate-100 dark:border-slate-800 rounded-md bg-slate-50/50 dark:bg-slate-950/50">
+    <div className="p-4 border border-line dark:border-slate-800 rounded-md bg-navy-50/50 dark:bg-slate-950/50">
       <div className="flex items-center gap-2 mb-1">
-        <span className="text-[#0f88a8] dark:text-[#38bdf8]">{icone}</span>
-        <span className="font-bold text-[#063955] dark:text-white">{termo}</span>
+        <span className="text-teal-600 dark:text-[#38bdf8]">{icone}</span>
+        <span className="font-bold text-navy-700 dark:text-white">{termo}</span>
       </div>
-      <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">{desc}</p>
+      <p className="text-xs text-ink-700 dark:text-slate-400 leading-relaxed">{desc}</p>
     </div>
   )
 }
@@ -464,38 +464,38 @@ function ConceitoCard({ icone, termo, desc }: { icone: React.ReactNode; termo: s
 function Coluna({ nome, obrig, desc }: { nome: string; obrig: string; desc: string }) {
   const corObrig =
     obrig === 'Sim' ? 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-300' :
-    obrig === 'Não' ? 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300' :
+    obrig === 'Não' ? 'bg-navy-100 dark:bg-slate-800 text-ink-700 dark:text-slate-300' :
     'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300'
   return (
     <tr>
-      <td className="p-2 border border-slate-200 dark:border-slate-700 font-mono text-xs">{nome}</td>
-      <td className="p-2 border border-slate-200 dark:border-slate-700"><span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${corObrig}`}>{obrig}</span></td>
-      <td className="p-2 border border-slate-200 dark:border-slate-700 text-xs leading-relaxed">{desc}</td>
+      <td className="p-2 border border-line dark:border-slate-700 font-mono text-xs">{nome}</td>
+      <td className="p-2 border border-line dark:border-slate-700"><span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${corObrig}`}>{obrig}</span></td>
+      <td className="p-2 border border-line dark:border-slate-700 text-xs leading-relaxed">{desc}</td>
     </tr>
   )
 }
 
 function FreqCard({ nome, regra, badge }: { nome: string; regra: string; badge?: string }) {
   return (
-    <div className="p-3 border border-slate-100 dark:border-slate-800 rounded-md bg-white dark:bg-slate-900">
+    <div className="p-3 border border-line dark:border-slate-800 rounded-md bg-white dark:bg-slate-900">
       <div className="flex items-center gap-2 mb-1">
-        <span className="font-bold text-sm text-[#063955] dark:text-white">{nome}</span>
+        <span className="font-bold text-sm text-navy-700 dark:text-white">{nome}</span>
         {badge && (
           <span className="text-[9px] font-bold uppercase tracking-widest bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 px-1.5 py-0.5 rounded">
             {badge}
           </span>
         )}
       </div>
-      <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">{regra}</p>
+      <p className="text-xs text-ink-700 dark:text-slate-400 leading-relaxed">{regra}</p>
     </div>
   )
 }
 
 function DimensaoCard({ nome, formula, peso }: { nome: string; formula: string; peso: string }) {
   return (
-    <div className="p-3 border border-slate-100 dark:border-slate-800 rounded-md bg-white dark:bg-slate-900">
-      <div className="font-bold text-sm text-[#063955] dark:text-white">{nome}</div>
-      <code className="text-[11px] text-slate-500 dark:text-slate-400 block mt-1">{formula}</code>
+    <div className="p-3 border border-line dark:border-slate-800 rounded-md bg-white dark:bg-slate-900">
+      <div className="font-bold text-sm text-navy-700 dark:text-white">{nome}</div>
+      <code className="text-[11px] text-ink-500 dark:text-slate-400 block mt-1">{formula}</code>
       <span className="text-[10px] uppercase font-bold tracking-wider text-[#C7A77B] mt-1.5 block">{peso}</span>
     </div>
   )
@@ -503,18 +503,18 @@ function DimensaoCard({ nome, formula, peso }: { nome: string; formula: string; 
 
 function PaginaItem({ icone, titulo, desc, admin }: { icone: React.ReactNode; titulo: string; desc: string; admin: boolean }) {
   return (
-    <div className="flex items-start gap-3 p-3 border border-slate-100 dark:border-slate-800 rounded-md bg-white dark:bg-slate-900">
-      <div className="text-[#0f88a8] dark:text-[#38bdf8] mt-0.5">{icone}</div>
+    <div className="flex items-start gap-3 p-3 border border-line dark:border-slate-800 rounded-md bg-white dark:bg-slate-900">
+      <div className="text-teal-600 dark:text-[#38bdf8] mt-0.5">{icone}</div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="font-bold text-sm text-[#063955] dark:text-white">{titulo}</span>
+          <span className="font-bold text-sm text-navy-700 dark:text-white">{titulo}</span>
           {admin && (
             <span className="text-[9px] font-bold uppercase tracking-widest bg-[#C7A77B]/20 text-[#C7A77B] px-1.5 py-0.5 rounded">
               Admin
             </span>
           )}
         </div>
-        <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed mt-0.5">{desc}</p>
+        <p className="text-xs text-ink-700 dark:text-slate-400 leading-relaxed mt-0.5">{desc}</p>
       </div>
     </div>
   )
@@ -524,19 +524,19 @@ function Permissao({ acao, m, a }: { acao: string; m: boolean; a: boolean }) {
   const Marker = ({ ok }: { ok: boolean }) =>
     ok
       ? <span className="text-emerald-600 dark:text-emerald-400 font-bold">✓</span>
-      : <span className="text-slate-300 dark:text-slate-600">—</span>
+      : <span className="text-ink-400 dark:text-slate-600">—</span>
   return (
     <tr>
-      <td className="p-2 border border-slate-200 dark:border-slate-700 text-xs">{acao}</td>
-      <td className="p-2 border border-slate-200 dark:border-slate-700 text-center"><Marker ok={m} /></td>
-      <td className="p-2 border border-slate-200 dark:border-slate-700 text-center"><Marker ok={a} /></td>
+      <td className="p-2 border border-line dark:border-slate-700 text-xs">{acao}</td>
+      <td className="p-2 border border-line dark:border-slate-700 text-center"><Marker ok={m} /></td>
+      <td className="p-2 border border-line dark:border-slate-700 text-center"><Marker ok={a} /></td>
     </tr>
   )
 }
 
 function Inline({ icon, children }: { icon?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-1 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-[12px] font-semibold text-slate-700 dark:text-slate-200 mx-0.5">
+    <span className="inline-flex items-center gap-1 bg-navy-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-[12px] font-semibold text-ink-700 dark:text-slate-200 mx-0.5">
       {icon}{children}
     </span>
   )
@@ -544,7 +544,7 @@ function Inline({ icon, children }: { icon?: React.ReactNode; children: React.Re
 
 function Aviso({ children }: { children: React.ReactNode }) {
   return (
-    <div className="my-4 p-3 border-l-4 border-l-[#C7A77B] bg-[#C7A77B]/5 dark:bg-[#C7A77B]/10 rounded-r-xl text-sm text-slate-700 dark:text-slate-300 not-prose">
+    <div className="my-4 p-3 border-l-4 border-l-[#C7A77B] bg-[#C7A77B]/5 dark:bg-[#C7A77B]/10 rounded-r-xl text-sm text-ink-700 dark:text-slate-300 not-prose">
       <div className="flex items-start gap-2">
         <AlertTriangle size={16} className="text-[#C7A77B] mt-0.5 shrink-0" />
         <div>{children}</div>

@@ -164,24 +164,24 @@ export default function FeriasPage() {
   // ─── Gates ────────────────────────────────────────────────────────────
   if (!authLoaded || loading) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center text-[#0f88a8] dark:text-[#38bdf8] font-medium animate-pulse">
+      <div className="min-h-screen bg-navy-50 dark:bg-slate-950 flex items-center justify-center text-teal-600 dark:text-[#38bdf8] font-medium animate-pulse">
         A carregar...
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-8 font-sans transition-colors">
+    <div className="min-h-screen bg-navy-50 dark:bg-slate-950 p-8 font-sans transition-colors">
       <Toaster position="bottom-right" toastOptions={{ style: { background: '#063955', color: '#fff', borderRadius: '12px' } }} />
 
-      <header className="mb-6 bg-white dark:bg-slate-900 p-6 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col xl:flex-row xl:justify-between xl:items-center gap-4">
+      <header className="mb-6 bg-white dark:bg-slate-900 p-6 rounded-lg shadow-card border border-line dark:border-slate-800 flex flex-col xl:flex-row xl:justify-between xl:items-center gap-4">
         <div className="flex items-center gap-4">
           <div className="bg-amber-500/10 dark:bg-amber-500/20 p-3 rounded-md text-amber-600 dark:text-amber-400">
             <Plane size={32} />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-[#063955] dark:text-white tracking-tight">Férias da Equipe</h1>
-            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
+            <h1 className="text-2xl font-bold text-navy-700 dark:text-white tracking-tight">Férias da Equipe</h1>
+            <p className="text-ink-500 dark:text-slate-400 text-sm mt-1">
               Calendário de ausências, substitutos, próximas saídas. {isAdmin && '(Admin vê tudo)'}
             </p>
           </div>
@@ -198,7 +198,7 @@ export default function FeriasPage() {
           {isAdmin && (
             <button
               onClick={() => { setModalEditing(null); setModalRespFixoId(undefined); setModalOpen(true) }}
-              className="flex items-center gap-2 bg-[#063955] hover:bg-[#042436] text-white px-5 py-2.5 rounded-md font-semibold transition-colors shadow-sm"
+              className="flex items-center gap-2 bg-navy-700 hover:bg-[#042436] text-white px-5 py-2.5 rounded-md font-semibold transition-colors shadow-sm"
             >
               <Plus size={16} /> Nova ausência (qualquer)
             </button>
@@ -219,12 +219,12 @@ export default function FeriasPage() {
         />
 
         {/* Card: Próximas da Equipe (top 3) */}
-        <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 p-5">
-          <h3 className="text-xs font-bold text-[#063955] dark:text-white uppercase tracking-widest mb-3 flex items-center gap-2">
-            <Calendar size={13} className="text-[#0f88a8]" /> Próximas da Equipe <span className="text-slate-300">(top 3)</span>
+        <div className="bg-white dark:bg-slate-900 rounded-lg shadow-card border border-line dark:border-slate-800 p-5">
+          <h3 className="text-xs font-bold text-navy-700 dark:text-white uppercase tracking-widest mb-3 flex items-center gap-2">
+            <Calendar size={13} className="text-teal-600" /> Próximas da Equipe <span className="text-ink-400">(top 3)</span>
           </h3>
           {proximas.length === 0 ? (
-            <p className="text-sm text-slate-500 dark:text-slate-400">Ninguém tem ausência futura cadastrada.</p>
+            <p className="text-sm text-ink-500 dark:text-slate-400">Ninguém tem ausência futura cadastrada.</p>
           ) : (
             <div className="space-y-2">
               {proximas.map(a => (
@@ -240,28 +240,28 @@ export default function FeriasPage() {
       </div>
 
       {/* Calendário do mês */}
-      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 p-5 mb-3 flex items-center justify-between">
-        <h3 className="text-base font-bold text-[#063955] dark:text-white flex items-center gap-2">
-          <Calendar size={18} className="text-[#0f88a8]" />
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-card border border-line dark:border-slate-800 p-5 mb-3 flex items-center justify-between">
+        <h3 className="text-base font-bold text-navy-700 dark:text-white flex items-center gap-2">
+          <Calendar size={18} className="text-teal-600" />
           {MESES_NOMES[mesAlvo]} {anoAlvo}
         </h3>
         <div className="flex items-center gap-2">
           <button
             onClick={() => navMes(-1)}
-            className="p-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors"
+            className="p-2 rounded-md hover:bg-navy-100 dark:hover:bg-slate-800 text-ink-700 dark:text-slate-300 transition-colors"
             title="Mês anterior"
           >
             <ChevronLeft size={18} />
           </button>
           <button
             onClick={() => { setMesAlvo(new Date().getMonth()); setAnoAlvo(new Date().getFullYear()) }}
-            className="px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-colors"
+            className="px-3 py-1.5 text-xs font-semibold text-ink-700 dark:text-slate-300 hover:bg-navy-100 dark:hover:bg-slate-800 rounded-md transition-colors"
           >
             Hoje
           </button>
           <button
             onClick={() => navMes(1)}
-            className="p-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors"
+            className="p-2 rounded-md hover:bg-navy-100 dark:hover:bg-slate-800 text-ink-700 dark:text-slate-300 transition-colors"
             title="Próximo mês"
           >
             <ChevronRight size={18} />
@@ -274,14 +274,14 @@ export default function FeriasPage() {
       {/* Tabela completa (admin) */}
       {isAdmin && ausencias.length > 0 && (
         <div className="mt-8">
-          <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-3">
+          <h3 className="text-xs font-bold text-ink-500 dark:text-slate-400 uppercase tracking-widest mb-3">
             Todas as Ausências ({ausencias.length})
           </h3>
-          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-card border border-line dark:border-slate-800 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50 dark:bg-slate-950">
-                  <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 uppercase text-xs tracking-wider">
+                <thead className="bg-navy-50 dark:bg-slate-950">
+                  <tr className="border-b border-line dark:border-slate-800 text-ink-500 dark:text-slate-400 uppercase text-xs tracking-wider">
                     <th className="px-4 py-3 font-semibold">Colaborador</th>
                     <th className="px-4 py-3 font-semibold">Início</th>
                     <th className="px-4 py-3 font-semibold">Fim</th>
@@ -294,24 +294,24 @@ export default function FeriasPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
                   {ausencias.map(a => (
-                    <tr key={a.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                      <td className="px-4 py-3 font-medium text-[#063955] dark:text-white">{a.responsaveis?.nome || '—'}</td>
-                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300 tabular-nums">{fmtBR(a.data_inicio)}</td>
-                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300 tabular-nums">{fmtBR(a.data_fim)}</td>
+                    <tr key={a.id} className="hover:bg-navy-50 dark:hover:bg-slate-800/50 transition-colors">
+                      <td className="px-4 py-3 font-medium text-navy-700 dark:text-white">{a.responsaveis?.nome || '—'}</td>
+                      <td className="px-4 py-3 text-ink-700 dark:text-slate-300 tabular-nums">{fmtBR(a.data_inicio)}</td>
+                      <td className="px-4 py-3 text-ink-700 dark:text-slate-300 tabular-nums">{fmtBR(a.data_fim)}</td>
                       <td className="px-4 py-3">
-                        <span className="inline-block bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-2 py-0.5 rounded text-xs font-medium">{a.motivo || '—'}</span>
+                        <span className="inline-block bg-navy-100 dark:bg-slate-800 text-ink-700 dark:text-slate-200 px-2 py-0.5 rounded text-xs font-medium">{a.motivo || '—'}</span>
                       </td>
-                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
-                        {a.substituto_id ? (respsById.get(a.substituto_id)?.nome || '?') : <span className="text-slate-300">—</span>}
+                      <td className="px-4 py-3 text-ink-700 dark:text-slate-300">
+                        {a.substituto_id ? (respsById.get(a.substituto_id)?.nome || '?') : <span className="text-ink-400">—</span>}
                       </td>
                       <td className="px-4 py-3"><BadgeAprovacao status={a.aprovacao_status} /></td>
-                      <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400 max-w-xs truncate" title={a.observacao || ''}>{a.observacao || '—'}</td>
+                      <td className="px-4 py-3 text-xs text-ink-500 dark:text-slate-400 max-w-xs truncate" title={a.observacao || ''}>{a.observacao || '—'}</td>
                       <td className="px-4 py-3 text-right">
                         <div className="inline-flex items-center gap-1">
-                          <button onClick={() => editar(a)} className="text-slate-300 hover:text-[#0f88a8] dark:hover:text-[#38bdf8] transition-colors p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800" title="Editar">
+                          <button onClick={() => editar(a)} className="text-ink-400 hover:text-teal-600 dark:hover:text-[#38bdf8] transition-colors p-1.5 rounded-md hover:bg-navy-100 dark:hover:bg-slate-800" title="Editar">
                             <Pencil size={14} />
                           </button>
-                          <button onClick={() => remover(a)} className="text-slate-300 hover:text-[#b43a3d] dark:hover:text-[#f87171] transition-colors p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800" title="Remover">
+                          <button onClick={() => remover(a)} className="text-ink-400 hover:text-[#b43a3d] dark:hover:text-[#f87171] transition-colors p-1.5 rounded-md hover:bg-navy-100 dark:hover:bg-slate-800" title="Remover">
                             <Trash2 size={14} />
                           </button>
                         </div>
@@ -343,14 +343,14 @@ export default function FeriasPage() {
 // ─── Badge de status de aprovação no Sênior ──────────────────────────────
 const APROVACAO_CONFIG: Record<string, { cls: string; icone: string }> = {
   'Aprovada':       { cls: 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300', icone: '✓' },
-  'Solicitada':     { cls: 'bg-[#0f88a8]/10 dark:bg-[#38bdf8]/15 text-[#0f88a8] dark:text-[#38bdf8]',      icone: '⌛' },
+  'Solicitada':     { cls: 'bg-teal-600/10 dark:bg-[#38bdf8]/15 text-teal-600 dark:text-[#38bdf8]',      icone: '⌛' },
   'Recusada':       { cls: 'bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300',              icone: '✕' },
-  'Não solicitada': { cls: 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400',             icone: '○' },
+  'Não solicitada': { cls: 'bg-navy-100 dark:bg-slate-800 text-ink-500 dark:text-slate-400',             icone: '○' },
 }
 
 function BadgeAprovacao({ status }: { status: string | null | undefined }) {
   const s = (status || 'Não solicitada').trim()
-  const cfg = APROVACAO_CONFIG[s] || { cls: 'bg-slate-100 dark:bg-slate-800 text-slate-500', icone: '?' }
+  const cfg = APROVACAO_CONFIG[s] || { cls: 'bg-navy-100 dark:bg-slate-800 text-ink-500', icone: '?' }
   return (
     <span
       className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${cfg.cls}`}
@@ -378,16 +378,16 @@ function ItemAusencia({
     ? 'bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/30'
     : futura
       ? 'bg-sky-50 dark:bg-sky-500/10 border-sky-200 dark:border-sky-500/30'
-      : 'bg-slate-50 dark:bg-slate-800/30 border-slate-100 dark:border-slate-700/50 opacity-60'
+      : 'bg-navy-50 dark:bg-slate-800/30 border-line dark:border-slate-700/50 opacity-60'
 
   return (
     <div className={`flex items-start justify-between gap-3 p-3 rounded-md border ${bg} group`}>
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 text-sm font-bold text-[#063955] dark:text-white">
+        <div className="flex items-center gap-2 text-sm font-bold text-navy-700 dark:text-white">
           {a.responsaveis?.nome || 'Sem nome'}
           {ativa && <span className="text-[9px] uppercase font-bold tracking-widest bg-amber-500 text-white px-1.5 py-0.5 rounded">Ativa</span>}
         </div>
-        <div className="text-xs text-slate-600 dark:text-slate-300 mt-0.5 tabular-nums">
+        <div className="text-xs text-ink-700 dark:text-slate-300 mt-0.5 tabular-nums">
           {fmtBR(a.data_inicio)} → {fmtBR(a.data_fim)} · <span className="font-medium">{a.motivo || 'ausência'}</span>
         </div>
         <div className="flex items-center gap-1.5 flex-wrap mt-1">
@@ -403,7 +403,7 @@ function ItemAusencia({
         {podeEditar && onEditar && (
           <button
             onClick={onEditar}
-            className="text-slate-400 hover:text-[#0f88a8] dark:hover:text-[#38bdf8] hover:bg-white dark:hover:bg-slate-800 transition-colors p-1.5 rounded-md"
+            className="text-ink-400 hover:text-teal-600 dark:hover:text-[#38bdf8] hover:bg-white dark:hover:bg-slate-800 transition-colors p-1.5 rounded-md"
             title="Editar"
           >
             <Pencil size={13} />
@@ -412,7 +412,7 @@ function ItemAusencia({
         {podeRemover && (
           <button
             onClick={onRemover}
-            className="text-slate-400 hover:text-[#b43a3d] dark:hover:text-[#f87171] hover:bg-white dark:hover:bg-slate-800 transition-colors p-1.5 rounded-md"
+            className="text-ink-400 hover:text-[#b43a3d] dark:hover:text-[#f87171] hover:bg-white dark:hover:bg-slate-800 transition-colors p-1.5 rounded-md"
             title="Remover"
           >
             <Trash2 size={13} />
@@ -455,11 +455,11 @@ function MinhasAusenciasCard({
 
   if (meuResponsavelId == null) {
     return (
-      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 p-5">
-        <h3 className="text-xs font-bold text-[#063955] dark:text-white uppercase tracking-widest mb-3 flex items-center gap-2">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-card border border-line dark:border-slate-800 p-5">
+        <h3 className="text-xs font-bold text-navy-700 dark:text-white uppercase tracking-widest mb-3 flex items-center gap-2">
           <UserCheck size={13} className="text-amber-500" /> Minhas Ausências
         </h3>
-        <p className="text-xs text-slate-500 dark:text-slate-400">
+        <p className="text-xs text-ink-500 dark:text-slate-400">
           Seu email do login não corresponde a nenhum responsável cadastrado. Peça pro admin te adicionar em <code>responsaveis</code>.
         </p>
       </div>
@@ -472,7 +472,7 @@ function MinhasAusenciasCard({
         <h3 className="text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-widest mb-2 flex items-center gap-2">
           <Plane size={13} /> Minhas Ausências
         </h3>
-        <p className="text-sm text-slate-700 dark:text-slate-200 mt-3 mb-4">
+        <p className="text-sm text-ink-700 dark:text-slate-200 mt-3 mb-4">
           Você ainda não tem nenhuma ausência cadastrada. Quando precisar tirar um período de férias, licença ou atestado, é só registrar aqui.
         </p>
         <button
@@ -492,8 +492,8 @@ function MinhasAusenciasCard({
           <Plane size={13} /> Minhas Ausências
         </h3>
         <div className="text-right">
-          <div className="text-[10px] uppercase font-bold tracking-wider text-slate-500 dark:text-slate-400">{anoAtual}</div>
-          <div className="text-sm font-bold text-[#063955] dark:text-white tabular-nums">{diasTotais} dia{diasTotais === 1 ? '' : 's'}</div>
+          <div className="text-[10px] uppercase font-bold tracking-wider text-ink-500 dark:text-slate-400">{anoAtual}</div>
+          <div className="text-sm font-bold text-navy-700 dark:text-white tabular-nums">{diasTotais} dia{diasTotais === 1 ? '' : 's'}</div>
         </div>
       </div>
 
@@ -506,9 +506,9 @@ function MinhasAusenciasCard({
                 <span className={`text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded ${ativa ? 'bg-amber-500 text-white' : 'bg-sky-100 text-sky-700 dark:bg-sky-500/20 dark:text-sky-300'}`}>
                   {ativa ? 'Em curso' : 'Próxima'}
                 </span>
-                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">{destaque.motivo || 'ausência'}</span>
+                <span className="text-xs text-ink-500 dark:text-slate-400 font-medium">{destaque.motivo || 'ausência'}</span>
               </div>
-              <div className="text-base font-bold text-[#063955] dark:text-white tabular-nums">
+              <div className="text-base font-bold text-navy-700 dark:text-white tabular-nums">
                 {fmtBR(destaque.data_inicio)} → {fmtBR(destaque.data_fim)}
               </div>
               <div className="flex items-center gap-2 flex-wrap mt-1">
@@ -521,10 +521,10 @@ function MinhasAusenciasCard({
               </div>
             </div>
             <div className="flex items-center gap-0.5 opacity-60 group-hover:opacity-100 transition-opacity">
-              <button onClick={() => onEditar(destaque)} className="text-slate-400 hover:text-[#0f88a8] hover:bg-slate-100 dark:hover:bg-slate-800 p-1.5 rounded-md transition-colors" title="Editar">
+              <button onClick={() => onEditar(destaque)} className="text-ink-400 hover:text-teal-600 hover:bg-navy-100 dark:hover:bg-slate-800 p-1.5 rounded-md transition-colors" title="Editar">
                 <Pencil size={13} />
               </button>
-              <button onClick={() => onRemover(destaque)} className="text-slate-400 hover:text-[#b43a3d] hover:bg-slate-100 dark:hover:bg-slate-800 p-1.5 rounded-md transition-colors" title="Remover">
+              <button onClick={() => onRemover(destaque)} className="text-ink-400 hover:text-[#b43a3d] hover:bg-navy-100 dark:hover:bg-slate-800 p-1.5 rounded-md transition-colors" title="Remover">
                 <Trash2 size={13} />
               </button>
             </div>
@@ -535,25 +535,25 @@ function MinhasAusenciasCard({
       {/* Outras (compactas) */}
       {outras.length > 0 && (
         <div className="space-y-1.5">
-          <div className="text-[10px] uppercase font-bold tracking-widest text-slate-500 dark:text-slate-400 px-1">Outros períodos</div>
+          <div className="text-[10px] uppercase font-bold tracking-widest text-ink-500 dark:text-slate-400 px-1">Outros períodos</div>
           {outras.map(a => (
             <div key={a.id} className="bg-white/60 dark:bg-slate-900/60 rounded-md px-3 py-2 flex items-center justify-between gap-2 group hover:bg-white dark:hover:bg-slate-900 transition-colors">
-              <div className="flex-1 text-xs tabular-nums text-slate-600 dark:text-slate-300">
+              <div className="flex-1 text-xs tabular-nums text-ink-700 dark:text-slate-300">
                 {fmtBR(a.data_inicio)} → {fmtBR(a.data_fim)}{' '}
-                <span className="text-slate-400">· {a.motivo || 'ausência'}</span>
+                <span className="text-ink-400">· {a.motivo || 'ausência'}</span>
               </div>
               <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onClick={() => onEditar(a)} className="text-slate-400 hover:text-[#0f88a8] p-1 rounded transition-colors" title="Editar">
+                <button onClick={() => onEditar(a)} className="text-ink-400 hover:text-teal-600 p-1 rounded transition-colors" title="Editar">
                   <Pencil size={12} />
                 </button>
-                <button onClick={() => onRemover(a)} className="text-slate-400 hover:text-[#b43a3d] p-1 rounded transition-colors" title="Remover">
+                <button onClick={() => onRemover(a)} className="text-ink-400 hover:text-[#b43a3d] p-1 rounded transition-colors" title="Remover">
                   <Trash2 size={12} />
                 </button>
               </div>
             </div>
           ))}
           {minhas.length > 1 + outras.length && (
-            <div className="text-[10px] text-slate-400 px-1 pt-1">+ {minhas.length - 1 - outras.length} no histórico</div>
+            <div className="text-[10px] text-ink-400 px-1 pt-1">+ {minhas.length - 1 - outras.length} no histórico</div>
           )}
         </div>
       )}

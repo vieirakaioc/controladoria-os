@@ -23,12 +23,14 @@ export default function RootLayout({
   return (
     <html lang="pt-br">
       <body
-        className={`${inter.variable} font-sans antialiased text-slate-900 flex h-screen bg-slate-50 overflow-hidden`}
+        className={`${inter.variable} font-sans antialiased text-ink-900 flex h-screen bg-navy-50 overflow-hidden`}
       >
         {/* O RouteGuard envolve tudo! Se não tiver login, ele nem deixa renderizar o resto */}
         <RouteGuard>
           <Sidebar />
-          <main className="flex-1 overflow-y-auto">
+          {/* min-w-0: sem isso o conteúdo largo (tabela, quadro) empurra a
+              página inteira e a barra lateral perde espaço. */}
+          <main className="min-w-0 flex-1 overflow-y-auto">
             {children}
           </main>
           <TutorialBoasVindas />

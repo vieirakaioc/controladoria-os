@@ -49,20 +49,20 @@ export const TaskCard = React.memo(function TaskCard({
       draggable={mode === 'default'}
       onDragStart={mode === 'default' ? handleDragStart : undefined}
       onDragEnd={mode === 'default' ? handleDragEnd : undefined}
-      className={`bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md p-4 shadow-sm hover:shadow-md dark:hover:shadow-slate-900/50 hover:-translate-y-0.5 transition-all duration-200 select-none ${mode === 'default' ? 'cursor-grab active:cursor-grabbing' : ''}`}
+      className={`bg-white dark:bg-slate-900 border border-line dark:border-slate-800 rounded-md p-4 shadow-card hover:shadow-md dark:hover:shadow-slate-900/50 hover:-translate-y-0.5 transition-all duration-200 select-none ${mode === 'default' ? 'cursor-grab active:cursor-grabbing' : ''}`}
     >
       <div className="flex items-center justify-between gap-3 mb-2">
-        <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+        <div className="text-[11px] font-medium text-ink-500 dark:text-slate-400">
           {r.data_vencimento ? String(r.data_vencimento).slice(0, 10) : '—'} • {bucket}
         </div>
         <div className="flex gap-2 items-center">
-          {chkTotal > 0 && <span title="Progresso do Checklist" className="text-[10px] font-bold text-slate-400 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded flex items-center gap-1">☑ {chkDone}/{chkTotal}</span>}
-          {r.anexo_url && <span title="Tem anexo" className="text-[#0f88a8]">📎</span>}
+          {chkTotal > 0 && <span title="Progresso do Checklist" className="text-[10px] font-bold text-ink-400 dark:text-slate-300 bg-navy-100 dark:bg-slate-800 px-1.5 py-0.5 rounded flex items-center gap-1">☑ {chkDone}/{chkTotal}</span>}
+          {r.anexo_url && <span title="Tem anexo" className="text-teal-600">📎</span>}
           <span className={`px-2 py-0.5 rounded text-[10px] font-semibold tracking-wide uppercase ${badge(st)}`}>{st}</span>
         </div>
       </div>
 
-      <div className="text-sm font-medium text-slate-800 dark:text-white leading-snug pointer-events-none">{atv.nome_atividade || '-'}</div>
+      <div className="text-sm font-medium text-ink-900 dark:text-white leading-snug pointer-events-none">{atv.nome_atividade || '-'}</div>
 
       <div className="mt-3 flex flex-wrap gap-1.5 pointer-events-none">
         {atv.projeto_id && (
@@ -75,11 +75,11 @@ export const TaskCard = React.memo(function TaskCard({
             {atv.classificacao}
           </span>
         )}
-        <span className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded text-[10px] font-medium">{atv.setores?.nome || '—'}</span>
-        <span className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded text-[10px] font-medium truncate max-w-[120px]" title={nomesResponsaveis}>
+        <span className="bg-navy-100 dark:bg-slate-800 text-ink-700 dark:text-slate-300 px-2 py-0.5 rounded text-[10px] font-medium">{atv.setores?.nome || '—'}</span>
+        <span className="bg-navy-100 dark:bg-slate-800 text-ink-700 dark:text-slate-300 px-2 py-0.5 rounded text-[10px] font-medium truncate max-w-[120px]" title={nomesResponsaveis}>
           {nomesResponsaveis}
         </span>
-        <span className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded text-[10px] font-medium">{atv.planner_name || '—'}</span>
+        <span className="bg-navy-100 dark:bg-slate-800 text-ink-700 dark:text-slate-300 px-2 py-0.5 rounded text-[10px] font-medium">{atv.planner_name || '—'}</span>
       </div>
 
       <div className="mt-4 flex gap-2 items-center">
@@ -87,14 +87,14 @@ export const TaskCard = React.memo(function TaskCard({
           <>{!isDone && <button onClick={() => setStatus(r.id, statuses[statuses.length - 1] || 'Concluído')} className="bg-[#2d6943]/10 hover:bg-[#2d6943]/20 dark:bg-[#2d6943]/20 dark:hover:bg-[#2d6943]/40 text-[#2d6943] dark:text-[#4ade80] border border-[#2d6943]/20 dark:border-[#4ade80]/20 font-medium py-1 px-3 rounded-md transition-colors text-xs cursor-pointer">Concluir</button>}</>
         ) : (
           <>
-            <button onClick={() => setStatus(r.id, prevSt)} disabled={st === statuses[0]} className="bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 py-1 px-2 rounded-md transition-colors disabled:opacity-40 text-xs cursor-pointer">◀</button>
-            <button onClick={() => setStatus(r.id, nextSt)} disabled={st === statuses[statuses.length - 1]} className="bg-[#0f88a8]/10 hover:bg-[#0f88a8]/20 dark:bg-[#0f88a8]/20 dark:hover:bg-[#0f88a8]/40 border border-[#0f88a8]/20 dark:border-[#0f88a8]/30 text-[#0f88a8] dark:text-[#7dd3fc] py-1 px-2 rounded-md transition-colors disabled:opacity-40 text-xs cursor-pointer">▶</button>
+            <button onClick={() => setStatus(r.id, prevSt)} disabled={st === statuses[0]} className="bg-navy-50 dark:bg-slate-800 hover:bg-navy-100 dark:hover:bg-slate-700 border border-line dark:border-slate-700 text-ink-700 dark:text-slate-300 py-1 px-2 rounded-md transition-colors disabled:opacity-40 text-xs cursor-pointer">◀</button>
+            <button onClick={() => setStatus(r.id, nextSt)} disabled={st === statuses[statuses.length - 1]} className="bg-teal-600/10 hover:bg-teal-600/20 dark:bg-[#0f88a8]/20 dark:hover:bg-teal-600/40 border border-teal-500/20 dark:border-[#0f88a8]/30 text-teal-600 dark:text-[#7dd3fc] py-1 px-2 rounded-md transition-colors disabled:opacity-40 text-xs cursor-pointer">▶</button>
           </>
         )}
 
         <div className="ml-auto flex items-center gap-1">
-          <button onClick={() => excluirTarefa(r.id)} className="text-slate-300 dark:text-slate-600 hover:text-[#b43a3d] dark:hover:text-[#f87171] hover:bg-[#b43a3d]/10 dark:hover:bg-[#b43a3d]/20 py-1 px-2 rounded-md transition-colors text-xs cursor-pointer" title="Excluir Tarefa">🗑️</button>
-          <button onClick={() => abrirDrawer(r)} className="bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-medium py-1 px-3 rounded-md transition-colors text-xs cursor-pointer">Detalhes</button>
+          <button onClick={() => excluirTarefa(r.id)} className="text-ink-400 dark:text-slate-600 hover:text-[#b43a3d] dark:hover:text-[#f87171] hover:bg-[#b43a3d]/10 dark:hover:bg-[#b43a3d]/20 py-1 px-2 rounded-md transition-colors text-xs cursor-pointer" title="Excluir Tarefa">🗑️</button>
+          <button onClick={() => abrirDrawer(r)} className="bg-navy-50 dark:bg-slate-800 hover:bg-navy-100 dark:hover:bg-slate-700 border border-line dark:border-slate-700 text-ink-700 dark:text-slate-300 font-medium py-1 px-3 rounded-md transition-colors text-xs cursor-pointer">Detalhes</button>
         </div>
       </div>
     </div>

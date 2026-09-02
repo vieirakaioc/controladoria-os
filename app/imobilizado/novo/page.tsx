@@ -14,9 +14,9 @@ import { caixaAlta, moedaDoTexto, textoDaMoeda } from '../_lib/formato'
 import { podeAgir, rotuloFilial, type Filial } from '../_lib/types'
 
 const CAMPO =
-  'w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-[#0f88a8] focus:ring-2 focus:ring-[#0f88a8]/20'
+  'w-full rounded-md border border-line-strong bg-white px-3 py-2 text-sm text-ink-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-[#0f88a8]/20'
 
-const ROTULO = 'text-xs font-semibold uppercase tracking-wider text-slate-400'
+const ROTULO = 'text-xs font-semibold uppercase tracking-wider text-ink-400'
 
 export default function PaginaNovoItem() {
   const router = useRouter()
@@ -46,7 +46,7 @@ export default function PaginaNovoItem() {
   if (!podeAgir(acesso)) {
     return (
       <Painel titulo="Somente leitura">
-        <p className="text-sm leading-relaxed text-slate-600">
+        <p className="text-sm leading-relaxed text-ink-700">
           Você acompanha este processo como observador. Cadastrar item é ação de participante.
         </p>
       </Painel>
@@ -119,7 +119,7 @@ export default function PaginaNovoItem() {
               ))}
             </select>
             {filiais.length === 0 && (
-              <p className="mt-1.5 text-xs text-slate-400">
+              <p className="mt-1.5 text-xs text-ink-400">
                 Nenhuma filial cadastrada ainda — a lista vem da tabela <code>filiais</code>.
               </p>
             )}
@@ -188,21 +188,21 @@ export default function PaginaNovoItem() {
           onClick={() => setEhFrota((atual) => !atual)}
           aria-pressed={ehFrota}
           className={`mt-5 flex w-full items-center gap-3 rounded-md border p-4 text-left transition-all ${
-            ehFrota ? 'border-[#0f88a8] bg-[#0f88a8]/[0.06]' : 'border-slate-200 bg-white hover:border-slate-300'
+            ehFrota ? 'border-teal-500 bg-teal-600/[0.06]' : 'border-line bg-white hover:border-line-strong'
           }`}
         >
           <span
             className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-md ${
-              ehFrota ? 'bg-[#0f88a8] text-white' : 'bg-slate-100 text-slate-400'
+              ehFrota ? 'bg-teal-600 text-white' : 'bg-navy-100 text-ink-400'
             }`}
           >
             <Truck size={18} />
           </span>
           <span className="min-w-0">
-            <span className="block text-sm font-bold text-[#063955]">
+            <span className="block text-sm font-bold text-navy-700">
               {ehFrota ? 'É frota' : 'Não é frota'}
             </span>
-            <span className="block text-xs leading-relaxed text-slate-500">
+            <span className="block text-xs leading-relaxed text-ink-500">
               Frota acrescenta a etapa do ATPV e a atividade paralela de cadastrar a placa. Sem
               frota, essas etapas nem chegam a ser criadas.
             </span>
@@ -221,7 +221,7 @@ export default function PaginaNovoItem() {
             type="button"
             onClick={enviar}
             disabled={salvando}
-            className="inline-flex items-center gap-2 rounded-md bg-[#0f88a8] px-5 py-2.5 text-sm font-bold text-white transition-all hover:brightness-110 disabled:opacity-40"
+            className="inline-flex items-center gap-2 rounded-md bg-teal-600 px-5 py-2.5 text-sm font-bold text-white transition-all hover:brightness-110 disabled:opacity-40"
           >
             {salvando ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
             Criar item e abrir o fluxo
@@ -231,7 +231,7 @@ export default function PaginaNovoItem() {
             type="button"
             onClick={() => router.push('/imobilizado')}
             disabled={salvando}
-            className="rounded-md border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-40"
+            className="rounded-md border border-line-strong px-5 py-2.5 text-sm font-semibold text-ink-700 transition-colors hover:bg-navy-50 disabled:opacity-40"
           >
             Cancelar
           </button>

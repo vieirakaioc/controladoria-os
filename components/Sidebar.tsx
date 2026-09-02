@@ -215,7 +215,7 @@ export default function Sidebar() {
   const navItems = allNavItems.filter(item => !item.adminOnly || userRole === 'admin')
 
   return (
-    <aside className={`relative bg-[#063955] text-white transition-all duration-300 ease-in-out flex flex-col shadow-xl z-50 ${isExpanded ? 'w-64' : 'w-20'}`}>
+    <aside className={`relative bg-navy-700 text-white transition-all duration-300 ease-in-out flex flex-col shadow-xl z-50 ${isExpanded ? 'w-64' : 'w-20'}`}>
       
       <div className="h-24 flex items-center justify-center border-b border-white/10 px-4 shrink-0">
         {isExpanded ? (
@@ -239,7 +239,7 @@ export default function Sidebar() {
 
       <button 
         onClick={() => setIsExpanded(!isExpanded)}
-        className="absolute -right-3 top-8 bg-[#0f88a8] text-white rounded-full p-1.5 shadow-lg hover:brightness-110 transition-all z-50"
+        className="absolute -right-3 top-8 bg-teal-600 text-white rounded-full p-1.5 shadow-lg hover:brightness-110 transition-all z-50"
       >
         {isExpanded ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
       </button>
@@ -255,7 +255,7 @@ export default function Sidebar() {
               key={item.href} 
               href={item.href}
               className={`flex items-center gap-3 px-3 py-3 rounded-md transition-all ${
-                isActive ? 'bg-[#0f88a8] text-white shadow-md' : 'text-[#818284] hover:bg-white/5 hover:text-white'
+                isActive ? 'bg-teal-600 text-white shadow-md' : 'text-[#818284] hover:bg-white/5 hover:text-white'
               } ${!isExpanded && 'justify-center'}`}
               title={!isExpanded ? item.name : ''}
             >
@@ -279,7 +279,7 @@ export default function Sidebar() {
             }
           }}
           className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-all w-full relative ${
-            notifOpen ? 'bg-[#0f88a8] text-white shadow-md' : 'text-[#818284] hover:bg-white/5 hover:text-white'
+            notifOpen ? 'bg-teal-600 text-white shadow-md' : 'text-[#818284] hover:bg-white/5 hover:text-white'
           } ${!isExpanded && 'justify-center'}`}
           title={!isExpanded ? 'Notificações' : ''}
         >
@@ -300,29 +300,29 @@ export default function Sidebar() {
         </button>
 
         {notifOpen && (
-          <div className="absolute bottom-4 left-full ml-4 w-80 bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden flex flex-col max-h-[450px] z-[100]">
-            <div className="p-4 bg-[#063955] flex justify-between items-center text-white shrink-0">
+          <div className="absolute bottom-4 left-full ml-4 w-80 bg-white rounded-lg shadow-xl border border-line overflow-hidden flex flex-col max-h-[450px] z-[100]">
+            <div className="p-4 bg-navy-700 flex justify-between items-center text-white shrink-0">
               <span className="font-bold text-sm">Central de Alertas</span>
               {unreadCount > 0 && (
-                <button onClick={marcarTodasComoLidas} className="text-xs text-[#0f88a8] hover:text-white flex items-center gap-1 transition-colors">
+                <button onClick={marcarTodasComoLidas} className="text-xs text-teal-600 hover:text-white flex items-center gap-1 transition-colors">
                   <CheckCheck size={14}/> Marcar lidas
                 </button>
               )}
             </div>
-            <div className="overflow-y-auto flex-1 p-2 space-y-1 bg-slate-50 custom-scrollbar">
+            <div className="overflow-y-auto flex-1 p-2 space-y-1 bg-navy-50 custom-scrollbar">
               {notificacoes.map(n => (
                 <div 
                   key={n.id} 
                   onClick={() => handleClickNotificacao(n)}
-                  className={`p-3 rounded-md cursor-pointer transition-all ${n.lida ? 'bg-white opacity-60 hover:opacity-100' : 'bg-[#0f88a8]/10 border border-[#0f88a8]/20 shadow-sm'}`}
+                  className={`p-3 rounded-md cursor-pointer transition-all ${n.lida ? 'bg-white opacity-60 hover:opacity-100' : 'bg-teal-600/10 border border-teal-500/20 shadow-card'}`}
                 >
-                  <h4 className={`text-xs ${n.lida ? 'font-semibold text-slate-700' : 'font-bold text-[#063955]'}`}>{n.titulo}</h4>
-                  <p className="text-xs text-slate-600 mt-1 leading-relaxed">{n.mensagem}</p>
-                  <span className="text-[9px] text-slate-400 mt-2 block">{new Date(n.created_at).toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})}</span>
+                  <h4 className={`text-xs ${n.lida ? 'font-semibold text-ink-700' : 'font-bold text-navy-700'}`}>{n.titulo}</h4>
+                  <p className="text-xs text-ink-700 mt-1 leading-relaxed">{n.mensagem}</p>
+                  <span className="text-[9px] text-ink-400 mt-2 block">{new Date(n.created_at).toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})}</span>
                 </div>
               ))}
               {notificacoes.length === 0 && (
-                <div className="p-8 flex flex-col items-center justify-center text-center text-slate-400">
+                <div className="p-8 flex flex-col items-center justify-center text-center text-ink-400">
                   <Bell size={32} className="mb-2 opacity-50" />
                   <span className="text-xs font-medium">Nenhuma notificação por enquanto.</span>
                 </div>

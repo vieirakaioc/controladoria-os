@@ -117,13 +117,13 @@ export default function PaginaFila() {
   if (itens.length === 0) {
     return (
       <Painel titulo="Nenhum item ainda">
-        <p className="text-sm leading-relaxed text-slate-600">
+        <p className="text-sm leading-relaxed text-ink-700">
           Cadastre a primeira nota de patrimônio para o fluxo começar. As etapas nascem junto, e a
           pasta de documentos é criada no mesmo momento.
         </p>
         <Link
           href="/imobilizado/novo"
-          className="mt-5 inline-flex items-center gap-2 rounded-md bg-[#0f88a8] px-5 py-2.5 text-sm font-bold text-white transition-all hover:brightness-110"
+          className="mt-5 inline-flex items-center gap-2 rounded-md bg-teal-600 px-5 py-2.5 text-sm font-bold text-white transition-all hover:brightness-110"
         >
           Cadastrar item
           <ArrowUpRight size={16} />
@@ -161,18 +161,18 @@ export default function PaginaFila() {
 
       <Painel className="!p-4">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2">
-            <Search size={16} className="shrink-0 text-slate-400" />
+          <div className="flex items-center gap-2 rounded-md border border-line-strong bg-white px-3 py-2">
+            <Search size={16} className="shrink-0 text-ink-400" />
             <input
               type="search"
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
               placeholder="Nº, nota, fornecedor, placa…"
-              className="w-60 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
+              className="w-60 bg-transparent text-sm text-ink-700 outline-none placeholder:text-ink-400"
             />
           </div>
 
-          <div className="flex flex-wrap gap-1 rounded-md bg-slate-100 p-1">
+          <div className="flex flex-wrap gap-1 rounded-md bg-navy-100 p-1">
             {FILTROS.map((f) => (
               <button
                 key={f.valor}
@@ -181,8 +181,8 @@ export default function PaginaFila() {
                 aria-pressed={filtro === f.valor}
                 className={`rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
                   filtro === f.valor
-                    ? 'bg-white text-[#063955] shadow-sm'
-                    : 'text-slate-500 hover:text-[#063955]'
+                    ? 'bg-white text-navy-700 shadow-sm'
+                    : 'text-ink-500 hover:text-navy-700'
                 }`}
               >
                 {f.rotulo}
@@ -195,7 +195,7 @@ export default function PaginaFila() {
               value={filtroFilial}
               onChange={(e) => setFiltroFilial(e.target.value)}
               aria-label="Filtrar por empresa e filial"
-              className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#0f88a8]"
+              className="rounded-md border border-line-strong bg-white px-3 py-2 text-sm text-ink-700 outline-none focus:border-teal-500"
             >
               <option value="todas">Todas as filiais</option>
               {filiaisEmUso.map(([id, rotulo]) => (
@@ -206,23 +206,23 @@ export default function PaginaFila() {
             </select>
           )}
 
-          <span className="ml-auto text-sm text-slate-500">
+          <span className="ml-auto text-sm text-ink-500">
             {formatarInteiro(visiveis.length)} de {formatarInteiro(itens.length)} itens
           </span>
         </div>
       </Painel>
 
-      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-lg border border-line bg-white shadow-card">
         <div className="overflow-x-auto">
           <table className="w-max min-w-full border-collapse text-sm">
-            <thead className="bg-slate-50">
+            <thead className="bg-navy-50">
               <tr>
                 {['Nº', 'Nota / fornecedor', 'Empresa · filial', 'Valor', 'Etapa atual', 'Prazo', 'Aging', ''].map(
                   (coluna) => (
                     <th
                       key={coluna}
                       scope="col"
-                      className="whitespace-nowrap border-b border-slate-200 px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500"
+                      className="whitespace-nowrap border-b border-line px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-ink-500"
                     >
                       {coluna}
                     </th>
@@ -234,7 +234,7 @@ export default function PaginaFila() {
             <tbody>
               {visiveis.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center text-sm text-slate-400">
+                  <td colSpan={8} className="px-4 py-12 text-center text-sm text-ink-400">
                     Nenhum item com esses filtros.
                   </td>
                 </tr>
@@ -249,12 +249,12 @@ export default function PaginaFila() {
                 return (
                   <tr
                     key={item.id}
-                    className={`border-b border-slate-100 ${linha % 2 === 1 ? 'bg-slate-50/70' : ''} hover:bg-[#0f88a8]/[0.06]`}
+                    className={`border-b border-line ${linha % 2 === 1 ? 'bg-navy-50/70' : ''} hover:bg-teal-600/[0.06]`}
                   >
                     <td className="whitespace-nowrap px-4 py-3 align-top">
-                      <span className="font-bold tabular-nums text-[#063955]">{item.numero}</span>
+                      <span className="font-bold tabular-nums text-navy-700">{item.numero}</span>
                       {item.ehFrota && (
-                        <span className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-[#0f88a8]">
+                        <span className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-teal-600">
                           <Truck size={11} />
                           frota
                         </span>
@@ -262,32 +262,32 @@ export default function PaginaFila() {
                     </td>
 
                     <td className="px-4 py-3 align-top">
-                      <div className="font-medium text-slate-700">{item.nfNumero || '—'}</div>
-                      <div className="line-clamp-1 w-56 text-xs text-slate-500">
+                      <div className="font-medium text-ink-700">{item.nfNumero || '—'}</div>
+                      <div className="line-clamp-1 w-56 text-xs text-ink-500">
                         {item.fornecedor || item.descricao || '—'}
                       </div>
                     </td>
 
                     <td className="px-4 py-3 align-top">
-                      <div className="whitespace-nowrap text-slate-600">{item.filial || '—'}</div>
-                      <div className="line-clamp-1 w-40 text-xs text-slate-400">{item.empresa}</div>
+                      <div className="whitespace-nowrap text-ink-700">{item.filial || '—'}</div>
+                      <div className="line-clamp-1 w-40 text-xs text-ink-400">{item.empresa}</div>
                     </td>
 
-                    <td className="whitespace-nowrap px-4 py-3 text-right align-top tabular-nums text-slate-700">
+                    <td className="whitespace-nowrap px-4 py-3 text-right align-top tabular-nums text-ink-700">
                       {formatarMoeda(item.valor)}
                     </td>
 
                     <td className="px-4 py-3 align-top">
                       {finalizado ? (
-                        <span className="text-sm font-semibold text-slate-400">Finalizado</span>
+                        <span className="text-sm font-semibold text-ink-400">Finalizado</span>
                       ) : (
                         <>
-                          <div className="font-medium text-slate-700">{atual?.titulo ?? '—'}</div>
-                          <div className="text-xs text-slate-500">{atual?.area ?? ''}</div>
+                          <div className="font-medium text-ink-700">{atual?.titulo ?? '—'}</div>
+                          <div className="text-xs text-ink-500">{atual?.area ?? ''}</div>
                         </>
                       )}
                       {placa && (
-                        <div className="mt-1 text-[11px] font-semibold text-[#c98500]">
+                        <div className="mt-1 text-[11px] font-semibold text-alerta">
                           placa pendente
                         </div>
                       )}
@@ -296,21 +296,21 @@ export default function PaginaFila() {
                     <td className="whitespace-nowrap px-4 py-3 align-top">
                       <ChipPrazo prazo={atual?.prazo ?? null} hoje={hoje} concluida={finalizado} />
                       {atual?.prazo && !finalizado && (
-                        <div className="mt-1 text-[11px] tabular-nums text-slate-400">
+                        <div className="mt-1 text-[11px] tabular-nums text-ink-400">
                           {formatarData(atual.prazo)}
                         </div>
                       )}
                     </td>
 
-                    <td className="whitespace-nowrap px-4 py-3 align-top text-xs text-slate-600">
+                    <td className="whitespace-nowrap px-4 py-3 align-top text-xs text-ink-700">
                       <div>Processo: {textoAging(processo)}</div>
-                      <div className="text-slate-400">Placa: {textoAging(agingPlaca(item, hoje))}</div>
+                      <div className="text-ink-400">Placa: {textoAging(agingPlaca(item, hoje))}</div>
                     </td>
 
                     <td className="whitespace-nowrap px-4 py-3 text-right align-top">
                       <Link
                         href={`/imobilizado/${item.id}`}
-                        className="inline-flex items-center gap-1.5 rounded-md border border-[#0f88a8] px-3 py-1.5 text-xs font-bold text-[#0f88a8] transition-all hover:bg-[#0f88a8] hover:text-white"
+                        className="inline-flex items-center gap-1.5 rounded-md border border-teal-500 px-3 py-1.5 text-xs font-bold text-teal-600 transition-all hover:bg-teal-600 hover:text-white"
                       >
                         Abrir
                       </Link>

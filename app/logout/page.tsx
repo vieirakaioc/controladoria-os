@@ -17,10 +17,10 @@ export default function LogoutPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-[#063955] flex flex-col items-center justify-center text-white">
-      <div className="w-12 h-12 border-4 border-[#0f88a8] border-t-transparent rounded-full animate-spin mb-4"></div>
+    <div className="min-h-screen bg-navy-700 flex flex-col items-center justify-center text-white">
+      <div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mb-4"></div>
       <h2 className="text-xl font-semibold">A encerrar sessão com segurança...</h2>
-      <p className="text-slate-400 text-sm mt-2">Limpando dados em cache.</p>
+      <p className="text-ink-400 text-sm mt-2">Limpando dados em cache.</p>
     </div>
   )
 }

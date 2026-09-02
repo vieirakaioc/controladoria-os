@@ -20,19 +20,19 @@ export function Section({ id, title, subtitle, children }: Props) {
   return (
     <section
       id={id}
-      className="scroll-mt-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-lg shadow-sm overflow-hidden mb-6"
+      className="scroll-mt-6 bg-white dark:bg-slate-900 border border-line dark:border-slate-800 rounded-lg shadow-card overflow-hidden mb-6"
     >
-      <header className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50">
+      <header className="px-6 py-5 border-b border-line dark:border-slate-800 bg-navy-50/50 dark:bg-slate-950/50">
         <div className="flex items-baseline gap-3">
-          <span className="text-xs font-mono tabular-nums text-slate-300 dark:text-slate-600">
+          <span className="text-xs font-mono tabular-nums text-ink-400 dark:text-slate-600">
             {numero}
           </span>
-          <h2 className="text-xl font-bold text-[#063955] dark:text-white tracking-tight">
+          <h2 className="text-xl font-bold text-navy-700 dark:text-white tracking-tight">
             {title}
           </h2>
         </div>
         {subtitle && (
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1.5 ml-7">
+          <p className="text-sm text-ink-500 dark:text-slate-400 mt-1.5 ml-7">
             {subtitle}
           </p>
         )}

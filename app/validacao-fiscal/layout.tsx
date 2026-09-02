@@ -15,21 +15,21 @@ export default function LayoutValidacaoFiscal({ children }: { children: React.Re
 
   return (
     <div className="p-6 space-y-6">
-      <header className="bg-white rounded-lg border border-slate-200 shadow-sm p-5">
+      <header className="bg-white rounded-lg border border-line shadow-card p-5">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="rounded-md bg-[#063955] p-2.5 text-white shrink-0">
+            <div className="rounded-md bg-navy-700 p-2.5 text-white shrink-0">
               <ScanLine size={22} />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-[#063955] leading-tight">Validação Fiscal</h1>
-              <p className="text-sm text-slate-500">
+              <h1 className="text-2xl font-bold text-navy-700 leading-tight">Validação Fiscal</h1>
+              <p className="text-sm text-ink-500">
                 Correções geradas das planilhas de divergências, com prazo de resposta por tarefa.
               </p>
             </div>
           </div>
 
-          <nav className="flex flex-wrap items-center gap-1 rounded-md bg-slate-100 p-1">
+          <nav className="flex flex-wrap items-center gap-1 rounded-md bg-navy-100 p-1">
             {ABAS.map((aba) => {
               // "/validacao-fiscal" é prefixo das demais; só fica ativa exata.
               const ativa =
@@ -44,8 +44,8 @@ export default function LayoutValidacaoFiscal({ children }: { children: React.Re
                   aria-current={ativa ? 'page' : undefined}
                   className={`rounded-md px-4 py-2 text-sm font-semibold transition-all ${
                     ativa
-                      ? 'bg-white text-[#063955] shadow-sm'
-                      : 'text-slate-500 hover:text-[#063955]'
+                      ? 'bg-white text-navy-700 shadow-sm'
+                      : 'text-ink-500 hover:text-navy-700'
                   }`}
                 >
                   {aba.rotulo}

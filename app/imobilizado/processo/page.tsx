@@ -65,12 +65,12 @@ export default function PaginaProcesso() {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] border-collapse text-sm">
             <thead>
-              <tr className="border-b border-slate-200 text-left">
+              <tr className="border-b border-line text-left">
                 {['#', 'Etapa', 'Área', 'Prazo', 'Exige', 'Condição'].map((coluna) => (
                   <th
                     key={coluna}
                     scope="col"
-                    className="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-400"
+                    className="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-ink-400"
                   >
                     {coluna}
                   </th>
@@ -79,17 +79,17 @@ export default function PaginaProcesso() {
             </thead>
             <tbody>
               {modelo.map((etapa) => (
-                <tr key={etapa.chave} className="border-b border-slate-100 align-top">
-                  <td className="px-3 py-3 font-mono text-xs tabular-nums text-slate-400">
+                <tr key={etapa.chave} className="border-b border-line align-top">
+                  <td className="px-3 py-3 font-mono text-xs tabular-nums text-ink-400">
                     {String(etapa.ordem).padStart(2, '0')}
                   </td>
                   <td className="px-3 py-3">
-                    <div className="font-semibold text-[#063955]">{etapa.titulo}</div>
-                    <div className="max-w-md text-xs leading-relaxed text-slate-500">
+                    <div className="font-semibold text-navy-700">{etapa.titulo}</div>
+                    <div className="max-w-md text-xs leading-relaxed text-ink-500">
                       {etapa.descricao}
                     </div>
                   </td>
-                  <td className="whitespace-nowrap px-3 py-3 text-slate-600">{etapa.area || '—'}</td>
+                  <td className="whitespace-nowrap px-3 py-3 text-ink-700">{etapa.area || '—'}</td>
                   <td className="whitespace-nowrap px-3 py-3">
                     {acesso === 'admin' ? (
                       <CampoPrazo
@@ -98,10 +98,10 @@ export default function PaginaProcesso() {
                         aoSalvar={carregar}
                       />
                     ) : (
-                      <span className="tabular-nums text-slate-600">{etapa.prazoDiasUteis} d.u.</span>
+                      <span className="tabular-nums text-ink-700">{etapa.prazoDiasUteis} d.u.</span>
                     )}
                   </td>
-                  <td className="px-3 py-3 text-xs text-slate-500">
+                  <td className="px-3 py-3 text-xs text-ink-500">
                     {[
                       etapa.exigeAnexo ? 'anexo' : null,
                       etapa.exigeCampo ? `campo ${etapa.exigeCampo}` : null,
@@ -121,12 +121,12 @@ export default function PaginaProcesso() {
                         </span>
                       )}
                       {etapa.paralela && (
-                        <span className="text-[11px] font-semibold text-[#c98500]">
+                        <span className="text-[11px] font-semibold text-alerta">
                           não bloqueia
                         </span>
                       )}
                       {!etapa.soFrota && !etapa.paralela && (
-                        <span className="text-xs text-slate-400">—</span>
+                        <span className="text-xs text-ink-400">—</span>
                       )}
                     </div>
                   </td>
@@ -142,22 +142,22 @@ export default function PaginaProcesso() {
         descricao="Participante responde etapa e anexa documento; observador acompanha e não altera nada. Quem não está aqui não enxerga o módulo."
       >
         {pessoas.length === 0 ? (
-          <p className="text-sm text-slate-400">Ninguém cadastrado ainda.</p>
+          <p className="text-sm text-ink-400">Ninguém cadastrado ainda.</p>
         ) : (
           <ul className="grid gap-2 sm:grid-cols-2">
             {pessoas.map((p) => (
               <li
                 key={p.id}
-                className={`flex items-center gap-3 rounded-md border border-slate-200 bg-white px-3 py-2.5 ${
+                className={`flex items-center gap-3 rounded-md border border-line bg-white px-3 py-2.5 ${
                   p.ativo ? '' : 'opacity-50'
                 }`}
               >
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-400">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-navy-100 text-ink-400">
                   <Users size={15} />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-semibold text-[#063955]">{p.nome}</div>
-                  <div className="truncate text-xs text-slate-500">
+                  <div className="truncate text-sm font-semibold text-navy-700">{p.nome}</div>
+                  <div className="truncate text-xs text-ink-500">
                     {p.papel || '—'}
                     {p.email ? ` · ${p.email}` : ''}
                   </div>
@@ -177,9 +177,9 @@ export default function PaginaProcesso() {
           </ul>
         )}
 
-        <p className="mt-4 text-xs leading-relaxed text-slate-400">
+        <p className="mt-4 text-xs leading-relaxed text-ink-400">
           Por enquanto o cadastro é feito no Supabase, na tabela{' '}
-          <code className="text-[#0f88a8]">imobilizado_participantes</code>. A tela de edição entra
+          <code className="text-teal-600">imobilizado_participantes</code>. A tela de edição entra
           em seguida — quis primeiro colocar o fluxo de pé.
         </p>
       </Painel>
@@ -247,10 +247,10 @@ function CampoPrazo({
           if (e.key === 'Escape') setRascunho(String(valor))
         }}
         aria-label={`Prazo da etapa em dias úteis`}
-        className="w-16 rounded-md border border-slate-300 bg-white px-2 py-1 text-sm tabular-nums text-slate-700 outline-none focus:border-[#0f88a8]"
+        className="w-16 rounded-md border border-line-strong bg-white px-2 py-1 text-sm tabular-nums text-ink-700 outline-none focus:border-teal-500"
       />
-      <span className="text-xs text-slate-400">d.u.</span>
-      {salvando && <Loader2 size={13} className="animate-spin text-slate-400" />}
+      <span className="text-xs text-ink-400">d.u.</span>
+      {salvando && <Loader2 size={13} className="animate-spin text-ink-400" />}
       {salvo && <Check size={13} style={{ color: CORES.bom }} />}
       {erro && <span className="text-[11px]" style={{ color: CORES.critico }}>{erro}</span>}
     </div>

@@ -51,13 +51,13 @@ const FILTROS: { valor: FiltroPrazo; rotulo: string }[] = [
 ]
 
 const CAMPO =
-  'rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#0f88a8]'
+  'rounded-md border border-line-strong bg-white px-3 py-2 text-sm text-ink-700 outline-none focus:border-teal-500'
 
 /** Coluna fixa da esquerda: largura travada e sombra marcando a borda de rolagem. */
 const CONGELADA =
-  'w-[186px] min-w-[186px] border-r border-slate-200 shadow-[8px_0_12px_-10px_rgba(15,23,42,0.45)]'
+  'w-[186px] min-w-[186px] border-r border-line shadow-[8px_0_12px_-10px_rgba(15,23,42,0.45)]'
 
-const ROTULO_TH = 'text-[11px] font-bold uppercase tracking-wider text-slate-500'
+const ROTULO_TH = 'text-[11px] font-bold uppercase tracking-wider text-ink-500'
 
 /**
  * Chave de acesso tem 44 dígitos e ocuparia meia tela sem informar nada: o que
@@ -257,9 +257,9 @@ export function Matriz({
         type="button"
         onClick={() => alternarOrdem(chave)}
         title={`Ordenar por ${rotulo}`}
-        className={`group flex w-full items-center gap-1.5 transition-colors hover:text-[#0f88a8] ${
+        className={`group flex w-full items-center gap-1.5 transition-colors hover:text-teal-600 ${
           alinharDireita ? 'justify-end' : ''
-        } ${ativa ? 'text-[#0f88a8]' : ''}`}
+        } ${ativa ? 'text-teal-600' : ''}`}
       >
         {rotulo}
         <Icone
@@ -297,7 +297,7 @@ export function Matriz({
   if (tarefas.length === 0) {
     return (
       <Painel titulo="Nenhuma tarefa">
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-ink-500">
           Importe as planilhas para gerar as tarefas de correção.
         </p>
       </Painel>
@@ -308,20 +308,20 @@ export function Matriz({
     <div className="space-y-4">
       <Painel className="!p-4">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2">
-            <Search size={16} className="shrink-0 text-slate-400" />
+          <div className="flex items-center gap-2 rounded-md border border-line-strong bg-white px-3 py-2">
+            <Search size={16} className="shrink-0 text-ink-400" />
             <input
               type="search"
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
               placeholder="Buscar em qualquer campo da planilha"
-              className="w-64 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
+              className="w-64 bg-transparent text-sm text-ink-700 outline-none placeholder:text-ink-400"
             />
           </div>
 
           {/* Entrada e saída são times diferentes: separar antes do prazo evita
               alguém responder o que não é da sua área. */}
-          <div className="flex flex-wrap gap-1 rounded-md bg-slate-100 p-1">
+          <div className="flex flex-wrap gap-1 rounded-md bg-navy-100 p-1">
             {([
               { valor: 'todos', rotulo: 'Todas' },
               { valor: 'saida', rotulo: 'Saídas' },
@@ -334,8 +334,8 @@ export function Matriz({
                 aria-pressed={filtroFluxo === f.valor}
                 className={`rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
                   filtroFluxo === f.valor
-                    ? 'bg-white text-[#063955] shadow-sm'
-                    : 'text-slate-500 hover:text-[#063955]'
+                    ? 'bg-white text-navy-700 shadow-sm'
+                    : 'text-ink-500 hover:text-navy-700'
                 }`}
               >
                 {f.rotulo}
@@ -343,7 +343,7 @@ export function Matriz({
             ))}
           </div>
 
-          <div className="flex flex-wrap gap-1 rounded-md bg-slate-100 p-1">
+          <div className="flex flex-wrap gap-1 rounded-md bg-navy-100 p-1">
             {FILTROS.map((f) => (
               <button
                 key={f.valor}
@@ -352,8 +352,8 @@ export function Matriz({
                 aria-pressed={filtroPrazo === f.valor}
                 className={`rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
                   filtroPrazo === f.valor
-                    ? 'bg-white text-[#063955] shadow-sm'
-                    : 'text-slate-500 hover:text-[#063955]'
+                    ? 'bg-white text-navy-700 shadow-sm'
+                    : 'text-ink-500 hover:text-navy-700'
                 }`}
               >
                 {f.rotulo}
@@ -376,13 +376,13 @@ export function Matriz({
             ))}
           </select>
 
-          <span className="ml-auto text-sm text-slate-500">
+          <span className="ml-auto text-sm text-ink-500">
             {formatarInteiro(visiveis.length)} de {formatarInteiro(tarefas.length)} tarefas
           </span>
         </div>
 
-        <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-slate-100 pt-3">
-          <span className="text-sm font-semibold text-[#063955]">Atribuir em lote</span>
+        <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-line pt-3">
+          <span className="text-sm font-semibold text-navy-700">Atribuir em lote</span>
 
           <select
             value={donoEmLote}
@@ -404,7 +404,7 @@ export function Matriz({
 
           {confirmandoLote ? (
             <>
-              <span className="text-sm text-slate-600">
+              <span className="text-sm text-ink-700">
                 Passar <strong>{formatarInteiro(visiveis.length)}</strong> tarefa(s) em tela para{' '}
                 <strong>{escolhidoParaLote?.nome}</strong>?
               </span>
@@ -413,7 +413,7 @@ export function Matriz({
                 type="button"
                 onClick={atribuirVisiveis}
                 disabled={atribuindo}
-                className="inline-flex items-center gap-2 rounded-md bg-[#0f88a8] px-4 py-2 text-sm font-bold text-white transition-all hover:brightness-110 disabled:opacity-40"
+                className="inline-flex items-center gap-2 rounded-md bg-teal-600 px-4 py-2 text-sm font-bold text-white transition-all hover:brightness-110 disabled:opacity-40"
               >
                 {atribuindo ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />}
                 Confirmar
@@ -423,7 +423,7 @@ export function Matriz({
                 type="button"
                 onClick={() => setConfirmandoLote(false)}
                 disabled={atribuindo}
-                className="text-sm text-slate-500 transition-colors hover:text-[#063955] disabled:opacity-40"
+                className="text-sm text-ink-500 transition-colors hover:text-navy-700 disabled:opacity-40"
               >
                 Cancelar
               </button>
@@ -434,13 +434,13 @@ export function Matriz({
                 type="button"
                 onClick={() => setConfirmandoLote(true)}
                 disabled={!escolhidoParaLote || visiveis.length === 0}
-                className="inline-flex items-center gap-2 rounded-md border border-[#0f88a8] px-4 py-2 text-sm font-bold text-[#0f88a8] transition-all hover:bg-[#0f88a8] hover:text-white disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-300 disabled:hover:bg-transparent"
+                className="inline-flex items-center gap-2 rounded-md border border-teal-500 px-4 py-2 text-sm font-bold text-teal-600 transition-all hover:bg-teal-600 hover:text-white disabled:cursor-not-allowed disabled:border-line disabled:text-ink-400 disabled:hover:bg-transparent"
               >
                 <UserPlus size={15} />
                 Atribuir as {formatarInteiro(visiveis.length)} da tela
               </button>
 
-              <span className="text-xs text-slate-400">
+              <span className="text-xs text-ink-400">
                 Vale para a aba e os filtros ativos — inclusive as que já têm dono.
               </span>
             </>
@@ -459,7 +459,7 @@ export function Matriz({
         </div>
       </Painel>
 
-      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-lg border border-line bg-white shadow-card">
         <div className="max-h-[70vh] overflow-auto">
           {/*
             w-max em vez de w-full: com w-full o navegador estica as colunas para
@@ -472,7 +472,7 @@ export function Matriz({
                 <th
                   scope="col"
                   aria-sort={ariaOrdem(CHAVE_NUMERO)}
-                  className={`${CONGELADA} sticky left-0 top-0 z-30 border-b border-slate-200 bg-slate-50 px-4 py-3 text-left ${ROTULO_TH}`}
+                  className={`${CONGELADA} sticky left-0 top-0 z-30 border-b border-line bg-navy-50 px-4 py-3 text-left ${ROTULO_TH}`}
                 >
                   {botaoOrdenar(CHAVE_NUMERO, 'Nº · tarefa')}
                 </th>
@@ -486,7 +486,7 @@ export function Matriz({
                     key={coluna.chave}
                     scope="col"
                     aria-sort={ariaOrdem(coluna.chave)}
-                    className={`whitespace-nowrap border-b border-l border-slate-200 bg-slate-50 px-4 py-3 text-left ${ROTULO_TH} ${
+                    className={`whitespace-nowrap border-b border-l border-line bg-navy-50 px-4 py-3 text-left ${ROTULO_TH} ${
                       ehNumerica(coluna.chave) ? 'text-right' : ''
                     }`}
                   >
@@ -501,7 +501,7 @@ export function Matriz({
                 <tr>
                   <td
                     colSpan={3 + colunas.length}
-                    className="px-4 py-12 text-center text-sm text-slate-400"
+                    className="px-4 py-12 text-center text-sm text-ink-400"
                   >
                     Nenhuma tarefa com esses filtros.
                   </td>
@@ -514,12 +514,12 @@ export function Matriz({
                 const semCorrecao = tarefa.status === 'sem_correcao'
                 // A faixa zebrada precisa estar também na célula congelada, que
                 // tem fundo próprio para o resto da linha passar por baixo.
-                const faixa = linha % 2 === 1 ? 'bg-slate-50/70' : 'bg-white'
+                const faixa = linha % 2 === 1 ? 'bg-navy-50/70' : 'bg-white'
 
                 return (
                   <tr
                     key={tarefa.id}
-                    className={`group border-b border-slate-100 ${faixa} hover:bg-[#0f88a8]/[0.06]`}
+                    className={`group border-b border-line ${faixa} hover:bg-teal-600/[0.06]`}
                   >
                     <td
                       className={`${CONGELADA} sticky left-0 z-10 px-4 py-3 align-top ${faixa} group-hover:bg-[#eef7fa]`}
@@ -527,7 +527,7 @@ export function Matriz({
                       {/* Número da atividade, não a posição na lista: serve
                           para citar a tarefa fora do sistema e não muda quando
                           o filtro muda. */}
-                      <span className="mb-1.5 block text-[11px] font-bold tabular-nums text-slate-400">
+                      <span className="mb-1.5 block text-[11px] font-bold tabular-nums text-ink-400">
                         Nº {tarefa.numero}
                       </span>
 
@@ -536,8 +536,8 @@ export function Matriz({
                         onClick={() => setEmEdicao(tarefa)}
                         className={`inline-flex w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-md border px-3 py-1.5 text-xs font-bold transition-all ${
                           finalizada
-                            ? 'border-slate-200 text-slate-400 hover:border-slate-300 hover:text-slate-700'
-                            : 'border-[#0f88a8] text-[#0f88a8] hover:bg-[#0f88a8] hover:text-white'
+                            ? 'border-line text-ink-400 hover:border-line-strong hover:text-ink-700'
+                            : 'border-teal-500 text-teal-600 hover:bg-teal-600 hover:text-white'
                         }`}
                       >
                         {semCorrecao ? (
@@ -560,12 +560,12 @@ export function Matriz({
 
                       <div className="mt-2 flex flex-col gap-1">
                         <ChipPrazo situacao={situacao} />
-                        <span className="text-[11px] tabular-nums text-slate-400">
+                        <span className="text-[11px] tabular-nums text-ink-400">
                           {finalizada
                             ? formatarData(tarefa.prazo)
                             : `${formatarData(tarefa.prazo)} · ${textoPrazo(tarefa.prazo, hoje)}`}
                         </span>
-                        <span className="text-[11px] text-slate-400">
+                        <span className="text-[11px] text-ink-400">
                           {ROTULO_FLUXO[tarefa.fluxo]}
                         </span>
                         {tarefa.status === 'em_andamento' && (
@@ -581,16 +581,16 @@ export function Matriz({
                       </div>
                     </td>
 
-                    <td className="w-[150px] border-l border-slate-100 px-4 py-3 align-top text-slate-700">
+                    <td className="w-[150px] border-l border-line px-4 py-3 align-top text-ink-700">
                       {tarefa.responsavelNome ?? (
-                        <span className="text-slate-300">Não atribuída</span>
+                        <span className="text-ink-400">Não atribuída</span>
                       )}
                     </td>
 
-                    <td className="w-[250px] border-l border-slate-100 px-4 py-3 align-top">
+                    <td className="w-[250px] border-l border-line px-4 py-3 align-top">
                       {tarefa.observacaoCorrecao && (
                         <div
-                          className="line-clamp-2 leading-snug text-slate-700"
+                          className="line-clamp-2 leading-snug text-ink-700"
                           title={tarefa.observacaoCorrecao}
                         >
                           {tarefa.observacaoCorrecao}
@@ -599,17 +599,17 @@ export function Matriz({
 
                       {tarefa.status === 'em_andamento' && tarefa.motivoAndamento && (
                         <div
-                          className="line-clamp-2 leading-snug text-slate-500"
+                          className="line-clamp-2 leading-snug text-ink-500"
                           title={tarefa.motivoAndamento}
                         >
-                          <span className="font-semibold text-slate-400">Parada em: </span>
+                          <span className="font-semibold text-ink-400">Parada em: </span>
                           {tarefa.motivoAndamento}
                         </div>
                       )}
 
                       {!tarefa.observacaoCorrecao &&
                         !(tarefa.status === 'em_andamento' && tarefa.motivoAndamento) && (
-                          <span className="text-slate-300">—</span>
+                          <span className="text-ink-400">—</span>
                         )}
                     </td>
 
@@ -624,13 +624,13 @@ export function Matriz({
                       return (
                         <td
                           key={coluna}
-                          className={`border-l border-slate-100 px-4 py-3 align-top ${
-                            numerica ? 'text-right tabular-nums text-slate-700' : 'text-slate-600'
+                          className={`border-l border-line px-4 py-3 align-top ${
+                            numerica ? 'text-right tabular-nums text-ink-700' : 'text-ink-700'
                           }`}
                         >
                           {codigo ? (
                             <span
-                              className="block whitespace-nowrap font-mono text-[11px] text-slate-500"
+                              className="block whitespace-nowrap font-mono text-[11px] text-ink-500"
                               title={texto}
                             >
                               {fimDaChave(texto)}
@@ -655,7 +655,7 @@ export function Matriz({
         </div>
       </div>
 
-      <p className="text-xs text-slate-400">
+      <p className="text-xs text-ink-400">
         A matriz é a mesma para entrada e saída. Para ver a linha exatamente como veio da planilha,
         com todas as colunas do arquivo, clique em Responder.
       </p>

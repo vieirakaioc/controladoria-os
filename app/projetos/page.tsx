@@ -25,10 +25,10 @@ type Projeto = {
 const badge = (s?: string | null) => {
   const st = (s || 'Pendente').toLowerCase()
   if (st.includes('concl')) return 'bg-[#2d6943]/10 text-[#2d6943] dark:bg-[#2d6943]/20 dark:text-[#4ade80]' 
-  if (st.includes('and')) return 'bg-[#0f88a8]/10 text-[#0f88a8] dark:bg-[#0f88a8]/20 dark:text-[#7dd3fc]'   
+  if (st.includes('and')) return 'bg-teal-600/10 text-teal-600 dark:bg-[#0f88a8]/20 dark:text-[#7dd3fc]'   
   if (st.includes('aguard')) return 'bg-[#a78bfa]/10 text-[#7c3aed] dark:bg-[#a78bfa]/20 dark:text-[#c4b5fd]' 
   if (st.includes('pend')) return 'bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300'
-  return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+  return 'bg-navy-100 text-ink-700 dark:bg-slate-800 dark:text-slate-300'
 }
 
 // 💡 Helper para ler múltiplos responsáveis
@@ -188,19 +188,19 @@ export default function ProjetosPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-8 font-sans">
+    <div className="min-h-screen bg-navy-50 dark:bg-slate-950 p-8 font-sans">
       <Toaster position="bottom-right" toastOptions={{ style: { background: '#031D2D', color: '#fff' } }} />
 
-      <header className="flex justify-between items-center mb-8 bg-white dark:bg-slate-900 p-6 rounded-lg shadow-sm border border-slate-100/50 dark:border-slate-800/50">
+      <header className="flex justify-between items-center mb-8 bg-white dark:bg-slate-900 p-6 rounded-lg shadow-card border border-line/50 dark:border-slate-800/50">
         <div>
           <h1 className="text-3xl font-extrabold text-slate-950 dark:text-white tracking-tighter flex items-center gap-3">
             <Briefcase className="text-[#C7A77B]" size={28} /> Gestão de Projetos
           </h1>
-          <p className="text-slate-500 text-sm mt-1.5 font-medium">Acompanhe as macro-entregas e faça drill-down nas atividades.</p>
+          <p className="text-ink-500 text-sm mt-1.5 font-medium">Acompanhe as macro-entregas e faça drill-down nas atividades.</p>
         </div>
 
         {isAdmin && (
-          <button onClick={abrirCriacao} className="flex items-center gap-2 bg-[#031D2D] hover:bg-[#063955] text-[#E5D6A7] px-6 py-3 rounded-md text-sm font-bold transition-all shadow-md">
+          <button onClick={abrirCriacao} className="flex items-center gap-2 bg-[#031D2D] hover:bg-navy-700 text-[#E5D6A7] px-6 py-3 rounded-md text-sm font-bold transition-all shadow-md">
             <Plus size={18} /> Novo Projeto
           </button>
         )}
@@ -214,11 +214,11 @@ export default function ProjetosPage() {
             const isExpanded = expandedProjId === proj.id
             
             return (
-              <div key={proj.id} className="bg-white dark:bg-slate-900 border border-slate-100/80 dark:border-slate-800 rounded-lg p-6 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col relative overflow-hidden group">
+              <div key={proj.id} className="bg-white dark:bg-slate-900 border border-line/80 dark:border-slate-800 rounded-lg p-6 shadow-card hover:shadow-lg transition-all duration-300 flex flex-col relative overflow-hidden group">
                 <div className={`absolute top-0 left-0 w-full h-1.5 ${proj.status === 'Concluído' ? 'bg-[#5A755C]' : 'bg-[#C7A77B]'}`}></div>
                 
                 <div className="flex justify-between items-start mb-4 pt-2 gap-3">
-                  <h3 className="text-xl font-bold text-slate-900 dark:text-white leading-tight tracking-tight flex-1 min-w-0">{proj.nome}</h3>
+                  <h3 className="text-xl font-bold text-ink-900 dark:text-white leading-tight tracking-tight flex-1 min-w-0">{proj.nome}</h3>
                   <div className="flex items-center gap-2 shrink-0">
                     <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md whitespace-nowrap ${proj.status === 'Concluído' ? 'bg-[#5A755C]/10 text-[#5A755C]' : 'bg-[#C7A77B]/10 text-[#C7A77B]'}`}>
                       {proj.status}
@@ -227,14 +227,14 @@ export default function ProjetosPage() {
                       <>
                         <button
                           onClick={() => abrirEdicao(proj)}
-                          className="text-slate-400 hover:text-[#0f88a8] dark:hover:text-[#38bdf8] hover:bg-slate-100 dark:hover:bg-slate-800 p-1.5 rounded-md transition-colors"
+                          className="text-ink-400 hover:text-teal-600 dark:hover:text-[#38bdf8] hover:bg-navy-100 dark:hover:bg-slate-800 p-1.5 rounded-md transition-colors"
                           title="Editar projeto"
                         >
                           <Pencil size={14} />
                         </button>
                         <button
                           onClick={() => apagarProjeto(proj)}
-                          className="text-slate-400 hover:text-[#b43a3d] dark:hover:text-[#f87171] hover:bg-slate-100 dark:hover:bg-slate-800 p-1.5 rounded-md transition-colors"
+                          className="text-ink-400 hover:text-[#b43a3d] dark:hover:text-[#f87171] hover:bg-navy-100 dark:hover:bg-slate-800 p-1.5 rounded-md transition-colors"
                           title="Apagar projeto"
                         >
                           <Trash2 size={14} />
@@ -244,31 +244,31 @@ export default function ProjetosPage() {
                   </div>
                 </div>
                 
-                <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 line-clamp-2 min-h-[40px]">{proj.descricao || 'Sem descrição'}</p>
+                <p className="text-sm text-ink-500 dark:text-slate-400 mb-6 line-clamp-2 min-h-[40px]">{proj.descricao || 'Sem descrição'}</p>
 
                 <div className="mt-auto space-y-6">
-                  <div className="flex justify-between text-xs font-semibold text-slate-500 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-md border border-slate-100 dark:border-slate-800">
+                  <div className="flex justify-between text-xs font-semibold text-ink-500 bg-navy-50 dark:bg-slate-800/50 p-3 rounded-md border border-line dark:border-slate-800">
                     <div className="flex items-center gap-1.5"><Calendar size={14} className="text-[#C7A77B]"/> Início: {formatarData(proj.data_inicio)}</div>
                     <div className="flex items-center gap-1.5"><Clock size={14} className="text-[#031D2D] dark:text-white"/> Prazo: {formatarData(proj.data_fim_prevista)}</div>
                   </div>
 
                   <div className="pt-2">
                     <div className="flex justify-between text-sm mb-2 font-medium">
-                      <span className="text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
-                        <CheckCircle2 size={16} className={proj.estatisticas?.progresso === 100 ? 'text-[#5A755C]' : 'text-slate-400'}/> Progresso
+                      <span className="text-ink-700 dark:text-slate-300 flex items-center gap-1.5">
+                        <CheckCircle2 size={16} className={proj.estatisticas?.progresso === 100 ? 'text-[#5A755C]' : 'text-ink-400'}/> Progresso
                       </span>
                       <span className="text-[#031D2D] dark:text-white font-bold">{proj.estatisticas?.progresso}%</span>
                     </div>
-                    <div className="h-2.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner">
+                    <div className="h-2.5 w-full bg-navy-100 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner">
                       <div className="h-full bg-[#031D2D] dark:bg-[#C7A77B] rounded-full transition-all duration-1000 ease-out" style={{ width: `${proj.estatisticas?.progresso}%` }}></div>
                     </div>
-                    <div className="mt-2 flex justify-between items-center text-[11px] text-slate-400">
+                    <div className="mt-2 flex justify-between items-center text-[11px] text-ink-400">
                       <span>{proj.estatisticas?.concluidas} de {proj.estatisticas?.total_tarefas} tarefas concluídas</span>
                       
                       {/* 💡 BOTÃO DRILL-DOWN */}
                       <button 
                         onClick={() => toggleExpand(proj.id)}
-                        className="flex items-center gap-1 font-bold text-[#0f88a8] dark:text-[#38bdf8] hover:text-[#063955] dark:hover:text-white transition-colors"
+                        className="flex items-center gap-1 font-bold text-teal-600 dark:text-[#38bdf8] hover:text-navy-700 dark:hover:text-white transition-colors"
                       >
                         {isExpanded ? 'Ocultar Tarefas' : 'Ver Tarefas'}
                         {isExpanded ? <ChevronUp size={14}/> : <ChevronDown size={14}/>}
@@ -278,8 +278,8 @@ export default function ProjetosPage() {
 
                   {/* 💡 SESSÃO DRILL-DOWN (LISTA DE TAREFAS) */}
                   {isExpanded && (
-                    <div className="pt-5 mt-4 border-t border-slate-100 dark:border-slate-800 animate-in fade-in slide-in-from-top-4 duration-300">
-                      <h4 className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Detalhamento das Atividades</h4>
+                    <div className="pt-5 mt-4 border-t border-line dark:border-slate-800 animate-in fade-in slide-in-from-top-4 duration-300">
+                      <h4 className="text-[10px] font-bold text-ink-400 dark:text-slate-500 uppercase tracking-widest mb-3">Detalhamento das Atividades</h4>
                       
                       <div className="space-y-2 max-h-[220px] overflow-y-auto custom-scrollbar pr-2">
                         {proj.tarefas?.map((t: any) => {
@@ -287,9 +287,9 @@ export default function ProjetosPage() {
                           const nomes = respsList.length > 0 ? respsList.map((res:any) => res.nome).join(', ') : 'Sem Responsável';
                           
                           return (
-                            <div key={t.id} className="bg-slate-50 dark:bg-slate-800/40 p-3 rounded-md border border-slate-100 dark:border-slate-700/50 flex flex-col gap-2 hover:border-[#0f88a8]/30 transition-colors">
+                            <div key={t.id} className="bg-navy-50 dark:bg-slate-800/40 p-3 rounded-md border border-line dark:border-slate-700/50 flex flex-col gap-2 hover:border-teal-500/30 transition-colors">
                               <div className="flex justify-between items-start gap-3">
-                                <span className="text-sm font-semibold text-slate-800 dark:text-white leading-tight">
+                                <span className="text-sm font-semibold text-ink-900 dark:text-white leading-tight">
                                   {t.atividades?.nome_atividade || 'Tarefa sem nome'}
                                 </span>
                                 <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md whitespace-nowrap shrink-0 ${badge(t.status)}`}>
@@ -298,11 +298,11 @@ export default function ProjetosPage() {
                               </div>
                               
                               <div className="flex justify-between items-center text-[10px] font-medium">
-                                <div className="flex items-center gap-1.5 text-slate-500 bg-white dark:bg-slate-900 px-2 py-1 rounded border border-slate-200 dark:border-slate-700 truncate max-w-[180px]" title={nomes}>
+                                <div className="flex items-center gap-1.5 text-ink-500 bg-white dark:bg-slate-900 px-2 py-1 rounded border border-line dark:border-slate-700 truncate max-w-[180px]" title={nomes}>
                                   <UserCircle size={12} className="text-[#C7A77B]" />
                                   <span className="truncate">{nomes}</span>
                                 </div>
-                                <span className="text-slate-400">
+                                <span className="text-ink-400">
                                   Vence: {formatarData(t.data_vencimento)}
                                 </span>
                               </div>
@@ -310,8 +310,8 @@ export default function ProjetosPage() {
                           )
                         })}
                         {(!proj.tarefas || proj.tarefas.length === 0) && (
-                          <div className="text-center py-6 bg-slate-50 dark:bg-slate-800/30 rounded-md border border-dashed border-slate-200 dark:border-slate-700">
-                            <p className="text-xs text-slate-400 font-medium">Nenhuma tarefa vinculada a este projeto ainda.</p>
+                          <div className="text-center py-6 bg-navy-50 dark:bg-slate-800/30 rounded-md border border-dashed border-line dark:border-slate-700">
+                            <p className="text-xs text-ink-400 font-medium">Nenhuma tarefa vinculada a este projeto ainda.</p>
                           </div>
                         )}
                       </div>
@@ -329,7 +329,7 @@ export default function ProjetosPage() {
           })}
           
           {projetos.length === 0 && (
-            <div className="col-span-full text-center py-20 text-slate-500 bg-white dark:bg-slate-900 rounded-lg border border-dashed border-slate-200 dark:border-slate-800 shadow-sm">
+            <div className="col-span-full text-center py-20 text-ink-500 bg-white dark:bg-slate-900 rounded-lg border border-dashed border-line dark:border-slate-800 shadow-card">
               Nenhum projeto ativo no momento. 
               {isAdmin && <span className="block mt-2 font-semibold text-[#031D2D] dark:text-white">Clique no botão "Novo Projeto" lá no topo para começar.</span>}
             </div>
@@ -341,35 +341,35 @@ export default function ProjetosPage() {
       {modalOpen && isAdmin && (
         <div className="fixed inset-0 bg-[#031D2D]/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-950/50">
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white">{editingId ? 'Editar Projeto' : 'Criar Novo Projeto'}</h2>
-              <button onClick={() => { setModalOpen(false); setEditingId(null) }} className="text-slate-400 hover:text-slate-600 bg-white dark:bg-slate-800 rounded-full p-1 border border-slate-200 dark:border-slate-700 transition-colors">✕</button>
+            <div className="p-6 border-b border-line dark:border-slate-800 flex justify-between items-center bg-navy-50/50 dark:bg-slate-950/50">
+              <h2 className="text-xl font-bold text-ink-900 dark:text-white">{editingId ? 'Editar Projeto' : 'Criar Novo Projeto'}</h2>
+              <button onClick={() => { setModalOpen(false); setEditingId(null) }} className="text-ink-400 hover:text-ink-700 bg-white dark:bg-slate-800 rounded-full p-1 border border-line dark:border-slate-700 transition-colors">✕</button>
             </div>
             <div className="p-6 space-y-5">
               <div>
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Nome do Projeto</label>
-                <input value={novoNome} onChange={e => setNovoNome(e.target.value)} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 rounded-md px-4 py-3 outline-none focus:border-[#C7A77B] text-slate-800 dark:text-white font-medium transition-colors" placeholder="Ex: Construção Dormitório..." />
+                <label className="text-xs font-bold text-ink-500 uppercase tracking-wider block mb-1.5">Nome do Projeto</label>
+                <input value={novoNome} onChange={e => setNovoNome(e.target.value)} className="w-full border border-line dark:border-slate-700 bg-navy-50 dark:bg-slate-950 rounded-md px-4 py-3 outline-none focus:border-[#C7A77B] text-ink-900 dark:text-white font-medium transition-colors" placeholder="Ex: Construção Dormitório..." />
               </div>
               <div>
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Descrição / Objetivo</label>
-                <textarea value={novaDesc} onChange={e => setNovaDesc(e.target.value)} rows={3} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 rounded-md px-4 py-3 outline-none focus:border-[#C7A77B] text-slate-800 dark:text-white font-medium resize-none transition-colors" placeholder="Qual o grande objetivo desta iniciativa?" />
+                <label className="text-xs font-bold text-ink-500 uppercase tracking-wider block mb-1.5">Descrição / Objetivo</label>
+                <textarea value={novaDesc} onChange={e => setNovaDesc(e.target.value)} rows={3} className="w-full border border-line dark:border-slate-700 bg-navy-50 dark:bg-slate-950 rounded-md px-4 py-3 outline-none focus:border-[#C7A77B] text-ink-900 dark:text-white font-medium resize-none transition-colors" placeholder="Qual o grande objetivo desta iniciativa?" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Data Início</label>
-                  <input type="date" value={novoInicio} onChange={e => setNovoInicio(e.target.value)} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 rounded-md px-4 py-3 outline-none focus:border-[#C7A77B] text-slate-800 dark:text-white font-medium transition-colors" />
+                  <label className="text-xs font-bold text-ink-500 uppercase tracking-wider block mb-1.5">Data Início</label>
+                  <input type="date" value={novoInicio} onChange={e => setNovoInicio(e.target.value)} className="w-full border border-line dark:border-slate-700 bg-navy-50 dark:bg-slate-950 rounded-md px-4 py-3 outline-none focus:border-[#C7A77B] text-ink-900 dark:text-white font-medium transition-colors" />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Previsão Fim</label>
-                  <input type="date" value={novoFim} onChange={e => setNovoFim(e.target.value)} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 rounded-md px-4 py-3 outline-none focus:border-[#C7A77B] text-slate-800 dark:text-white font-medium transition-colors" />
+                  <label className="text-xs font-bold text-ink-500 uppercase tracking-wider block mb-1.5">Previsão Fim</label>
+                  <input type="date" value={novoFim} onChange={e => setNovoFim(e.target.value)} className="w-full border border-line dark:border-slate-700 bg-navy-50 dark:bg-slate-950 rounded-md px-4 py-3 outline-none focus:border-[#C7A77B] text-ink-900 dark:text-white font-medium transition-colors" />
                 </div>
               </div>
               <div>
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Status</label>
+                <label className="text-xs font-bold text-ink-500 uppercase tracking-wider block mb-1.5">Status</label>
                 <select
                   value={novoStatus}
                   onChange={e => setNovoStatus(e.target.value)}
-                  className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 rounded-md px-4 py-3 outline-none focus:border-[#C7A77B] text-slate-800 dark:text-white font-medium transition-colors"
+                  className="w-full border border-line dark:border-slate-700 bg-navy-50 dark:bg-slate-950 rounded-md px-4 py-3 outline-none focus:border-[#C7A77B] text-ink-900 dark:text-white font-medium transition-colors"
                 >
                   <option value="Em Andamento" className="dark:bg-slate-900">Em Andamento</option>
                   <option value="Concluído" className="dark:bg-slate-900">Concluído</option>
@@ -378,8 +378,8 @@ export default function ProjetosPage() {
                 </select>
               </div>
             </div>
-            <div className="p-6 bg-slate-50/50 dark:bg-slate-950/50 flex justify-end gap-3 border-t border-slate-100 dark:border-slate-800">
-              <button onClick={() => { setModalOpen(false); setEditingId(null) }} className="px-5 py-2.5 rounded-md text-sm font-semibold text-slate-600 hover:bg-slate-200 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">Cancelar</button>
+            <div className="p-6 bg-navy-50/50 dark:bg-slate-950/50 flex justify-end gap-3 border-t border-line dark:border-slate-800">
+              <button onClick={() => { setModalOpen(false); setEditingId(null) }} className="px-5 py-2.5 rounded-md text-sm font-semibold text-ink-700 hover:bg-slate-200 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">Cancelar</button>
               <button onClick={salvarProjeto} disabled={salvando} className="bg-[#C7A77B] hover:bg-[#A68A63] text-[#031D2D] px-6 py-2.5 rounded-md text-sm font-bold shadow-md transition-colors disabled:opacity-50 tracking-tight">
                 {salvando ? 'A processar...' : (editingId ? 'Salvar Alterações' : 'Salvar Projeto')}
               </button>

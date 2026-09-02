@@ -56,24 +56,24 @@ export function TaskDetailsModal(props: Props) {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
       <div className="absolute inset-0 bg-[#031D2D]/60 dark:bg-black/80 backdrop-blur-md transition-opacity" onClick={onClose} />
-      <div className="relative bg-white dark:bg-slate-900 w-full max-w-2xl max-h-[95vh] rounded-lg shadow-xl flex flex-col overflow-hidden border border-slate-100 dark:border-slate-800 animate-in zoom-in-95 duration-200">
+      <div className="relative bg-white dark:bg-slate-900 w-full max-w-2xl max-h-[95vh] rounded-lg shadow-xl flex flex-col overflow-hidden border border-line dark:border-slate-800 animate-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-start bg-slate-50/50 dark:bg-slate-950/50 shrink-0">
+        <div className="p-6 border-b border-line dark:border-slate-800 flex justify-between items-start bg-navy-50/50 dark:bg-slate-950/50 shrink-0">
           <div className="w-full mr-4">
-            <span className="text-xs text-[#0f88a8] dark:text-[#38bdf8] font-semibold tracking-wide uppercase">Detalhes da Tarefa</span>
+            <span className="text-xs text-teal-600 dark:text-[#38bdf8] font-semibold tracking-wide uppercase">Detalhes da Tarefa</span>
             <input
               value={drawerNome}
               onChange={(e) => setDrawerNome(e.target.value)}
-              className="w-full text-xl text-[#063955] dark:text-white font-semibold mt-1 bg-transparent border-b-2 border-transparent focus:border-[#0f88a8] outline-none transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50 px-1 -ml-1 rounded"
+              className="w-full text-xl text-navy-700 dark:text-white font-semibold mt-1 bg-transparent border-b-2 border-transparent focus:border-teal-500 outline-none transition-colors hover:bg-navy-50 dark:hover:bg-slate-800/50 px-1 -ml-1 rounded"
               title="Clique para editar o nome da atividade"
             />
-            <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-2">
+            <div className="text-xs text-ink-500 dark:text-slate-400 mt-1 flex items-center gap-2">
               <span>{selected.atividades?.setores?.nome || '—'}</span>
               <span>•</span>
               <span>{selected.atividades?.planner_name || '—'}</span>
             </div>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-[#063955] dark:hover:text-white p-2">✕</button>
+          <button onClick={onClose} className="text-ink-400 hover:text-navy-700 dark:hover:text-white p-2">✕</button>
         </div>
 
         {/* Body */}
@@ -82,28 +82,28 @@ export function TaskDetailsModal(props: Props) {
             {/* Status + Vencimento */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-xs text-slate-500 dark:text-slate-400 font-medium block mb-1">Status</label>
-                <select value={drawerStatus} onChange={e => setDrawerStatus(e.target.value)} className="w-full bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-md p-2.5 text-sm outline-none focus:border-[#0f88a8]">
+                <label className="text-xs text-ink-500 dark:text-slate-400 font-medium block mb-1">Status</label>
+                <select value={drawerStatus} onChange={e => setDrawerStatus(e.target.value)} className="w-full bg-transparent border border-line dark:border-slate-800 dark:text-white rounded-md p-2.5 text-sm outline-none focus:border-teal-500">
                   {statuses.map(s => <option key={s} value={s} className="dark:bg-slate-900">{s}</option>)}
                 </select>
               </div>
               <div>
-                <label className="text-xs text-slate-500 dark:text-slate-400 font-medium block mb-1">Vencimento</label>
-                <input type="date" value={drawerVenc} onChange={e => setDrawerVenc(e.target.value)} className="w-full bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-md p-2.5 text-sm outline-none focus:border-[#0f88a8]" />
+                <label className="text-xs text-ink-500 dark:text-slate-400 font-medium block mb-1">Vencimento</label>
+                <input type="date" value={drawerVenc} onChange={e => setDrawerVenc(e.target.value)} className="w-full bg-transparent border border-line dark:border-slate-800 dark:text-white rounded-md p-2.5 text-sm outline-none focus:border-teal-500" />
               </div>
             </div>
 
             {/* Classificação + Projeto */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-xs text-slate-500 dark:text-slate-400 font-medium block mb-1">Classificação da Tarefa</label>
-                <select value={drawerClassificacao} onChange={e => setDrawerClassificacao(e.target.value)} className="w-full bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-md p-2.5 text-sm outline-none focus:border-[#0f88a8]">
+                <label className="text-xs text-ink-500 dark:text-slate-400 font-medium block mb-1">Classificação da Tarefa</label>
+                <select value={drawerClassificacao} onChange={e => setDrawerClassificacao(e.target.value)} className="w-full bg-transparent border border-line dark:border-slate-800 dark:text-white rounded-md p-2.5 text-sm outline-none focus:border-teal-500">
                   <option value="" className="dark:bg-slate-900">(Nenhuma)</option>
                   {classificacoesDb.map(c => <option key={c.id} value={c.nome} className="dark:bg-slate-900">{c.nome}</option>)}
                 </select>
               </div>
               <div>
-                <label className="text-xs text-slate-500 dark:text-slate-400 font-medium block mb-1 text-[#C7A77B]">Vincular a Projeto</label>
+                <label className="text-xs text-ink-500 dark:text-slate-400 font-medium block mb-1 text-[#C7A77B]">Vincular a Projeto</label>
                 <select value={drawerProjetoId} onChange={e => setDrawerProjetoId(e.target.value)} className="w-full bg-transparent border border-[#C7A77B]/50 dark:border-slate-800 dark:text-white rounded-md p-2.5 text-sm outline-none focus:border-[#C7A77B]">
                   <option value="" className="dark:bg-slate-900">(Sem Projeto)</option>
                   {projetosDb.map(p => <option key={p.id} value={p.id} className="dark:bg-slate-900">{p.nome}</option>)}
@@ -113,15 +113,15 @@ export function TaskDetailsModal(props: Props) {
 
             {/* Responsáveis */}
             <div>
-              <label className="text-xs text-slate-500 dark:text-slate-400 font-medium mb-1 flex justify-between">
+              <label className="text-xs text-ink-500 dark:text-slate-400 font-medium mb-1 flex justify-between">
                 <span>Envolvidos na Tarefa</span>
-                <span className="text-[#0f88a8] font-bold">{drawerResps.length} selecionado(s)</span>
+                <span className="text-teal-600 font-bold">{drawerResps.length} selecionado(s)</span>
               </label>
-              <div className="border rounded-md p-2 max-h-36 overflow-y-auto bg-transparent border-slate-200 dark:border-slate-800 custom-scrollbar">
+              <div className="border rounded-md p-2 max-h-36 overflow-y-auto bg-transparent border-line dark:border-slate-800 custom-scrollbar">
                 {respsDb.map(r => {
                   const isChecked = drawerResps.some(dr => dr.id === r.id)
                   return (
-                    <label key={r.id} className="flex items-center gap-3 p-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded cursor-pointer transition-colors">
+                    <label key={r.id} className="flex items-center gap-3 p-2 hover:bg-navy-50 dark:hover:bg-slate-800/50 rounded cursor-pointer transition-colors">
                       <input
                         type="checkbox"
                         checked={isChecked}
@@ -129,9 +129,9 @@ export function TaskDetailsModal(props: Props) {
                           if (e.target.checked) setDrawerResps([...drawerResps, { id: r.id, nome: r.nome, email: r.email }])
                           else setDrawerResps(drawerResps.filter(dr => dr.id !== r.id))
                         }}
-                        className="w-4 h-4 rounded border-slate-300 text-[#0f88a8] focus:ring-[#0f88a8] cursor-pointer"
+                        className="w-4 h-4 rounded border-line-strong text-teal-600 focus:ring-[#0f88a8] cursor-pointer"
                       />
-                      <span className={`text-sm ${isChecked ? 'font-semibold text-[#0f88a8] dark:text-[#38bdf8]' : 'text-slate-700 dark:text-slate-300'}`}>{r.nome}</span>
+                      <span className={`text-sm ${isChecked ? 'font-semibold text-teal-600 dark:text-[#38bdf8]' : 'text-ink-700 dark:text-slate-300'}`}>{r.nome}</span>
                     </label>
                   )
                 })}
@@ -142,12 +142,12 @@ export function TaskDetailsModal(props: Props) {
             <AnexoUploader value={drawerAnexo} onChange={setDrawerAnexo} />
 
             <div>
-              <label className="text-xs text-slate-500 dark:text-slate-400 font-medium block mb-1">Observações Gerais</label>
+              <label className="text-xs text-ink-500 dark:text-slate-400 font-medium block mb-1">Observações Gerais</label>
               <textarea
                 value={drawerObs}
                 onChange={e => setDrawerObs(e.target.value)}
                 rows={4}
-                className="w-full bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-md p-3 text-sm outline-none focus:border-[#0f88a8]"
+                className="w-full bg-transparent border border-line dark:border-slate-800 dark:text-white rounded-md p-3 text-sm outline-none focus:border-teal-500"
                 placeholder="Informações adicionais..."
               />
             </div>
@@ -164,12 +164,12 @@ export function TaskDetailsModal(props: Props) {
         </div>
 
         {/* Footer */}
-        <div className="p-5 border-t border-slate-100 dark:border-slate-800 flex justify-between bg-slate-50 dark:bg-slate-950 shrink-0">
+        <div className="p-5 border-t border-line dark:border-slate-800 flex justify-between bg-navy-50 dark:bg-slate-950 shrink-0">
           <button onClick={onExcluir} className="text-[#b43a3d] dark:text-[#f87171] hover:bg-[#b43a3d]/10 dark:hover:bg-[#b43a3d]/20 px-4 py-2.5 rounded-md text-sm font-medium transition-colors">
             Excluir Tarefa
           </button>
           <div className="flex gap-2">
-            <button onClick={onSalvar} disabled={savingDrawer} className="bg-[#0f88a8] text-white px-5 py-2.5 rounded-md text-sm font-medium hover:bg-[#0c708b] transition-colors shadow-sm disabled:opacity-50">
+            <button onClick={onSalvar} disabled={savingDrawer} className="bg-teal-600 text-white px-5 py-2.5 rounded-md text-sm font-medium hover:bg-[#0c708b] transition-colors shadow-sm disabled:opacity-50">
               {savingDrawer ? 'A guardar...' : 'Salvar'}
             </button>
             <button onClick={onConcluir} className="bg-[#2d6943] text-white px-5 py-2.5 rounded-md text-sm font-medium hover:bg-[#204e31] transition-colors shadow-sm">

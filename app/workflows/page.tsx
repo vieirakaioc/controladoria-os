@@ -264,7 +264,7 @@ export default function WorkflowsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-8 font-sans">
-      <header className="flex justify-between items-center mb-6 bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+      <header className="flex justify-between items-center mb-6 bg-white p-6 rounded-lg shadow-card border border-gray-100">
         <div>
           <h1 className="text-3xl font-black text-indigo-950 uppercase tracking-tighter">Workflows</h1>
           <p className="text-gray-500 font-medium">Status por Planner</p>
@@ -281,7 +281,7 @@ export default function WorkflowsPage() {
         </div>
       </header>
 
-      <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 mb-6 flex flex-wrap gap-3 items-center">
+      <div className="bg-white p-4 rounded-lg shadow-card border border-gray-100 mb-6 flex flex-wrap gap-3 items-center">
         <div className="font-black text-gray-900">Planner</div>
         <select
           className="bg-white border border-gray-200 rounded-md px-3 py-2 font-bold text-gray-700"

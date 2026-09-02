@@ -100,8 +100,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 p-6 font-sans">
-      <div className="flex w-full max-w-md flex-col items-center rounded-xl border border-slate-100 bg-white p-10 shadow-xl transition-all">
+    <div className="flex min-h-screen items-center justify-center bg-navy-50 p-6 font-sans">
+      <div className="flex w-full max-w-md flex-col items-center rounded-xl border border-line bg-white p-10 shadow-xl transition-all">
         <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-lg border border-[#C7A77B]/20 bg-[#031D2D] shadow-lg">
           <span className="text-2xl font-black tracking-tighter text-[#C7A77B]">PC</span>
         </div>
@@ -110,7 +110,7 @@ export default function LoginPage() {
           Portal da Controladoria
         </h1>
 
-        <p className="mt-2 mb-8 px-4 text-center text-sm font-medium text-slate-500">
+        <p className="mt-2 mb-8 px-4 text-center text-sm font-medium text-ink-500">
           {viewMode === 'login' && 'Acesse o seu painel de gestão executiva.'}
           {viewMode === 'signup' && 'Crie uma conta para acessar o sistema.'}
           {viewMode === 'reset' &&
@@ -131,11 +131,11 @@ export default function LoginPage() {
 
         <form onSubmit={handleAuth} className="w-full space-y-5">
           <div>
-            <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-slate-400">
+            <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-ink-400">
               E-mail de acesso
             </label>
             <input
-              className="w-full rounded-md border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm text-slate-800 outline-none transition-colors focus:border-[#C7A77B] focus:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+              className="w-full rounded-md border border-line bg-navy-50 px-4 py-3.5 text-sm text-ink-900 outline-none transition-colors focus:border-[#C7A77B] focus:bg-white disabled:cursor-not-allowed disabled:opacity-60"
               placeholder="exemplo@empresa.com"
               type="email"
               value={email}
@@ -148,7 +148,7 @@ export default function LoginPage() {
           {viewMode !== 'reset' && (
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <label className="block text-xs font-bold uppercase tracking-widest text-slate-400">
+                <label className="block text-xs font-bold uppercase tracking-widest text-ink-400">
                   Senha
                 </label>
 
@@ -168,7 +168,7 @@ export default function LoginPage() {
               </div>
 
               <input
-                className="w-full rounded-md border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm text-slate-800 outline-none transition-colors focus:border-[#C7A77B] focus:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+                className="w-full rounded-md border border-line bg-navy-50 px-4 py-3.5 text-sm text-ink-900 outline-none transition-colors focus:border-[#C7A77B] focus:bg-white disabled:cursor-not-allowed disabled:opacity-60"
                 placeholder="••••••••"
                 type="password"
                 value={password}
@@ -182,7 +182,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading || !email || (viewMode !== 'reset' && !password)}
-            className="mt-4 w-full rounded-md bg-[#031D2D] py-3.5 font-bold tracking-wide text-[#E5D6A7] shadow-md transition-all hover:bg-[#063955] disabled:opacity-50"
+            className="mt-4 w-full rounded-md bg-[#031D2D] py-3.5 font-bold tracking-wide text-[#E5D6A7] shadow-md transition-all hover:bg-navy-700 disabled:opacity-50"
           >
             {loading
               ? 'Processando...'
@@ -194,7 +194,7 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div className="mt-8 w-full border-t border-slate-100 pt-6 text-center">
+        <div className="mt-8 w-full border-t border-line pt-6 text-center">
           <button
             type="button"
             disabled={loading}
@@ -202,7 +202,7 @@ export default function LoginPage() {
               setViewMode(viewMode === 'login' ? 'signup' : 'login')
               resetFormState()
             }}
-            className="text-sm font-semibold text-slate-500 transition-colors hover:text-[#031D2D] disabled:opacity-50"
+            className="text-sm font-semibold text-ink-500 transition-colors hover:text-[#031D2D] disabled:opacity-50"
           >
             {viewMode === 'login' ? 'Não tem conta? Criar nova conta' : 'Voltar ao login'}
           </button>

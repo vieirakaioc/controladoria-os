@@ -78,12 +78,12 @@ export default function PaginaImportar() {
         descricao="Cada envio fica registrado com quantas tarefas gerou e qual prazo foi aplicado."
       >
         {lotes.length === 0 ? (
-          <p className="text-sm text-slate-400">Nenhuma planilha importada ainda.</p>
+          <p className="text-sm text-ink-400">Nenhuma planilha importada ainda.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] border-collapse text-sm">
               <thead>
-                <tr className="border-b border-slate-200 text-left">
+                <tr className="border-b border-line text-left">
                   {[
                     'Arquivo',
                     'Tipo',
@@ -97,7 +97,7 @@ export default function PaginaImportar() {
                     <th
                       key={`${coluna}-${indice}`}
                       scope="col"
-                      className="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-400"
+                      className="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-ink-400"
                     >
                       {coluna}
                     </th>
@@ -106,25 +106,25 @@ export default function PaginaImportar() {
               </thead>
               <tbody>
                 {lotes.map((lote) => (
-                  <tr key={lote.id} className="border-b border-slate-100">
+                  <tr key={lote.id} className="border-b border-line">
                     <td
-                      className="max-w-[280px] truncate px-3 py-3 font-medium text-[#063955]"
+                      className="max-w-[280px] truncate px-3 py-3 font-medium text-navy-700"
                       title={lote.arquivo}
                     >
                       {lote.arquivo}
                     </td>
-                    <td className="px-3 py-3 text-slate-600">{ROTULO_ORIGEM[lote.origem]}</td>
-                    <td className="px-3 py-3 text-slate-600">{lote.importadoPor ?? '—'}</td>
-                    <td className="px-3 py-3 tabular-nums text-slate-600">
+                    <td className="px-3 py-3 text-ink-700">{ROTULO_ORIGEM[lote.origem]}</td>
+                    <td className="px-3 py-3 text-ink-700">{lote.importadoPor ?? '—'}</td>
+                    <td className="px-3 py-3 tabular-nums text-ink-700">
                       {new Date(lote.importadoEm).toLocaleString('pt-BR', {
                         timeZone: 'America/Sao_Paulo',
                         dateStyle: 'short',
                         timeStyle: 'short',
                       })}
                     </td>
-                    <td className="px-3 py-3 tabular-nums font-bold text-[#063955]">{lote.novas}</td>
-                    <td className="px-3 py-3 tabular-nums text-slate-400">{lote.duplicadas}</td>
-                    <td className="px-3 py-3 tabular-nums text-slate-600">
+                    <td className="px-3 py-3 tabular-nums font-bold text-navy-700">{lote.novas}</td>
+                    <td className="px-3 py-3 tabular-nums text-ink-400">{lote.duplicadas}</td>
+                    <td className="px-3 py-3 tabular-nums text-ink-700">
                       {formatarData(lote.prazo)}
                     </td>
 
@@ -134,7 +134,7 @@ export default function PaginaImportar() {
                           type="button"
                           onClick={() => pedirExclusao(lote)}
                           aria-label={`Excluir a importação ${lote.arquivo}`}
-                          className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-500 transition-colors hover:border-[#b1272d] hover:text-[#b1272d]"
+                          className="inline-flex items-center gap-1.5 rounded-md border border-line px-3 py-1.5 text-xs font-semibold text-ink-500 transition-colors hover:border-[#b1272d] hover:text-negativo"
                         >
                           <Trash2 size={13} />
                           Excluir
@@ -161,19 +161,19 @@ export default function PaginaImportar() {
             role="dialog"
             aria-modal="true"
             aria-label="Confirmar exclusão da importação"
-            className="relative w-full max-w-lg rounded-lg border border-slate-200 bg-white p-6 shadow-xl"
+            className="relative w-full max-w-lg rounded-lg border border-line bg-white p-6 shadow-xl"
           >
             <div className="flex items-start gap-3">
               <AlertTriangle size={22} className="mt-0.5 shrink-0" style={{ color: CORES.critico }} />
               <div className="min-w-0">
-                <h2 className="text-lg font-bold text-[#063955]">Excluir esta importação?</h2>
-                <p className="mt-1 break-words text-sm text-slate-600">{alvo.arquivo}</p>
+                <h2 className="text-lg font-bold text-navy-700">Excluir esta importação?</h2>
+                <p className="mt-1 break-words text-sm text-ink-700">{alvo.arquivo}</p>
               </div>
             </div>
 
-            <div className="mt-4 rounded-md border border-slate-200 bg-slate-50 p-4 text-sm leading-relaxed text-slate-600">
+            <div className="mt-4 rounded-md border border-line bg-navy-50 p-4 text-sm leading-relaxed text-ink-700">
               {contagem === null ? (
-                <span className="flex items-center gap-2 text-slate-400">
+                <span className="flex items-center gap-2 text-ink-400">
                   <Loader2 size={14} className="animate-spin" />
                   Conferindo o que será apagado…
                 </span>
@@ -212,7 +212,7 @@ export default function PaginaImportar() {
                 type="button"
                 onClick={() => setAlvo(null)}
                 disabled={excluindo}
-                className="rounded-md border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-40"
+                className="rounded-md border border-line-strong px-5 py-2.5 text-sm font-semibold text-ink-700 transition-colors hover:bg-navy-50 disabled:opacity-40"
               >
                 Cancelar
               </button>

@@ -45,13 +45,13 @@ export default function PaginaDashboard() {
   if (tarefas.length === 0) {
     return (
       <Painel titulo="Nenhuma tarefa ainda">
-        <p className="text-sm text-slate-600 leading-relaxed">
+        <p className="text-sm text-ink-700 leading-relaxed">
           Importe os relatórios de divergência — auditoria fiscal, situações da logística e notas
           de entrada — para gerar as tarefas de correção.
         </p>
         <Link
           href="/validacao-fiscal/importar"
-          className="mt-5 inline-flex items-center gap-2 rounded-md bg-[#0f88a8] px-5 py-2.5 text-sm font-bold text-white transition-all hover:brightness-110"
+          className="mt-5 inline-flex items-center gap-2 rounded-md bg-teal-600 px-5 py-2.5 text-sm font-bold text-white transition-all hover:brightness-110"
         >
           Importar planilhas
           <ArrowUpRight size={16} />
@@ -90,9 +90,9 @@ export default function PaginaDashboard() {
     <div className="space-y-6">
       <Painel className="!p-3">
         <div className="flex flex-wrap items-center gap-3">
-          <span className="pl-1 text-sm font-semibold text-[#063955]">Mostrar</span>
+          <span className="pl-1 text-sm font-semibold text-navy-700">Mostrar</span>
 
-          <div className="flex flex-wrap gap-1 rounded-md bg-slate-100 p-1">
+          <div className="flex flex-wrap gap-1 rounded-md bg-navy-100 p-1">
             {(
               [
                 { valor: 'todos', rotulo: 'Tudo' },
@@ -107,8 +107,8 @@ export default function PaginaDashboard() {
                 aria-pressed={fluxo === opcao.valor}
                 className={`rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
                   fluxo === opcao.valor
-                    ? 'bg-white text-[#063955] shadow-sm'
-                    : 'text-slate-500 hover:text-[#063955]'
+                    ? 'bg-white text-navy-700 shadow-sm'
+                    : 'text-ink-500 hover:text-navy-700'
                 }`}
               >
                 {opcao.rotulo}
@@ -116,7 +116,7 @@ export default function PaginaDashboard() {
             ))}
           </div>
 
-          <span className="text-sm text-slate-500">
+          <span className="text-sm text-ink-500">
             {formatarInteiro(visiveis.length)} de {formatarInteiro(tarefas.length)} tarefas
           </span>
         </div>
@@ -125,14 +125,14 @@ export default function PaginaDashboard() {
       <div className="grid gap-4 lg:grid-cols-[minmax(250px,0.85fr)_2fr]">
         <Painel className="flex flex-col justify-between">
           <div>
-            <p className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">
+            <p className="text-[11px] uppercase tracking-wider text-ink-400 font-semibold">
               Correções em aberto
             </p>
             {/* Figura principal do painel — uma só por tela. */}
-            <p className="mt-3 text-6xl font-bold leading-none text-[#063955]">
+            <p className="mt-3 text-6xl font-bold leading-none text-navy-700">
               {formatarInteiro(resumo.emAberto)}
             </p>
-            <p className="mt-3 text-sm text-slate-500 leading-relaxed">
+            <p className="mt-3 text-sm text-ink-500 leading-relaxed">
               de {formatarInteiro(resumo.total)} tarefas geradas · prazo de {PRAZO_DIAS_UTEIS} dias
               úteis por importação
             </p>
@@ -140,7 +140,7 @@ export default function PaginaDashboard() {
 
           <Link
             href="/validacao-fiscal/matriz"
-            className="mt-6 inline-flex items-center gap-2 self-start rounded-md border border-[#0f88a8] px-4 py-2 text-sm font-bold text-[#0f88a8] transition-colors hover:bg-[#0f88a8] hover:text-white"
+            className="mt-6 inline-flex items-center gap-2 self-start rounded-md border border-teal-500 px-4 py-2 text-sm font-bold text-teal-600 transition-colors hover:bg-teal-600 hover:text-white"
           >
             Abrir matriz
             <ArrowUpRight size={16} />

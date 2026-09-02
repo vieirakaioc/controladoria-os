@@ -152,7 +152,7 @@ export default function EquipePage() {
   // ─── Gates ───────────────────────────────────────────────────────────
   if (!authLoaded) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center text-[#0f88a8] dark:text-[#38bdf8] font-medium animate-pulse">
+      <div className="min-h-screen bg-navy-50 dark:bg-slate-950 flex items-center justify-center text-teal-600 dark:text-[#38bdf8] font-medium animate-pulse">
         A verificar credenciais...
       </div>
     )
@@ -160,15 +160,15 @@ export default function EquipePage() {
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-8 flex flex-col items-center justify-center text-center">
+      <div className="min-h-screen bg-navy-50 dark:bg-slate-950 p-8 flex flex-col items-center justify-center text-center">
         <ShieldAlert size={64} className="text-[#b43a3d] dark:text-[#f87171] mb-4 opacity-80" />
-        <h1 className="text-2xl font-bold text-[#063955] dark:text-white">Acesso Restrito</h1>
-        <p className="text-slate-500 dark:text-slate-400 mt-2 max-w-md">
+        <h1 className="text-2xl font-bold text-navy-700 dark:text-white">Acesso Restrito</h1>
+        <p className="text-ink-500 dark:text-slate-400 mt-2 max-w-md">
           O Monitor da Equipe é exclusivo para administradores.
         </p>
         <button
           onClick={() => router.push('/tarefas')}
-          className="mt-6 bg-[#0f88a8] hover:bg-[#0c708b] text-white px-6 py-2.5 rounded-md font-medium shadow-sm"
+          className="mt-6 bg-teal-600 hover:bg-[#0c708b] text-white px-6 py-2.5 rounded-md font-medium shadow-sm"
         >
           Voltar ao Kanban
         </button>
@@ -177,21 +177,21 @@ export default function EquipePage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-8 font-sans transition-colors">
+    <div className="min-h-screen bg-navy-50 dark:bg-slate-950 p-8 font-sans transition-colors">
       {/* Header */}
-      <header className="mb-6 bg-white dark:bg-slate-900 p-6 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col xl:flex-row xl:justify-between xl:items-center gap-4">
+      <header className="mb-6 bg-white dark:bg-slate-900 p-6 rounded-lg shadow-card border border-line dark:border-slate-800 flex flex-col xl:flex-row xl:justify-between xl:items-center gap-4">
         <div className="flex items-center gap-4">
-          <div className="bg-[#0f88a8]/10 dark:bg-[#38bdf8]/10 p-3 rounded-md text-[#0f88a8] dark:text-[#38bdf8]">
+          <div className="bg-teal-600/10 dark:bg-[#38bdf8]/10 p-3 rounded-md text-teal-600 dark:text-[#38bdf8]">
             <Users size={32} />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-[#063955] dark:text-white tracking-tight">
+            <h1 className="text-2xl font-bold text-navy-700 dark:text-white tracking-tight">
               Monitor da Equipe
             </h1>
-            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
+            <p className="text-ink-500 dark:text-slate-400 text-sm mt-1">
               Desempenho e acesso ao app por colaborador — {MESES.find(m => m.v === mesAlvo)?.n}/{anoAlvo}
               {filtroAtivo && (
-                <span className="ml-2 inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider bg-[#0f88a8]/10 dark:bg-[#38bdf8]/10 text-[#0f88a8] dark:text-[#38bdf8] px-2 py-0.5 rounded">
+                <span className="ml-2 inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider bg-teal-600/10 dark:bg-[#38bdf8]/10 text-teal-600 dark:text-[#38bdf8] px-2 py-0.5 rounded">
                   Filtrado{filtroPlanner !== 'Todos' && ` · ${filtroPlanner}`}{filtroSetor !== 'Todos' && ` · ${filtroSetor}`}
                 </span>
               )}
@@ -202,7 +202,7 @@ export default function EquipePage() {
           <select
             value={filtroPlanner}
             onChange={(e) => setFiltroPlanner(e.target.value)}
-            className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-md px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 outline-none focus:border-[#0f88a8] min-w-[150px]"
+            className="bg-navy-50 dark:bg-slate-950 border border-line dark:border-slate-800 rounded-md px-3 py-2 text-sm font-medium text-ink-700 dark:text-slate-200 outline-none focus:border-teal-500 min-w-[150px]"
           >
             <option value="Todos">Planner: Todos</option>
             {plannerOptions.map(p => <option key={p} value={p}>{p}</option>)}
@@ -210,7 +210,7 @@ export default function EquipePage() {
           <select
             value={filtroSetor}
             onChange={(e) => setFiltroSetor(e.target.value)}
-            className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-md px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 outline-none focus:border-[#0f88a8] min-w-[150px]"
+            className="bg-navy-50 dark:bg-slate-950 border border-line dark:border-slate-800 rounded-md px-3 py-2 text-sm font-medium text-ink-700 dark:text-slate-200 outline-none focus:border-teal-500 min-w-[150px]"
           >
             <option value="Todos">Setor: Todos</option>
             {setorOptions.map(s => <option key={s} value={s}>{s}</option>)}
@@ -218,24 +218,24 @@ export default function EquipePage() {
           {filtroAtivo && (
             <button
               onClick={limparFiltros}
-              className="text-xs font-semibold text-slate-500 hover:text-[#063955] dark:hover:text-white px-2 transition-colors"
+              className="text-xs font-semibold text-ink-500 hover:text-navy-700 dark:hover:text-white px-2 transition-colors"
             >
               Limpar filtros
             </button>
           )}
-          <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-[#063955] dark:hover:text-white transition-colors select-none">
+          <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-ink-700 dark:text-slate-300 hover:text-navy-700 dark:hover:text-white transition-colors select-none">
             <input
               type="checkbox"
               checked={esconderEmFerias}
               onChange={e => setEsconderEmFerias(e.target.checked)}
-              className="w-4 h-4 rounded border-slate-300 text-[#0f88a8] focus:ring-[#0f88a8] cursor-pointer"
+              className="w-4 h-4 rounded border-line-strong text-teal-600 focus:ring-[#0f88a8] cursor-pointer"
             />
             Esconder em férias
           </label>
           <select
             value={mesAlvo}
             onChange={(e) => setMesAlvo(Number(e.target.value))}
-            className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-md px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 outline-none focus:border-[#0f88a8]"
+            className="bg-navy-50 dark:bg-slate-950 border border-line dark:border-slate-800 rounded-md px-3 py-2 text-sm font-medium text-ink-700 dark:text-slate-200 outline-none focus:border-teal-500"
           >
             {MESES.map(m => <option key={m.v} value={m.v}>{m.n}</option>)}
           </select>
@@ -243,7 +243,7 @@ export default function EquipePage() {
             type="number"
             value={anoAlvo}
             onChange={(e) => setAnoAlvo(Number(e.target.value))}
-            className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-md px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 w-24 outline-none focus:border-[#0f88a8]"
+            className="bg-navy-50 dark:bg-slate-950 border border-line dark:border-slate-800 rounded-md px-3 py-2 text-sm font-medium text-ink-700 dark:text-slate-200 w-24 outline-none focus:border-teal-500"
           />
 
           <div className="flex items-center gap-2 ml-1">
@@ -289,22 +289,22 @@ export default function EquipePage() {
       />
 
       {/* Tab switcher entre vista mensal e histórico */}
-      <div className="flex gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-md mb-6 w-fit">
+      <div className="flex gap-1 p-1 bg-navy-100 dark:bg-slate-800 rounded-md mb-6 w-fit">
         <button
           onClick={() => setTab('mensal')}
-          className={`px-5 py-2 rounded-md text-sm font-semibold transition-all ${tab === 'mensal' ? 'bg-white dark:bg-slate-700 shadow-sm text-[#063955] dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+          className={`px-5 py-2 rounded-md text-sm font-semibold transition-all ${tab === 'mensal' ? 'bg-white dark:bg-slate-700 shadow-sm text-navy-700 dark:text-white' : 'text-ink-500 dark:text-slate-400 hover:text-ink-700 dark:hover:text-slate-200'}`}
         >
           Mensal
         </button>
         <button
           onClick={() => setTab('historico')}
-          className={`px-5 py-2 rounded-md text-sm font-semibold transition-all ${tab === 'historico' ? 'bg-white dark:bg-slate-700 shadow-sm text-[#063955] dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+          className={`px-5 py-2 rounded-md text-sm font-semibold transition-all ${tab === 'historico' ? 'bg-white dark:bg-slate-700 shadow-sm text-navy-700 dark:text-white' : 'text-ink-500 dark:text-slate-400 hover:text-ink-700 dark:hover:text-slate-200'}`}
         >
           Histórico (6 meses)
         </button>
         <button
           onClick={() => setTab('atividade')}
-          className={`px-5 py-2 rounded-md text-sm font-semibold transition-all ${tab === 'atividade' ? 'bg-white dark:bg-slate-700 shadow-sm text-[#063955] dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+          className={`px-5 py-2 rounded-md text-sm font-semibold transition-all ${tab === 'atividade' ? 'bg-white dark:bg-slate-700 shadow-sm text-navy-700 dark:text-white' : 'text-ink-500 dark:text-slate-400 hover:text-ink-700 dark:hover:text-slate-200'}`}
         >
           Atividade (30 dias)
         </button>
@@ -345,13 +345,13 @@ export default function EquipePage() {
           totalEventos={heatmap.totalEventos}
         />
       ) : (
-      <main className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden">
+      <main className="bg-white dark:bg-slate-900 rounded-lg shadow-card border border-line dark:border-slate-800 overflow-hidden">
         {loading ? (
-          <div className="p-12 text-center text-[#0f88a8] dark:text-[#38bdf8] font-medium animate-pulse">
+          <div className="p-12 text-center text-teal-600 dark:text-[#38bdf8] font-medium animate-pulse">
             A agregar métricas da equipe...
           </div>
         ) : colaboradores.length === 0 ? (
-          <div className="p-12 text-center text-slate-500 dark:text-slate-400">
+          <div className="p-12 text-center text-ink-500 dark:text-slate-400">
             {filtroAtivo
               ? 'Nenhum colaborador tem tarefas neste recorte. Tente limpar os filtros ou trocar o período.'
               : 'Nenhum colaborador cadastrado em `responsaveis`.'}
@@ -359,8 +359,8 @@ export default function EquipePage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left">
-              <thead className="bg-slate-50 dark:bg-slate-950">
-                <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 uppercase text-xs tracking-wider">
+              <thead className="bg-navy-50 dark:bg-slate-950">
+                <tr className="border-b border-line dark:border-slate-800 text-ink-500 dark:text-slate-400 uppercase text-xs tracking-wider">
                   <th className="px-4 py-3.5 font-semibold">Colaborador</th>
                   <th className="px-4 py-3.5 font-semibold">Último acesso</th>
                   <th className="px-4 py-3.5 font-semibold text-center">Tarefas</th>
@@ -376,11 +376,11 @@ export default function EquipePage() {
                   const pctConcl = c.metrics.totalAtribuidas === 0 ? 0 : Math.round((c.metrics.concluidas / c.metrics.totalAtribuidas) * 100)
                   const pctPrazo = c.metrics.concluidas === 0 ? 0 : Math.round((c.metrics.concluidasNoPrazo / c.metrics.concluidas) * 100)
                   return (
-                    <tr key={c.responsavel_id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                    <tr key={c.responsavel_id} className="hover:bg-navy-50 dark:hover:bg-slate-800/50 transition-colors">
                       {/* Colaborador */}
                       <td className="px-4 py-5">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <div className="font-bold text-[15px] text-[#063955] dark:text-white leading-tight">{c.nome}</div>
+                          <div className="font-bold text-[15px] text-navy-700 dark:text-white leading-tight">{c.nome}</div>
                           {c.ausenciaAtiva && (
                             <span
                               className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded"
@@ -390,7 +390,7 @@ export default function EquipePage() {
                             </span>
                           )}
                         </div>
-                        {c.email && <div className="text-xs text-slate-400 mt-0.5">{c.email}</div>}
+                        {c.email && <div className="text-xs text-ink-400 mt-0.5">{c.email}</div>}
                       </td>
                       {/* Último acesso */}
                       <td className="px-4 py-5">
@@ -405,7 +405,7 @@ export default function EquipePage() {
                       </td>
                       {/* Tarefas */}
                       <td className="px-4 py-5 text-center">
-                        <span className="text-lg font-semibold tabular-nums text-slate-700 dark:text-slate-200">
+                        <span className="text-lg font-semibold tabular-nums text-ink-700 dark:text-slate-200">
                           {c.metrics.totalAtribuidas}
                         </span>
                       </td>
@@ -415,16 +415,16 @@ export default function EquipePage() {
                           {c.metrics.concluidas}
                         </span>
                         {c.metrics.totalAtribuidas > 0 && (
-                          <span className="text-xs text-slate-400 ml-1.5 tabular-nums">({pctConcl}%)</span>
+                          <span className="text-xs text-ink-400 ml-1.5 tabular-nums">({pctConcl}%)</span>
                         )}
                       </td>
                       {/* No prazo */}
                       <td className="px-4 py-5 text-center">
                         {c.metrics.concluidas > 0 ? (
-                          <span className="text-lg font-semibold tabular-nums text-[#0f88a8] dark:text-[#38bdf8]">
+                          <span className="text-lg font-semibold tabular-nums text-teal-600 dark:text-[#38bdf8]">
                             {pctPrazo}%
                           </span>
-                        ) : <span className="text-slate-300 text-lg">—</span>}
+                        ) : <span className="text-ink-400 text-lg">—</span>}
                       </td>
                       {/* Atrasadas */}
                       <td className="px-4 py-5 text-center">
@@ -432,14 +432,14 @@ export default function EquipePage() {
                           <span className="text-lg font-bold tabular-nums text-[#b43a3d] dark:text-[#f87171]">
                             {c.metrics.atrasadas}
                           </span>
-                        ) : <span className="text-lg text-slate-300 tabular-nums">0</span>}
+                        ) : <span className="text-lg text-ink-400 tabular-nums">0</span>}
                       </td>
                       {/* Dias ativos */}
                       <td className="px-4 py-5 text-center">
-                        <span className="text-lg font-semibold tabular-nums text-slate-700 dark:text-slate-200">
+                        <span className="text-lg font-semibold tabular-nums text-ink-700 dark:text-slate-200">
                           {c.metrics.diasUteisAtivos}
                         </span>
-                        <span className="text-xs text-slate-400 tabular-nums">/{c.metrics.diasUteisPeriodo}</span>
+                        <span className="text-xs text-ink-400 tabular-nums">/{c.metrics.diasUteisPeriodo}</span>
                       </td>
                       {/* Score */}
                       <td className="px-4 py-5">
@@ -459,8 +459,8 @@ export default function EquipePage() {
       </div>{/* fim do equipe-content (área capturada no PDF) */}
 
       {/* Legenda */}
-      <div className="mt-6 p-4 bg-white/50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-md text-xs text-slate-500 dark:text-slate-400">
-        <strong className="text-slate-700 dark:text-slate-300">Score atual:</strong>{' '}
+      <div className="mt-6 p-4 bg-white/50 dark:bg-slate-900/50 border border-line dark:border-slate-800 rounded-md text-xs text-ink-500 dark:text-slate-400">
+        <strong className="text-ink-700 dark:text-slate-300">Score atual:</strong>{' '}
         {weights.conclusao}% Conclusão + {weights.volume}% Volume + {weights.pontualidade}% Pontualidade + {weights.aderencia}% Aderência + {weights.uso}% Uso.
         Editável no painel "Configuração do Score" acima.
         <br />
@@ -482,16 +482,16 @@ function KpiCard({ label, value, icon, suffix = '', accent = 'default' }: {
     ? 'text-[#2d6943] dark:text-[#4ade80]'
     : accent === 'danger'
     ? 'text-[#b43a3d] dark:text-[#f87171]'
-    : 'text-slate-900 dark:text-white'
+    : 'text-ink-900 dark:text-white'
 
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-lg p-4 shadow-sm">
+    <div className="bg-white dark:bg-slate-900 border border-line dark:border-slate-800 rounded-lg p-4 shadow-card">
       <div className="flex justify-between items-start mb-2">
-        <span className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">{label}</span>
-        <span className="text-slate-400">{icon}</span>
+        <span className="text-xs font-medium text-ink-500 dark:text-slate-400 uppercase tracking-wide">{label}</span>
+        <span className="text-ink-400">{icon}</span>
       </div>
       <div className={`text-2xl font-light mt-1 ${colorClass}`}>
-        {value}{suffix && <span className="text-sm font-medium text-slate-400">{suffix}</span>}
+        {value}{suffix && <span className="text-sm font-medium text-ink-400">{suffix}</span>}
       </div>
     </div>
   )

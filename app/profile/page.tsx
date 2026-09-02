@@ -149,97 +149,97 @@ export default function ProfilePage() {
     }
   }
 
-  if (loading) return <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center text-[#031D2D] font-medium animate-pulse">A carregar perfil...</div>
+  if (loading) return <div className="min-h-screen bg-navy-50 dark:bg-slate-950 flex items-center justify-center text-[#031D2D] font-medium animate-pulse">A carregar perfil...</div>
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-8 font-sans">
+    <div className="min-h-screen bg-navy-50 dark:bg-slate-950 p-8 font-sans">
       <Toaster position="bottom-right" toastOptions={{ style: { background: '#031D2D', color: '#fff', borderRadius: '12px' } }} />
 
       <header className="mb-8">
         <h1 className="text-3xl font-extrabold text-[#031D2D] dark:text-white tracking-tighter flex items-center gap-3">
           <User className="text-[#C7A77B]" size={28} /> O Meu Perfil
         </h1>
-        <p className="text-slate-500 text-sm mt-1.5 font-medium">Gerir as suas informações pessoais e configurações de sistema.</p>
+        <p className="text-ink-500 text-sm mt-1.5 font-medium">Gerir as suas informações pessoais e configurações de sistema.</p>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
         
         <div className="space-y-8">
           {/* CARD DO PERFIL DO USUÁRIO */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-lg shadow-sm p-8 flex flex-col transition-all">
-            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
-              <Briefcase size={20} className="text-slate-400" />
-              <h2 className="text-lg font-bold text-slate-800 dark:text-white">Dados Pessoais</h2>
+          <div className="bg-white dark:bg-slate-900 border border-line dark:border-slate-800 rounded-lg shadow-card p-8 flex flex-col transition-all">
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-line dark:border-slate-800">
+              <Briefcase size={20} className="text-ink-400" />
+              <h2 className="text-lg font-bold text-ink-900 dark:text-white">Dados Pessoais</h2>
             </div>
 
             <div className="space-y-5">
               <div>
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">E-mail de Acesso</label>
-                <input value={email} disabled className="w-full border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/50 rounded-md px-4 py-3 outline-none text-slate-500 dark:text-slate-400 font-medium cursor-not-allowed" />
+                <label className="text-xs font-bold text-ink-500 uppercase tracking-wider block mb-1.5">E-mail de Acesso</label>
+                <input value={email} disabled className="w-full border border-line dark:border-slate-700 bg-navy-100 dark:bg-slate-800/50 rounded-md px-4 py-3 outline-none text-ink-500 dark:text-slate-400 font-medium cursor-not-allowed" />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Nome Completo</label>
-                <input value={nome} onChange={e => setNome(e.target.value)} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 rounded-md px-4 py-3 outline-none focus:border-[#C7A77B] text-slate-800 dark:text-white font-medium transition-colors" placeholder="O seu nome..." />
+                <label className="text-xs font-bold text-ink-500 uppercase tracking-wider block mb-1.5">Nome Completo</label>
+                <input value={nome} onChange={e => setNome(e.target.value)} className="w-full border border-line dark:border-slate-700 bg-navy-50 dark:bg-slate-950 rounded-md px-4 py-3 outline-none focus:border-[#C7A77B] text-ink-900 dark:text-white font-medium transition-colors" placeholder="O seu nome..." />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Nível de Permissão</label>
+                <label className="text-xs font-bold text-ink-500 uppercase tracking-wider block mb-1.5">Nível de Permissão</label>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className={`px-3 py-1 rounded-md text-xs font-bold uppercase tracking-wider border ${role === 'admin' ? 'bg-[#031D2D]/10 text-[#031D2D] border-[#031D2D]/20 dark:bg-[#C7A77B]/10 dark:text-[#C7A77B] dark:border-[#C7A77B]/20' : 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'}`}>
+                  <span className={`px-3 py-1 rounded-md text-xs font-bold uppercase tracking-wider border ${role === 'admin' ? 'bg-[#031D2D]/10 text-[#031D2D] border-[#031D2D]/20 dark:bg-[#C7A77B]/10 dark:text-[#C7A77B] dark:border-[#C7A77B]/20' : 'bg-navy-100 text-ink-700 border-line dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'}`}>
                     {role === 'admin' ? '⭐ Administrador' : 'Membro da Equipa'}
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800 flex justify-end">
-              <button onClick={salvarPerfil} disabled={salvando} className="bg-[#031D2D] hover:bg-[#063955] text-[#E5D6A7] px-8 py-3 rounded-md text-sm font-bold shadow-md transition-all disabled:opacity-50 tracking-tight">
+            <div className="mt-8 pt-6 border-t border-line dark:border-slate-800 flex justify-end">
+              <button onClick={salvarPerfil} disabled={salvando} className="bg-[#031D2D] hover:bg-navy-700 text-[#E5D6A7] px-8 py-3 rounded-md text-sm font-bold shadow-md transition-all disabled:opacity-50 tracking-tight">
                 {salvando ? 'A guardar...' : 'Guardar Alterações'}
               </button>
             </div>
           </div>
 
           {/* CARD DE SEGURANÇA / SENHA */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-lg shadow-sm p-8 flex flex-col transition-all">
-            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
-              <Lock size={20} className="text-slate-400" />
-              <h2 className="text-lg font-bold text-slate-800 dark:text-white">Segurança da Conta</h2>
+          <div className="bg-white dark:bg-slate-900 border border-line dark:border-slate-800 rounded-lg shadow-card p-8 flex flex-col transition-all">
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-line dark:border-slate-800">
+              <Lock size={20} className="text-ink-400" />
+              <h2 className="text-lg font-bold text-ink-900 dark:text-white">Segurança da Conta</h2>
             </div>
 
-            <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+            <p className="text-sm text-ink-500 mb-6 leading-relaxed">
               Mantenha a sua conta segura. Escolha uma senha forte com pelo menos 6 caracteres.
             </p>
 
             <div className="space-y-5">
               <div>
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Nova Senha</label>
+                <label className="text-xs font-bold text-ink-500 uppercase tracking-wider block mb-1.5">Nova Senha</label>
                 <input 
                   type="password" 
                   value={novaSenha} 
                   onChange={e => setNovaSenha(e.target.value)} 
-                  className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 rounded-md px-4 py-3 outline-none focus:border-[#C7A77B] text-slate-800 dark:text-white font-medium transition-colors" 
+                  className="w-full border border-line dark:border-slate-700 bg-navy-50 dark:bg-slate-950 rounded-md px-4 py-3 outline-none focus:border-[#C7A77B] text-ink-900 dark:text-white font-medium transition-colors" 
                   placeholder="••••••••" 
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Confirmar Nova Senha</label>
+                <label className="text-xs font-bold text-ink-500 uppercase tracking-wider block mb-1.5">Confirmar Nova Senha</label>
                 <input 
                   type="password" 
                   value={confirmarSenha} 
                   onChange={e => setConfirmarSenha(e.target.value)} 
-                  className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 rounded-md px-4 py-3 outline-none focus:border-[#C7A77B] text-slate-800 dark:text-white font-medium transition-colors" 
+                  className="w-full border border-line dark:border-slate-700 bg-navy-50 dark:bg-slate-950 rounded-md px-4 py-3 outline-none focus:border-[#C7A77B] text-ink-900 dark:text-white font-medium transition-colors" 
                   placeholder="••••••••" 
                 />
               </div>
             </div>
 
-            <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+            <div className="mt-8 pt-6 border-t border-line dark:border-slate-800 flex justify-end">
               <button 
                 onClick={alterarSenha} 
                 disabled={alterandoSenha || !novaSenha || !confirmarSenha} 
-                className="bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-8 py-3 rounded-md text-sm font-bold shadow-sm transition-all disabled:opacity-50 tracking-tight"
+                className="bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-ink-700 dark:text-slate-200 px-8 py-3 rounded-md text-sm font-bold shadow-sm transition-all disabled:opacity-50 tracking-tight"
               >
                 {alterandoSenha ? 'A alterar...' : 'Atualizar Senha'}
               </button>
@@ -252,40 +252,40 @@ export default function ProfilePage() {
           <div className="bg-white dark:bg-slate-900 border border-[#C7A77B]/30 dark:border-[#C7A77B]/20 rounded-lg shadow-lg p-8 flex flex-col relative overflow-hidden transition-all h-full">
             <div className="absolute top-0 left-0 w-full h-1.5 bg-[#C7A77B]"></div>
             
-            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-line dark:border-slate-800">
               <Building size={20} className="text-[#C7A77B]" />
               <h2 className="text-lg font-bold text-[#031D2D] dark:text-white">Branding / Identidade da Empresa</h2>
             </div>
             
-            <p className="text-sm text-slate-500 mb-6 leading-relaxed">
-              Como Administrador, pode alterar a <strong className="text-slate-800 dark:text-slate-300">Logo do Menu Principal</strong>. Esta alteração reflete-se automaticamente no sistema para <strong>todos os utilizadores</strong>.
+            <p className="text-sm text-ink-500 mb-6 leading-relaxed">
+              Como Administrador, pode alterar a <strong className="text-ink-900 dark:text-slate-300">Logo do Menu Principal</strong>. Esta alteração reflete-se automaticamente no sistema para <strong>todos os utilizadores</strong>.
             </p>
 
-            <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-md bg-slate-50 dark:bg-slate-950 mb-6 flex-1">
+            <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-line dark:border-slate-700 rounded-md bg-navy-50 dark:bg-slate-950 mb-6 flex-1">
               {logoEmpresaUrl ? (
                 <div className="flex flex-col items-center">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Logo Atual</span>
+                  <span className="text-[10px] font-bold text-ink-400 uppercase tracking-widest mb-3">Logo Atual</span>
                   <div className="bg-[#031D2D] p-4 rounded-md flex items-center justify-center min-w-[200px] shadow-inner mb-4">
                     <img src={logoEmpresaUrl} alt="Logo" className="max-h-16 object-contain" />
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={() => logoInputRef.current?.click()} disabled={uploadingLogo} className="text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2 rounded-md hover:border-[#C7A77B] text-slate-700 dark:text-slate-200 transition-colors shadow-sm">
+                    <button onClick={() => logoInputRef.current?.click()} disabled={uploadingLogo} className="text-xs font-semibold bg-white dark:bg-slate-800 border border-line dark:border-slate-700 px-4 py-2 rounded-md hover:border-[#C7A77B] text-ink-700 dark:text-slate-200 transition-colors shadow-card">
                       Substituir Logo
                     </button>
-                    <button onClick={resetarLogoEmpresa} disabled={uploadingLogo} className="text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2 rounded-md hover:border-[#b43a3d] hover:text-[#b43a3d] text-slate-500 transition-colors shadow-sm">
+                    <button onClick={resetarLogoEmpresa} disabled={uploadingLogo} className="text-xs font-semibold bg-white dark:bg-slate-800 border border-line dark:border-slate-700 px-4 py-2 rounded-md hover:border-[#b43a3d] hover:text-[#b43a3d] text-ink-500 transition-colors shadow-card">
                       Remover
                     </button>
                   </div>
                 </div>
               ) : (
                 <div className="flex flex-col items-center text-center">
-                  <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-3">
-                    <Upload size={24} className="text-slate-400" />
+                  <div className="w-16 h-16 bg-navy-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-3">
+                    <Upload size={24} className="text-ink-400" />
                   </div>
-                  <span className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Nenhuma logo configurada</span>
-                  <span className="text-xs text-slate-500 max-w-[250px] mb-4">Para melhor resultado, use uma imagem PNG com fundo transparente (Max. 2MB).</span>
+                  <span className="text-sm font-semibold text-ink-700 dark:text-slate-300 mb-1">Nenhuma logo configurada</span>
+                  <span className="text-xs text-ink-500 max-w-[250px] mb-4">Para melhor resultado, use uma imagem PNG com fundo transparente (Max. 2MB).</span>
                   
-                  <button onClick={() => logoInputRef.current?.click()} disabled={uploadingLogo} className="bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-white px-5 py-2.5 rounded-md text-sm font-semibold transition-colors">
+                  <button onClick={() => logoInputRef.current?.click()} disabled={uploadingLogo} className="bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-ink-700 dark:text-white px-5 py-2.5 rounded-md text-sm font-semibold transition-colors">
                     {uploadingLogo ? 'A fazer upload...' : 'Selecionar Imagem'}
                   </button>
                 </div>
@@ -293,7 +293,7 @@ export default function ProfilePage() {
               <input type="file" accept="image/*" ref={logoInputRef} className="hidden" onChange={handleUploadLogoEmpresa} />
             </div>
 
-            <div className="mt-auto bg-[#0f88a8]/10 text-[#0f88a8] dark:bg-[#38bdf8]/10 dark:text-[#38bdf8] p-4 rounded-md flex items-start gap-3">
+            <div className="mt-auto bg-teal-600/10 text-teal-600 dark:bg-[#38bdf8]/10 dark:text-[#38bdf8] p-4 rounded-md flex items-start gap-3">
               <Info size={20} className="shrink-0 mt-0.5" />
               <p className="text-xs font-medium leading-relaxed">
                 Após alterar a imagem, pode ser necessário que os utilizadores façam atualizar a página (F5) para que o navegador baixe a nova logo em cache.

@@ -11,9 +11,9 @@ type Props = {
 
 /** Pinta a célula com cor da faixa do score. */
 function corDoScore(score: number | null | undefined) {
-  if (score == null) return 'bg-slate-50 dark:bg-slate-800/30 text-slate-300 dark:text-slate-600'
+  if (score == null) return 'bg-navy-50 dark:bg-slate-800/30 text-ink-400 dark:text-slate-600'
   if (score >= 85) return 'bg-emerald-500/15 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-500/30'
-  if (score >= 70) return 'bg-[#0f88a8]/15 dark:bg-[#38bdf8]/15 text-[#0f88a8] dark:text-[#38bdf8] ring-1 ring-[#0f88a8]/30'
+  if (score >= 70) return 'bg-teal-600/15 dark:bg-[#38bdf8]/15 text-teal-600 dark:text-[#38bdf8] ring-1 ring-[#0f88a8]/30'
   if (score >= 50) return 'bg-amber-500/15 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 ring-1 ring-amber-500/30'
   return 'bg-rose-500/15 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300 ring-1 ring-rose-500/30'
 }
@@ -24,7 +24,7 @@ function trend(linha: LinhaHistorico) {
   const pen = linha.scores[linha.scores.length - 2]?.total
   if (ult == null || pen == null) return null
   const diff = ult - pen
-  if (Math.abs(diff) < 3) return { icone: <Minus size={14} />, cor: 'text-slate-400', label: 'estável' }
+  if (Math.abs(diff) < 3) return { icone: <Minus size={14} />, cor: 'text-ink-400', label: 'estável' }
   if (diff > 0) return { icone: <TrendingUp size={14} />, cor: 'text-emerald-600 dark:text-emerald-400', label: `+${diff}` }
   return { icone: <TrendingDown size={14} />, cor: 'text-rose-600 dark:text-rose-400', label: `${diff}` }
 }
@@ -32,7 +32,7 @@ function trend(linha: LinhaHistorico) {
 export function HistoricoView({ linhas, meses, loading }: Props) {
   if (loading) {
     return (
-      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 p-12 text-center text-[#0f88a8] dark:text-[#38bdf8] font-medium animate-pulse">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-card border border-line dark:border-slate-800 p-12 text-center text-teal-600 dark:text-[#38bdf8] font-medium animate-pulse">
         A carregar histórico de 6 meses...
       </div>
     )
@@ -40,7 +40,7 @@ export function HistoricoView({ linhas, meses, loading }: Props) {
 
   if (linhas.length === 0) {
     return (
-      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 p-12 text-center text-slate-500 dark:text-slate-400">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-card border border-line dark:border-slate-800 p-12 text-center text-ink-500 dark:text-slate-400">
         Sem dados nos últimos meses pra mostrar histórico.
       </div>
     )
@@ -48,17 +48,17 @@ export function HistoricoView({ linhas, meses, loading }: Props) {
 
   return (
     <>
-      <div className="mb-3 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+      <div className="mb-3 flex items-center gap-2 text-xs text-ink-500 dark:text-slate-400">
         <History size={14} className="text-[#C7A77B]" />
         <span>Heatmap de score por colaborador nos últimos {meses.length} meses. Cinza = não teve tarefa no mês.</span>
       </div>
 
-      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-card border border-line dark:border-slate-800 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
-            <thead className="bg-slate-50 dark:bg-slate-950">
-              <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 uppercase text-xs tracking-wider">
-                <th className="px-4 py-3.5 font-semibold sticky left-0 bg-slate-50 dark:bg-slate-950 z-10">Colaborador</th>
+            <thead className="bg-navy-50 dark:bg-slate-950">
+              <tr className="border-b border-line dark:border-slate-800 text-ink-500 dark:text-slate-400 uppercase text-xs tracking-wider">
+                <th className="px-4 py-3.5 font-semibold sticky left-0 bg-navy-50 dark:bg-slate-950 z-10">Colaborador</th>
                 {meses.map(m => (
                   <th key={`${m.ano}-${m.mes}`} className="px-3 py-3.5 font-semibold text-center min-w-[80px]">
                     {m.label}
@@ -71,10 +71,10 @@ export function HistoricoView({ linhas, meses, loading }: Props) {
               {linhas.map(linha => {
                 const t = trend(linha)
                 return (
-                  <tr key={linha.responsavel_id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                  <tr key={linha.responsavel_id} className="hover:bg-navy-50 dark:hover:bg-slate-800/50 transition-colors">
                     <td className="px-4 py-3 sticky left-0 bg-white dark:bg-slate-900 z-10">
-                      <div className="font-bold text-[14px] text-[#063955] dark:text-white leading-tight">{linha.nome}</div>
-                      {linha.email && <div className="text-[10px] text-slate-400 mt-0.5">{linha.email}</div>}
+                      <div className="font-bold text-[14px] text-navy-700 dark:text-white leading-tight">{linha.nome}</div>
+                      {linha.email && <div className="text-[10px] text-ink-400 mt-0.5">{linha.email}</div>}
                     </td>
                     {linha.scores.map((s, i) => (
                       <td key={i} className="px-2 py-3 text-center">
@@ -93,7 +93,7 @@ export function HistoricoView({ linhas, meses, loading }: Props) {
                           {t.label}
                         </span>
                       ) : (
-                        <span className="text-slate-300 text-sm">—</span>
+                        <span className="text-ink-400 text-sm">—</span>
                       )}
                     </td>
                   </tr>
@@ -105,10 +105,10 @@ export function HistoricoView({ linhas, meses, loading }: Props) {
       </div>
 
       {/* Legenda */}
-      <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+      <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-ink-500 dark:text-slate-400">
         <span className="font-semibold">Legenda:</span>
         <span className="inline-flex items-center gap-1"><span className="w-3 h-3 rounded ring-1 ring-emerald-500/30 bg-emerald-500/15" /> 85+</span>
-        <span className="inline-flex items-center gap-1"><span className="w-3 h-3 rounded ring-1 ring-[#0f88a8]/30 bg-[#0f88a8]/15" /> 70-84</span>
+        <span className="inline-flex items-center gap-1"><span className="w-3 h-3 rounded ring-1 ring-[#0f88a8]/30 bg-teal-600/15" /> 70-84</span>
         <span className="inline-flex items-center gap-1"><span className="w-3 h-3 rounded ring-1 ring-amber-500/30 bg-amber-500/15" /> 50-69</span>
         <span className="inline-flex items-center gap-1"><span className="w-3 h-3 rounded ring-1 ring-rose-500/30 bg-rose-500/15" /> 0-49</span>
       </div>

@@ -18,26 +18,26 @@ export function ScoreRanking({ colaboradores }: { colaboradores: ColaboradorRow[
   }
 
   return (
-    <div className="mb-6 bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 p-6">
-      <h3 className="text-sm font-bold text-[#063955] dark:text-white uppercase tracking-wider mb-5 flex items-center gap-2">
-        <BarChart3 size={16} className="text-[#0f88a8]" /> Score por colaborador
+    <div className="mb-6 bg-white dark:bg-slate-900 rounded-lg shadow-card border border-line dark:border-slate-800 p-6">
+      <h3 className="text-sm font-bold text-navy-700 dark:text-white uppercase tracking-wider mb-5 flex items-center gap-2">
+        <BarChart3 size={16} className="text-teal-600" /> Score por colaborador
       </h3>
 
       <div className="space-y-3">
         {colaboradores.map(c => (
           <div key={c.responsavel_id} className="group">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate flex-1">
+              <span className="text-sm font-medium text-ink-700 dark:text-slate-200 truncate flex-1">
                 {c.nome}
               </span>
-              <span className="text-xs text-slate-400 ml-2 mr-2 hidden sm:inline">
+              <span className="text-xs text-ink-400 ml-2 mr-2 hidden sm:inline">
                 {c.metrics.concluidas}/{c.metrics.totalAtribuidas} · {c.metrics.diasUteisAtivos}d
               </span>
-              <span className="text-sm font-bold text-[#063955] dark:text-white tabular-nums w-10 text-right">
+              <span className="text-sm font-bold text-navy-700 dark:text-white tabular-nums w-10 text-right">
                 {c.score.total}
               </span>
             </div>
-            <div className="h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+            <div className="h-2.5 bg-navy-100 dark:bg-slate-800 rounded-full overflow-hidden">
               <div
                 className={`h-full ${barColor(c.score.total)} transition-all duration-500 ease-out`}
                 style={{ width: `${Math.max(2, c.score.total)}%` }}

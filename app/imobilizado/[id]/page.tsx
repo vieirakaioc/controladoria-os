@@ -59,7 +59,7 @@ import {
 } from '../_lib/types'
 
 const CAMPO =
-  'w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-[#0f88a8] focus:ring-2 focus:ring-[#0f88a8]/20'
+  'w-full rounded-md border border-line-strong bg-white px-3 py-2 text-sm text-ink-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-[#0f88a8]/20'
 
 export default function PaginaFicha({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -117,10 +117,10 @@ export default function PaginaFicha({ params }: { params: Promise<{ id: string }
   if (!item) {
     return (
       <Painel titulo="Item não encontrado">
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-ink-700">
           Ele pode ter sido excluído, ou o link está errado.
         </p>
-        <Link href="/imobilizado" className="mt-4 inline-block text-sm font-bold text-[#0f88a8]">
+        <Link href="/imobilizado" className="mt-4 inline-block text-sm font-bold text-teal-600">
           Voltar para a fila
         </Link>
       </Painel>
@@ -138,7 +138,7 @@ export default function PaginaFicha({ params }: { params: Promise<{ id: string }
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
           href="/imobilizado"
-          className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition-colors hover:text-[#063955]"
+          className="inline-flex items-center gap-2 text-sm font-semibold text-ink-500 transition-colors hover:text-navy-700"
         >
           <ArrowLeft size={16} />
           Fila
@@ -146,7 +146,7 @@ export default function PaginaFicha({ params }: { params: Promise<{ id: string }
 
         <div className="flex flex-wrap items-center gap-3">
           {!editavel && (
-            <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-500">
+            <span className="rounded-full border border-line bg-white px-3 py-1 text-xs font-semibold text-ink-500">
               Você acompanha este processo como observador
             </span>
           )}
@@ -320,16 +320,16 @@ function Cabecalho({
       <div className="flex flex-wrap items-start justify-between gap-5">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-md bg-slate-100 px-2 py-0.5 text-sm font-bold tabular-nums text-slate-500">
+            <span className="rounded-md bg-navy-100 px-2 py-0.5 text-sm font-bold tabular-nums text-ink-500">
               Nº {item.numero}
             </span>
             {item.ehFrota && (
-              <span className="inline-flex items-center gap-1 rounded-full border border-[#0f88a8] px-2.5 py-0.5 text-xs font-semibold text-[#0f88a8]">
+              <span className="inline-flex items-center gap-1 rounded-full border border-teal-500 px-2.5 py-0.5 text-xs font-semibold text-teal-600">
                 <Truck size={12} />
                 Frota
               </span>
             )}
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+            <span className="text-xs font-semibold uppercase tracking-wider text-ink-400">
               {item.status === 'finalizado' ? 'Finalizado' : 'Em andamento'}
             </span>
 
@@ -339,7 +339,7 @@ function Cabecalho({
               <button
                 type="button"
                 onClick={abrir}
-                className="ml-1 inline-flex items-center gap-1.5 rounded-md border border-slate-300 px-2.5 py-1 text-xs font-bold text-slate-500 transition-colors hover:border-[#0f88a8] hover:text-[#0f88a8]"
+                className="ml-1 inline-flex items-center gap-1.5 rounded-md border border-line-strong px-2.5 py-1 text-xs font-bold text-ink-500 transition-colors hover:border-teal-500 hover:text-teal-600"
               >
                 <Pencil size={12} />
                 Editar dados
@@ -351,7 +351,7 @@ function Cabecalho({
             <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {CAMPOS_TEXTO.map((campo) => (
                 <div key={campo.chave}>
-                  <label className="text-xs text-slate-400">{campo.rotulo}</label>
+                  <label className="text-xs text-ink-400">{campo.rotulo}</label>
                   <input
                     value={campos[campo.chave]}
                     onChange={(e) =>
@@ -363,7 +363,7 @@ function Cabecalho({
               ))}
 
               <div>
-                <label className="text-xs text-slate-400">Valor</label>
+                <label className="text-xs text-ink-400">Valor</label>
                 <input
                   value={textoDaMoeda(campos.valor)}
                   onChange={(e) =>
@@ -376,7 +376,7 @@ function Cabecalho({
               </div>
 
               <div>
-                <label className="text-xs text-slate-400">Empresa e filial</label>
+                <label className="text-xs text-ink-400">Empresa e filial</label>
                 <select
                   value={campos.filialId}
                   onChange={(e) => setCampos((atuais) => ({ ...atuais, filialId: e.target.value }))}
@@ -396,7 +396,7 @@ function Cabecalho({
                   type="button"
                   onClick={salvar}
                   disabled={salvando}
-                  className="inline-flex items-center gap-2 rounded-md bg-[#0f88a8] px-4 py-2 text-sm font-bold text-white transition-all hover:brightness-110 disabled:opacity-40"
+                  className="inline-flex items-center gap-2 rounded-md bg-teal-600 px-4 py-2 text-sm font-bold text-white transition-all hover:brightness-110 disabled:opacity-40"
                 >
                   {salvando ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />}
                   Salvar
@@ -405,11 +405,11 @@ function Cabecalho({
                   type="button"
                   onClick={() => setEditando(false)}
                   disabled={salvando}
-                  className="text-sm font-semibold text-slate-500 transition-colors hover:text-[#063955] disabled:opacity-40"
+                  className="text-sm font-semibold text-ink-500 transition-colors hover:text-navy-700 disabled:opacity-40"
                 >
                   Cancelar
                 </button>
-                <span className="text-xs leading-relaxed text-slate-400">
+                <span className="text-xs leading-relaxed text-ink-400">
                   A marca de frota não muda aqui: ela decide quais etapas existem, e trocá-la agora
                   criaria ou apagaria etapas no meio do fluxo.
                 </span>
@@ -427,7 +427,7 @@ function Cabecalho({
             </div>
           ) : (
             <>
-              <h2 className="mt-2 text-xl font-bold text-[#063955]">
+              <h2 className="mt-2 text-xl font-bold text-navy-700">
                 {item.descricao || item.fornecedor || `Nota ${item.nfNumero}`}
               </h2>
 
@@ -443,8 +443,8 @@ function Cabecalho({
                   { rotulo: 'Placa', valor: item.placa || '—' },
                 ].map((campo) => (
                   <div key={campo.rotulo} className="min-w-0">
-                    <dt className="text-xs text-slate-400">{campo.rotulo}</dt>
-                    <dd className="truncate text-sm text-slate-700" title={campo.valor}>
+                    <dt className="text-xs text-ink-400">{campo.rotulo}</dt>
+                    <dd className="truncate text-sm text-ink-700" title={campo.valor}>
                       {campo.valor}
                     </dd>
                   </div>
@@ -459,11 +459,11 @@ function Cabecalho({
             { rotulo: 'Aging do processo', valor: textoAging(processo) },
             { rotulo: 'Aging da placa', valor: textoAging(placa) },
           ].map((a) => (
-            <div key={a.rotulo} className="rounded-md border border-slate-200 bg-slate-50 p-3">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+            <div key={a.rotulo} className="rounded-md border border-line bg-navy-50 p-3">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">
                 {a.rotulo}
               </p>
-              <p className="mt-1 text-lg font-bold text-[#063955]">{a.valor}</p>
+              <p className="mt-1 text-lg font-bold text-navy-700">{a.valor}</p>
             </div>
           ))}
         </div>
@@ -559,21 +559,21 @@ function CartaoEtapa({
   return (
     <div
       className={`rounded-lg border p-4 transition-colors ${
-        aberta ? 'border-[#0f88a8] bg-[#0f88a8]/[0.04]' : 'border-slate-200 bg-white'
+        aberta ? 'border-teal-500 bg-teal-600/[0.04]' : 'border-line bg-white'
       } ${concluida ? 'opacity-70' : ''}`}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <span className="font-mono text-xs text-slate-400">{String(etapa.ordem).padStart(2, '0')}</span>
-            <h3 className="font-bold text-[#063955]">{etapa.titulo}</h3>
+            <span className="font-mono text-xs text-ink-400">{String(etapa.ordem).padStart(2, '0')}</span>
+            <h3 className="font-bold text-navy-700">{etapa.titulo}</h3>
             {concluida && <Check size={15} style={{ color: CORES.bom }} />}
           </div>
           {descricao && (
-            <p className="mt-1 max-w-prose text-sm leading-relaxed text-slate-600">{descricao}</p>
+            <p className="mt-1 max-w-prose text-sm leading-relaxed text-ink-700">{descricao}</p>
           )}
 
-          <p className="mt-1.5 text-xs text-slate-400">
+          <p className="mt-1.5 text-xs text-ink-400">
             {etapa.area}
             {etapa.responsavelNome ? ` · ${etapa.responsavelNome}` : ''}
             {concluida && etapa.concluidaEm
@@ -586,7 +586,7 @@ function CartaoEtapa({
       </div>
 
       {concluida && etapa.observacao && (
-        <p className="mt-3 rounded-md bg-slate-50 p-3 text-sm leading-relaxed text-slate-600">
+        <p className="mt-3 rounded-md bg-navy-50 p-3 text-sm leading-relaxed text-ink-700">
           {etapa.observacao}
         </p>
       )}
@@ -595,7 +595,7 @@ function CartaoEtapa({
         <div className="mt-4 space-y-3">
           {etapa.exigeCampo && (
             <div>
-              <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+              <label className="text-xs font-semibold uppercase tracking-wider text-ink-400">
                 {ROTULO_CAMPO[etapa.exigeCampo] ?? etapa.exigeCampo}
               </label>
               <input
@@ -620,7 +620,7 @@ function CartaoEtapa({
               type="button"
               onClick={concluir}
               disabled={salvando}
-              className="inline-flex items-center gap-2 rounded-md bg-[#0f88a8] px-4 py-2 text-sm font-bold text-white transition-all hover:brightness-110 disabled:opacity-40"
+              className="inline-flex items-center gap-2 rounded-md bg-teal-600 px-4 py-2 text-sm font-bold text-white transition-all hover:brightness-110 disabled:opacity-40"
             >
               {salvando ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />}
               Concluir etapa
@@ -630,7 +630,7 @@ function CartaoEtapa({
               value={etapa.responsavelId ?? ''}
               onChange={(e) => trocarResponsavel(e.target.value)}
               aria-label="Responsável pela etapa"
-              className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#0f88a8]"
+              className="rounded-md border border-line-strong bg-white px-3 py-2 text-sm text-ink-700 outline-none focus:border-teal-500"
             >
               <option value="">Sem responsável</option>
               {responsaveis.map((r) => (
@@ -648,7 +648,7 @@ function CartaoEtapa({
           </div>
 
           {faltas.length > 0 && !erro && (
-            <p className="text-xs text-slate-500">{faltas.join(' ')}</p>
+            <p className="text-xs text-ink-500">{faltas.join(' ')}</p>
           )}
 
           {erro && (
@@ -665,7 +665,7 @@ function CartaoEtapa({
           type="button"
           onClick={reabrir}
           disabled={salvando}
-          className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 transition-colors hover:text-[#063955] disabled:opacity-40"
+          className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-ink-400 transition-colors hover:text-navy-700 disabled:opacity-40"
         >
           <RotateCcw size={13} />
           Reabrir
@@ -680,7 +680,7 @@ function CartaoEtapa({
                 href={a.url}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-600 hover:border-[#0f88a8] hover:text-[#0f88a8]"
+                className="inline-flex items-center gap-1.5 rounded-md border border-line bg-white px-2.5 py-1 text-xs text-ink-700 hover:border-teal-500 hover:text-teal-600"
               >
                 <FileText size={12} />
                 {a.nome}
@@ -778,7 +778,7 @@ function Pasta({
             type="button"
             onClick={baixar}
             disabled={enviando}
-            className="inline-flex items-center gap-1.5 rounded-md border border-[#0f88a8] px-3 py-1.5 text-xs font-bold text-[#0f88a8] transition-all hover:bg-[#0f88a8] hover:text-white disabled:opacity-40"
+            className="inline-flex items-center gap-1.5 rounded-md border border-teal-500 px-3 py-1.5 text-xs font-bold text-teal-600 transition-all hover:bg-teal-600 hover:text-white disabled:opacity-40"
           >
             {enviando ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
             Baixar pasta (.zip)
@@ -788,11 +788,11 @@ function Pasta({
     >
       {/* O caminho é a ponte para fora do sistema: é por ele que a pasta é
           encontrada no Storage quando for levada para o controle de vocês. */}
-      <div className="mb-4 rounded-md bg-slate-50 px-3 py-2">
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+      <div className="mb-4 rounded-md bg-navy-50 px-3 py-2">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">
           Caminho no Storage
         </span>
-        <p className="break-all font-mono text-xs text-slate-600">
+        <p className="break-all font-mono text-xs text-ink-700">
           evidencias/{item.pasta}
         </p>
       </div>
@@ -800,7 +800,7 @@ function Pasta({
       {editavel && (
         <div className="mb-4 space-y-2">
           <div>
-            <label htmlFor="etapa-anexo" className="text-xs text-slate-400">
+            <label htmlFor="etapa-anexo" className="text-xs text-ink-400">
               {escolha === null && sugerida
                 ? `Vai para a etapa aberta: ${sugerida.titulo}`
                 : 'Etapa do documento'}
@@ -829,7 +829,7 @@ function Pasta({
             type="button"
             onClick={() => entrada.current?.click()}
             disabled={enviando}
-            className="flex w-full items-center justify-center gap-2 rounded-md border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-500 transition-colors hover:border-[#0f88a8] hover:text-[#0f88a8] disabled:opacity-40"
+            className="flex w-full items-center justify-center gap-2 rounded-md border border-dashed border-line-strong bg-navy-50 px-4 py-3 text-sm font-semibold text-ink-500 transition-colors hover:border-teal-500 hover:text-teal-600 disabled:opacity-40"
           >
             {enviando ? <Loader2 size={15} className="animate-spin" /> : <Paperclip size={15} />}
             Anexar documento
@@ -854,25 +854,25 @@ function Pasta({
       )}
 
       {anexos.length === 0 ? (
-        <p className="text-sm text-slate-400">A pasta ainda está vazia.</p>
+        <p className="text-sm text-ink-400">A pasta ainda está vazia.</p>
       ) : (
         <ul className="flex flex-col gap-2">
           {anexos.map((a) => (
             <li
               key={a.id}
-              className="flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2"
+              className="flex items-center gap-2 rounded-md border border-line bg-white px-3 py-2"
             >
-              <FileText size={15} className="shrink-0 text-[#0f88a8]" />
+              <FileText size={15} className="shrink-0 text-teal-600" />
               <div className="min-w-0 flex-1">
                 <a
                   href={a.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="block truncate text-sm text-slate-700 hover:text-[#0f88a8]"
+                  className="block truncate text-sm text-ink-700 hover:text-teal-600"
                 >
                   {a.nome}
                 </a>
-                <span className="text-[11px] text-slate-400">
+                <span className="text-[11px] text-ink-400">
                   {item.etapas.find((e) => e.id === a.etapaId)?.titulo ?? 'Geral'}
                   {a.enviadoPor ? ` · ${a.enviadoPor}` : ''}
                 </span>
@@ -882,7 +882,7 @@ function Pasta({
                   type="button"
                   onClick={() => remover(a)}
                   aria-label={`Remover ${a.nome}`}
-                  className="shrink-0 text-slate-300 transition-colors hover:text-[#b1272d]"
+                  className="shrink-0 text-ink-400 transition-colors hover:text-negativo"
                 >
                   <Trash2 size={14} />
                 </button>
@@ -904,15 +904,15 @@ function Historico({ movimentos }: { movimentos: Movimento[] }) {
       descricao="Tudo o que aconteceu com este item, inclusive a atividade paralela."
     >
       {movimentos.length === 0 ? (
-        <p className="text-sm text-slate-400">Nada registrado ainda.</p>
+        <p className="text-sm text-ink-400">Nada registrado ainda.</p>
       ) : (
         <ol className="flex flex-col gap-3">
           {movimentos.map((m) => (
             <li key={m.id} className="flex gap-3">
-              <History size={14} className="mt-0.5 shrink-0 text-slate-300" />
+              <History size={14} className="mt-0.5 shrink-0 text-ink-400" />
               <div className="min-w-0">
-                <p className="text-sm leading-snug text-slate-700">{m.descricao}</p>
-                <p className="text-[11px] text-slate-400">
+                <p className="text-sm leading-snug text-ink-700">{m.descricao}</p>
+                <p className="text-[11px] text-ink-400">
                   {new Date(m.criadoEm).toLocaleString('pt-BR', {
                     timeZone: 'America/Sao_Paulo',
                     dateStyle: 'short',
@@ -961,7 +961,7 @@ function ExcluirItem({ item, anexos }: { item: Item; anexos: Anexo[] }) {
       <button
         type="button"
         onClick={() => setConfirmando(true)}
-        className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-ink-400 transition-colors hover:border-negativo hover:text-negativo"
+        className="inline-flex items-center gap-1.5 rounded-md border border-line bg-white px-3 py-1.5 text-xs font-semibold text-ink-400 transition-colors hover:border-negativo hover:text-negativo"
       >
         <Trash2 size={13} />
         Excluir item

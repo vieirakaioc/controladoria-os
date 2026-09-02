@@ -112,27 +112,27 @@ export function CommentsThread({ tarefa, userId, userName, userEmail, respsDb, o
   const filtradosMention = respsDb.filter(r => r.nome.toLowerCase().includes(mentionFilter.toLowerCase()))
 
   return (
-    <div className="border-t border-slate-100 dark:border-slate-800 pt-5 relative">
-      <label className="text-xs text-slate-500 dark:text-slate-400 font-medium block mb-2">
+    <div className="border-t border-line dark:border-slate-800 pt-5 relative">
+      <label className="text-xs text-ink-500 dark:text-slate-400 font-medium block mb-2">
         Comentários e Histórico (Use @ para mencionar)
       </label>
 
       {mentionOpen && (
-        <div className="absolute bottom-full mb-2 left-0 w-64 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md shadow-xl overflow-hidden z-50">
-          <div className="bg-[#063955] dark:bg-slate-900 text-white text-xs font-bold px-4 py-2">Mencionar Colaborador</div>
+        <div className="absolute bottom-full mb-2 left-0 w-64 bg-white dark:bg-slate-800 border border-line dark:border-slate-700 rounded-md shadow-xl overflow-hidden z-50">
+          <div className="bg-navy-700 dark:bg-slate-900 text-white text-xs font-bold px-4 py-2">Mencionar Colaborador</div>
           <div className="max-h-40 overflow-y-auto custom-scrollbar">
             {filtradosMention.map(r => (
               <div
                 key={r.id}
                 onClick={() => selectMention(r.nome)}
-                className="px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer text-slate-700 dark:text-slate-200 border-b border-slate-100 dark:border-slate-700 last:border-0 transition-colors"
+                className="px-4 py-2 hover:bg-navy-50 dark:hover:bg-slate-700 cursor-pointer text-ink-700 dark:text-slate-200 border-b border-line dark:border-slate-700 last:border-0 transition-colors"
               >
-                <span className="font-semibold text-sm text-[#0f88a8] dark:text-[#38bdf8] block">{r.nome}</span>
-                <span className="text-[10px] text-slate-400 block">{r.email}</span>
+                <span className="font-semibold text-sm text-teal-600 dark:text-[#38bdf8] block">{r.nome}</span>
+                <span className="text-[10px] text-ink-400 block">{r.email}</span>
               </div>
             ))}
             {filtradosMention.length === 0 && (
-              <div className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400 text-center bg-slate-50 dark:bg-slate-800">Ninguém encontrado...</div>
+              <div className="px-4 py-3 text-xs text-ink-500 dark:text-slate-400 text-center bg-navy-50 dark:bg-slate-800">Ninguém encontrado...</div>
             )}
           </div>
         </div>
@@ -145,24 +145,24 @@ export function CommentsThread({ tarefa, userId, userName, userEmail, respsDb, o
           onChange={handleInput}
           onKeyDown={e => e.key === 'Enter' && !mentionOpen && enviar()}
           placeholder="Escreva algo... (ex: @Patricia valida isto?)"
-          className="flex-1 bg-transparent border border-slate-200 dark:border-slate-800 dark:text-white rounded-md px-3 py-2 text-sm outline-none focus:border-[#0f88a8] transition-colors"
+          className="flex-1 bg-transparent border border-line dark:border-slate-800 dark:text-white rounded-md px-3 py-2 text-sm outline-none focus:border-teal-500 transition-colors"
         />
-        <button onClick={enviar} className="bg-[#0f88a8] text-white px-4 rounded-md text-sm font-medium hover:bg-[#0c708b] transition-colors">
+        <button onClick={enviar} className="bg-teal-600 text-white px-4 rounded-md text-sm font-medium hover:bg-[#0c708b] transition-colors">
           Enviar
         </button>
       </div>
 
       <div className="mt-4 space-y-2">
         {comentarios.map(c => (
-          <div key={c.id} className="bg-slate-50 dark:bg-slate-800/50 rounded-md p-3 border border-slate-100 dark:border-slate-700/50">
-            <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
-              <span className="font-bold text-[#063955] dark:text-slate-200">{c.autor || 'Usuário'}</span>
+          <div key={c.id} className="bg-navy-50 dark:bg-slate-800/50 rounded-md p-3 border border-line dark:border-slate-700/50">
+            <div className="flex justify-between text-xs text-ink-500 dark:text-slate-400 mb-1">
+              <span className="font-bold text-navy-700 dark:text-slate-200">{c.autor || 'Usuário'}</span>
               <span>{String(c.created_at).slice(0, 16).replace('T', ' ')}</span>
             </div>
             <p
-              className="text-sm text-slate-800 dark:text-slate-300 leading-relaxed"
+              className="text-sm text-ink-900 dark:text-slate-300 leading-relaxed"
               dangerouslySetInnerHTML={{
-                __html: c.mensagem.replace(/@([a-zA-ZÀ-ÿ\s]+)/g, '<strong class="text-[#0f88a8] dark:text-[#38bdf8]">@$1</strong>'),
+                __html: c.mensagem.replace(/@([a-zA-ZÀ-ÿ\s]+)/g, '<strong class="text-teal-600 dark:text-[#38bdf8]">@$1</strong>'),
               }}
             />
           </div>

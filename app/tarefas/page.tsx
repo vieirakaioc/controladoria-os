@@ -151,7 +151,7 @@ export default function TarefasPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-8 font-sans relative transition-colors duration-300">
+    <div className="min-h-screen bg-navy-50 dark:bg-slate-950 p-8 font-sans relative transition-colors duration-300">
       <Toaster
         position="bottom-right"
         toastOptions={{

@@ -1,26 +1,28 @@
 import type { SituacaoPrazo } from './types'
 
 /**
- * Cores da Validação Fiscal.
+ * Cores do portal — paleta institucional Comber, amostrada do logo e já em uso
+ * no ai-controller-dashboard.
  *
- * As três de status foram validadas contra a superfície branca dos cards:
- * banda de luminosidade, piso de croma, separação para daltonismo (pior par
- * ΔE 10,5) e contraste ≥ 3:1 — todas aprovadas. "Concluída" usa cinza de
- * de-ênfase de propósito: um quarto tom cromático ao lado dos outros três
- * reprovava o piso de visão normal, então esse estado sai do canal de cor e
- * se apoia no rótulo, que sempre acompanha.
+ * O trio de status foi validado contra a superfície branca dos cards: banda de
+ * luminosidade, piso de croma, separação para daltonismo (pior par ΔE 11,0) e
+ * piso de visão normal (ΔE 20,4) — todos aprovados. O âmbar fica em 2,87:1 de
+ * contraste, abaixo de 3:1, o que é aceito porque status aqui nunca aparece só
+ * como cor: vem sempre com ícone e rótulo. "Concluída" usa cinza de de-ênfase
+ * de propósito — um quarto tom cromático ao lado dos outros três reprovaria o
+ * piso de visão normal.
  */
 export const CORES = {
-  /** Azul-petróleo da marca — títulos e superfícies escuras. */
-  marca: '#063955',
-  /** Teal de ação: botões, item ativo, foco. */
-  acao: '#0f88a8',
+  /** Navy dominante do logo — títulos e superfícies escuras. */
+  marca: '#004068',
+  /** Teal do símbolo: botões, item ativo, foco. */
+  acao: '#10b098',
   /** Barra de gráfico (série única, magnitude). */
-  serie: '#0f88a8',
-  bom: '#0e7a3c',
-  atencao: '#c98500',
-  critico: '#b1272d',
-  concluido: '#94a3b8',
+  serie: '#10b098',
+  bom: '#0e9c82',
+  atencao: '#c98a00',
+  critico: '#c43a5c',
+  concluido: '#8496a5',
 } as const
 
 export const COR_PRAZO: Record<SituacaoPrazo, string> = {

@@ -52,7 +52,7 @@ export default function RouteGuard({ children }: { children: React.ReactNode }) 
 
   // Mostra um ecrã em branco seguro enquanto verifica a chave, para não piscar os dados da empresa
   if (!authorized) {
-    return <div className="h-screen w-screen flex items-center justify-center bg-slate-50" />
+    return <div className="h-screen w-screen flex items-center justify-center bg-navy-50" />
   }
 
   return <>{children}</>

@@ -46,13 +46,13 @@ export function DestaqueSemana({ top, semanaLabel, mensagem, loading }: Props) {
             <Trophy size={22} />
           </div>
           <div>
-            <h3 className="text-base font-bold text-[#063955] dark:text-white flex items-center gap-2">
+            <h3 className="text-base font-bold text-navy-700 dark:text-white flex items-center gap-2">
               Destaque da Semana
               <span className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider bg-amber-200/50 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded">
                 <Calendar size={10} /> {semanaLabel}
               </span>
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            <p className="text-xs text-ink-500 dark:text-slate-400 mt-0.5">
               Reconhecimento semanal pra compartilhar com a equipe
             </p>
           </div>
@@ -60,7 +60,7 @@ export function DestaqueSemana({ top, semanaLabel, mensagem, loading }: Props) {
         <div className="flex gap-2">
           <button
             onClick={copiarMensagem}
-            className="flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-3 py-2 rounded-md text-xs font-semibold transition-colors shadow-sm"
+            className="flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-line dark:border-slate-700 hover:bg-navy-50 dark:hover:bg-slate-700 text-ink-700 dark:text-slate-200 px-3 py-2 rounded-md text-xs font-semibold transition-colors shadow-card"
           >
             <Copy size={13} /> Copiar
           </button>
@@ -75,7 +75,7 @@ export function DestaqueSemana({ top, semanaLabel, mensagem, loading }: Props) {
 
       {/* Pódio compacto */}
       {top.length === 0 ? (
-        <div className="text-center py-8 text-sm text-slate-500 dark:text-slate-400">
+        <div className="text-center py-8 text-sm text-ink-500 dark:text-slate-400">
           Nenhuma tarefa concluída esta semana ainda. Voltamos segunda! 💪
         </div>
       ) : (
@@ -94,16 +94,16 @@ export function DestaqueSemana({ top, semanaLabel, mensagem, loading }: Props) {
                 <div className="flex items-start gap-3">
                   <span className="text-3xl">{medalha}</span>
                   <div className="flex-1 min-w-0">
-                    <div className="font-bold text-[#063955] dark:text-white truncate">{d.nome}</div>
+                    <div className="font-bold text-navy-700 dark:text-white truncate">{d.nome}</div>
                     {d.email && (
-                      <div className="text-[10px] text-slate-400 truncate">{d.email}</div>
+                      <div className="text-[10px] text-ink-400 truncate">{d.email}</div>
                     )}
                     <div className="mt-2 flex items-center gap-3 text-xs">
                       <div>
-                        <span className="text-2xl font-light text-[#063955] dark:text-white tabular-nums">{d.score.total}</span>
-                        <span className="text-[10px] text-slate-400 ml-0.5">/100</span>
+                        <span className="text-2xl font-light text-navy-700 dark:text-white tabular-nums">{d.score.total}</span>
+                        <span className="text-[10px] text-ink-400 ml-0.5">/100</span>
                       </div>
-                      <div className="text-slate-500 dark:text-slate-400 leading-tight text-[11px]">
+                      <div className="text-ink-500 dark:text-slate-400 leading-tight text-[11px]">
                         ✅ {d.metrics.concluidas} concl.<br />
                         🎯 {d.score.pontualidade}% no prazo
                       </div>

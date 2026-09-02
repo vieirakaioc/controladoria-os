@@ -24,7 +24,7 @@ type Props = {
   onReset: () => void
 }
 
-const baseSelect = 'bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-md px-4 py-2 text-sm text-slate-700 dark:text-slate-200 outline-none transition-colors'
+const baseSelect = 'bg-navy-50 dark:bg-slate-950 border border-line dark:border-slate-800 rounded-md px-4 py-2 text-sm text-ink-700 dark:text-slate-200 outline-none transition-colors'
 
 export function FiltersBar({
   filtroTexto, filtroStatus, filtroSetor, filtroResp, filtroClassificacao, filtroProjeto,
@@ -33,12 +33,12 @@ export function FiltersBar({
   totalFiltradas, onReset,
 }: Props) {
   return (
-    <div className="bg-white dark:bg-slate-900 p-4 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 mb-6 flex flex-wrap gap-3 items-center transition-colors">
+    <div className="bg-white dark:bg-slate-900 p-4 rounded-lg shadow-card border border-line dark:border-slate-800 mb-6 flex flex-wrap gap-3 items-center transition-colors">
       <input
         value={filtroTexto}
         onChange={(e) => setFiltroTexto(e.target.value)}
         placeholder="Buscar atividade..."
-        className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-md px-4 py-2 text-sm w-full md:w-64 outline-none focus:border-[#0f88a8] dark:text-white transition-colors"
+        className="bg-navy-50 dark:bg-slate-950 border border-line dark:border-slate-800 rounded-md px-4 py-2 text-sm w-full md:w-64 outline-none focus:border-teal-500 dark:text-white transition-colors"
       />
 
       <select
@@ -72,11 +72,11 @@ export function FiltersBar({
 
       <button
         onClick={onReset}
-        className="text-sm font-medium text-slate-500 hover:text-slate-800 dark:hover:text-slate-300 px-2 transition-colors"
+        className="text-sm font-medium text-ink-500 hover:text-ink-900 dark:hover:text-ink-400 px-2 transition-colors"
       >
         Limpar Filtros
       </button>
-      <span className="ml-auto text-sm font-medium text-slate-400">{totalFiltradas} tarefas</span>
+      <span className="ml-auto text-sm font-medium text-ink-400">{totalFiltradas} tarefas</span>
     </div>
   )
 }

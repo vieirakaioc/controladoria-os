@@ -19,12 +19,12 @@ export function Painel({
   className?: string
 }) {
   return (
-    <section className={`rounded-lg border border-slate-200 bg-white p-5 shadow-sm ${className}`}>
+    <section className={`rounded-lg border border-line bg-white p-5 shadow-card ${className}`}>
       {(titulo || acao) && (
         <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
           <div>
-            {titulo && <h2 className="text-base font-bold text-[#063955]">{titulo}</h2>}
-            {descricao && <p className="mt-1 text-sm leading-relaxed text-slate-500">{descricao}</p>}
+            {titulo && <h2 className="text-base font-bold text-navy-700">{titulo}</h2>}
+            {descricao && <p className="mt-1 text-sm leading-relaxed text-ink-500">{descricao}</p>}
           </div>
           {acao}
         </div>
@@ -48,12 +48,12 @@ export function Kpi({
   const cor = { neutro: '#063955', bom: CORES.bom, atencao: CORES.atencao, critico: CORES.critico }[tom]
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-      <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">{rotulo}</p>
+    <div className="rounded-lg border border-line bg-white p-4 shadow-card">
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">{rotulo}</p>
       <p className="mt-2 text-3xl font-bold leading-none" style={{ color: cor }}>
         {valor}
       </p>
-      {detalhe && <p className="mt-2 text-xs leading-relaxed text-slate-500">{detalhe}</p>}
+      {detalhe && <p className="mt-2 text-xs leading-relaxed text-ink-500">{detalhe}</p>}
     </div>
   )
 }
@@ -62,7 +62,7 @@ export function Carregando({ linhas = 3 }: { linhas?: number }) {
   return (
     <div className="animate-pulse space-y-4">
       {Array.from({ length: linhas }).map((_, i) => (
-        <div key={i} className="h-24 rounded-lg border border-slate-200 bg-white" />
+        <div key={i} className="h-24 rounded-lg border border-line bg-white" />
       ))}
     </div>
   )
@@ -78,14 +78,14 @@ export function AvisoErro({ mensagem }: { mensagem: string }) {
           <Database size={22} style={{ color: CORES.atencao }} />
         </div>
         <div className="min-w-0 flex-1">
-          <h2 className="text-lg font-bold text-[#063955]">Não foi possível carregar</h2>
-          <p className="mt-2 text-sm leading-relaxed text-slate-600">{mensagem}</p>
+          <h2 className="text-lg font-bold text-navy-700">Não foi possível carregar</h2>
+          <p className="mt-2 text-sm leading-relaxed text-ink-700">{mensagem}</p>
           {faltaTabela && (
-            <ol className="mt-4 flex list-decimal flex-col gap-2 pl-5 text-sm leading-relaxed text-slate-600">
+            <ol className="mt-4 flex list-decimal flex-col gap-2 pl-5 text-sm leading-relaxed text-ink-700">
               <li>Abra o Supabase do projeto e vá em SQL Editor.</li>
               <li>
                 Cole o conteúdo de{' '}
-                <code className="font-semibold text-[#0f88a8]">docs/imobilizado-schema.sql</code> e
+                <code className="font-semibold text-teal-600">docs/imobilizado-schema.sql</code> e
                 execute.
               </li>
               <li>Recarregue esta página.</li>
@@ -99,12 +99,12 @@ export function AvisoErro({ mensagem }: { mensagem: string }) {
 
 export function SemAcesso() {
   return (
-    <div className="mx-auto flex max-w-xl flex-col items-center gap-4 rounded-lg border border-slate-200 bg-white p-10 text-center shadow-sm">
-      <div className="rounded-md bg-slate-100 p-3 text-slate-400">
+    <div className="mx-auto flex max-w-xl flex-col items-center gap-4 rounded-lg border border-line bg-white p-10 text-center shadow-card">
+      <div className="rounded-md bg-navy-100 p-3 text-ink-400">
         <Lock size={22} />
       </div>
-      <h1 className="text-xl font-bold text-[#063955]">Acesso restrito</h1>
-      <p className="text-sm leading-relaxed text-slate-500">
+      <h1 className="text-xl font-bold text-navy-700">Acesso restrito</h1>
+      <p className="text-sm leading-relaxed text-ink-500">
         O fluxo de imobilizado é visto apenas por quem participa do processo. Peça a um
         administrador para incluir você no cadastro de participantes.
       </p>
@@ -115,9 +115,9 @@ export function SemAcesso() {
 /** Selo de prazo da etapa: ícone e texto, nunca só a cor. */
 export function ChipPrazo({ prazo, hoje, concluida }: { prazo: string | null; hoje: string; concluida: boolean }) {
   if (concluida) {
-    return <span className="text-xs font-semibold text-slate-400">Concluída</span>
+    return <span className="text-xs font-semibold text-ink-400">Concluída</span>
   }
-  if (!prazo) return <span className="text-xs text-slate-400">Sem prazo</span>
+  if (!prazo) return <span className="text-xs text-ink-400">Sem prazo</span>
 
   const atrasada = prazo < hoje
   const hojeMesmo = prazo === hoje

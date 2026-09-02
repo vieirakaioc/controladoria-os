@@ -13,7 +13,7 @@ import { ROTULO_FLUXO, type Fluxo, type TarefaFiscal } from '../_lib/types'
 import { Painel } from './Ui'
 
 const CAMPO =
-  'w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-[#0f88a8] focus:ring-2 focus:ring-[#0f88a8]/20'
+  'w-full rounded-md border border-line-strong bg-white px-3 py-2 text-sm text-ink-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-[#0f88a8]/20'
 
 type Estado =
   | { fase: 'inicial' }
@@ -136,7 +136,7 @@ export function ExportarPainel({
     >
       <div className="flex flex-wrap items-end gap-3">
         <div className="min-w-[280px] flex-1">
-          <label htmlFor="destinatarios" className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+          <label htmlFor="destinatarios" className="text-xs font-semibold uppercase tracking-wider text-ink-400">
             Para
           </label>
           <input
@@ -149,7 +149,7 @@ export function ExportarPainel({
             placeholder="nome@comber.com.br, outro@comber.com.br"
             className={`mt-2 ${CAMPO}`}
           />
-          <p className="mt-1.5 text-xs text-slate-400">
+          <p className="mt-1.5 text-xs text-ink-400">
             Separe por vírgula para enviar a mais de uma pessoa.
           </p>
         </div>
@@ -158,7 +158,7 @@ export function ExportarPainel({
           type="button"
           onClick={enviar}
           disabled={estado.fase === 'enviando'}
-          className="inline-flex items-center gap-2 rounded-md bg-[#0f88a8] px-5 py-2.5 text-sm font-bold text-white transition-all hover:brightness-110 disabled:opacity-40"
+          className="inline-flex items-center gap-2 rounded-md bg-teal-600 px-5 py-2.5 text-sm font-bold text-white transition-all hover:brightness-110 disabled:opacity-40"
         >
           {estado.fase === 'enviando' ? (
             <Loader2 size={16} className="animate-spin" />
@@ -171,7 +171,7 @@ export function ExportarPainel({
         <button
           type="button"
           onClick={abrirPrevia}
-          className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:border-[#0f88a8] hover:text-[#0f88a8]"
+          className="inline-flex items-center gap-2 rounded-md border border-line-strong px-4 py-2.5 text-sm font-semibold text-ink-700 transition-colors hover:border-teal-500 hover:text-teal-600"
         >
           <Eye size={16} />
           Ver antes
@@ -180,7 +180,7 @@ export function ExportarPainel({
         <button
           type="button"
           onClick={baixar}
-          className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:border-[#0f88a8] hover:text-[#0f88a8]"
+          className="inline-flex items-center gap-2 rounded-md border border-line-strong px-4 py-2.5 text-sm font-semibold text-ink-700 transition-colors hover:border-teal-500 hover:text-teal-600"
         >
           <Download size={16} />
           Baixar

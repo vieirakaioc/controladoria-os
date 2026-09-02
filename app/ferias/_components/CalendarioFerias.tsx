@@ -23,7 +23,7 @@ function corMotivo(m: string | null): string {
   if (s.includes('férias') || s.includes('ferias')) return 'bg-amber-500'
   if (s.includes('licença') || s.includes('licenca')) return 'bg-violet-500'
   if (s.includes('atestado')) return 'bg-rose-500'
-  if (s.includes('afastamento')) return 'bg-slate-500'
+  if (s.includes('afastamento')) return 'bg-navy-500'
   return 'bg-emerald-500'
 }
 
@@ -52,7 +52,7 @@ export function CalendarioFerias({ ausencias, mes, ano }: Props) {
 
   if (porPessoa.length === 0) {
     return (
-      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 p-12 text-center text-slate-500 dark:text-slate-400">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-card border border-line dark:border-slate-800 p-12 text-center text-ink-500 dark:text-slate-400">
         Ninguém tem ausência cadastrada nesse mês.
       </div>
     )
@@ -70,18 +70,18 @@ export function CalendarioFerias({ ausencias, mes, ano }: Props) {
   }
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden">
+    <div className="bg-white dark:bg-slate-900 rounded-lg shadow-card border border-line dark:border-slate-800 overflow-hidden">
       <div className="overflow-x-auto">
         <table className="min-w-full">
-          <thead className="bg-slate-50 dark:bg-slate-950">
+          <thead className="bg-navy-50 dark:bg-slate-950">
             <tr>
-              <th className="sticky left-0 bg-slate-50 dark:bg-slate-950 px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 z-10 min-w-[180px]">
+              <th className="sticky left-0 bg-navy-50 dark:bg-slate-950 px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-ink-500 dark:text-slate-400 z-10 min-w-[180px]">
                 Colaborador
               </th>
               {diasInfo.map(({ dia, dow }) => (
                 <th
                   key={dia}
-                  className={`px-1 py-2 text-center text-[10px] font-mono ${dow === 0 || dow === 6 ? 'bg-slate-100 dark:bg-slate-800/60 text-slate-400' : 'text-slate-500 dark:text-slate-400'}`}
+                  className={`px-1 py-2 text-center text-[10px] font-mono ${dow === 0 || dow === 6 ? 'bg-navy-100 dark:bg-slate-800/60 text-ink-400' : 'text-ink-500 dark:text-slate-400'}`}
                   style={{ minWidth: '24px' }}
                 >
                   <div className="text-[9px]">{DIAS_SEM[dow]}</div>
@@ -93,7 +93,7 @@ export function CalendarioFerias({ ausencias, mes, ano }: Props) {
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
             {porPessoa.map(pessoa => (
               <tr key={pessoa.id}>
-                <td className="sticky left-0 bg-white dark:bg-slate-900 px-4 py-2.5 font-medium text-sm text-[#063955] dark:text-white z-10 whitespace-nowrap">
+                <td className="sticky left-0 bg-white dark:bg-slate-900 px-4 py-2.5 font-medium text-sm text-navy-700 dark:text-white z-10 whitespace-nowrap">
                   {pessoa.nome}
                 </td>
                 {diasInfo.map(({ dia, dow }) => {
@@ -103,7 +103,7 @@ export function CalendarioFerias({ ausencias, mes, ano }: Props) {
                   return (
                     <td
                       key={dia}
-                      className={`p-0.5 text-center ${isWeekend ? 'bg-slate-50 dark:bg-slate-950/50' : ''}`}
+                      className={`p-0.5 text-center ${isWeekend ? 'bg-navy-50 dark:bg-slate-950/50' : ''}`}
                     >
                       {cobre && (
                         <div
@@ -121,12 +121,12 @@ export function CalendarioFerias({ ausencias, mes, ano }: Props) {
       </div>
 
       {/* Legenda */}
-      <div className="px-4 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+      <div className="px-4 py-3 border-t border-line dark:border-slate-800 bg-navy-50/50 dark:bg-slate-950/50 flex flex-wrap items-center gap-3 text-xs text-ink-500 dark:text-slate-400">
         <span className="font-semibold">Legenda:</span>
         <span className="inline-flex items-center gap-1"><span className="w-3 h-3 rounded bg-amber-500" /> férias</span>
         <span className="inline-flex items-center gap-1"><span className="w-3 h-3 rounded bg-violet-500" /> licença</span>
         <span className="inline-flex items-center gap-1"><span className="w-3 h-3 rounded bg-rose-500" /> atestado</span>
-        <span className="inline-flex items-center gap-1"><span className="w-3 h-3 rounded bg-slate-500" /> afastamento</span>
+        <span className="inline-flex items-center gap-1"><span className="w-3 h-3 rounded bg-navy-500" /> afastamento</span>
         <span className="inline-flex items-center gap-1"><span className="w-3 h-3 rounded bg-emerald-500" /> outro</span>
       </div>
     </div>

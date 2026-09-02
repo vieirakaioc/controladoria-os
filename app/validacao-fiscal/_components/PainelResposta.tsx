@@ -19,9 +19,9 @@ import {
 import { ChipPrazo } from './Ui'
 
 const CAMPO =
-  'w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-[#0f88a8] focus:ring-2 focus:ring-[#0f88a8]/20'
+  'w-full rounded-md border border-line-strong bg-white px-3 py-2 text-sm text-ink-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-[#0f88a8]/20'
 
-const ROTULO = 'text-xs uppercase tracking-wider text-slate-400 font-semibold'
+const ROTULO = 'text-xs uppercase tracking-wider text-ink-400 font-semibold'
 
 /** Os quatro desfechos possíveis, na ordem em que a tarefa costuma andar. */
 const ESTADOS: { valor: StatusTarefa; ajuda: string }[] = [
@@ -157,27 +157,27 @@ export function PainelResposta({
         role="dialog"
         aria-modal="true"
         aria-label={`Responder correção do documento ${tarefa.documento}`}
-        className="relative flex h-full w-full max-w-xl flex-col bg-slate-50 shadow-xl"
+        className="relative flex h-full w-full max-w-xl flex-col bg-navy-50 shadow-xl"
       >
-        <header className="flex items-start justify-between gap-4 border-b border-slate-200 bg-white p-5">
+        <header className="flex items-start justify-between gap-4 border-b border-line bg-white p-5">
           <div className="min-w-0">
-            <p className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">
+            <p className="text-[11px] uppercase tracking-wider text-ink-400 font-semibold">
               {tarefa.aba ? `${ROTULO_ORIGEM[tarefa.origem]} · ${tarefa.aba}` : ROTULO_ORIGEM[tarefa.origem]}
             </p>
-            <h2 className="mt-1 flex items-center gap-2 text-xl font-bold text-[#063955]">
-              <span className="shrink-0 rounded-md bg-slate-100 px-2 py-0.5 text-sm tabular-nums text-slate-500">
+            <h2 className="mt-1 flex items-center gap-2 text-xl font-bold text-navy-700">
+              <span className="shrink-0 rounded-md bg-navy-100 px-2 py-0.5 text-sm tabular-nums text-ink-500">
                 Nº {tarefa.numero}
               </span>
               <span className="truncate">Documento {tarefa.documento}</span>
             </h2>
-            <p className="mt-1 text-sm text-slate-600">{tarefa.tipoDivergencia}</p>
+            <p className="mt-1 text-sm text-ink-700">{tarefa.tipoDivergencia}</p>
           </div>
 
           <button
             type="button"
             onClick={aoFechar}
             aria-label="Fechar"
-            className="rounded-full border border-slate-200 p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+            className="rounded-full border border-line p-2 text-ink-400 hover:text-ink-700 hover:bg-navy-100 transition-colors"
           >
             <X size={16} />
           </button>
@@ -191,15 +191,15 @@ export function PainelResposta({
                 estaFinalizada(tarefa.status) ? undefined : textoPrazo(tarefa.prazo, hoje)
               }
             />
-            <span className="text-sm text-slate-500">Prazo: {formatarData(tarefa.prazo)}</span>
-            <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-600">
+            <span className="text-sm text-ink-500">Prazo: {formatarData(tarefa.prazo)}</span>
+            <span className="rounded-full border border-line bg-white px-2.5 py-1 text-xs text-ink-700">
               {ROTULO_STATUS[tarefa.status]}
             </span>
           </div>
 
-          <div className="bg-white rounded-lg border border-slate-200 p-4 space-y-4">
+          <div className="bg-white rounded-lg border border-line p-4 space-y-4">
             <fieldset>
-              <legend className="text-xs uppercase tracking-wider text-slate-400 font-semibold">
+              <legend className="text-xs uppercase tracking-wider text-ink-400 font-semibold">
                 Situação da tarefa
               </legend>
 
@@ -215,8 +215,8 @@ export function PainelResposta({
                       aria-pressed={ativo}
                       className={`rounded-md border px-3 py-2.5 text-left text-sm font-semibold transition-all ${
                         ativo
-                          ? 'border-[#0f88a8] bg-[#0f88a8]/10 text-[#063955]'
-                          : 'border-slate-200 text-slate-500 hover:border-slate-300 hover:text-[#063955]'
+                          ? 'border-teal-500 bg-teal-600/10 text-navy-700'
+                          : 'border-line text-ink-500 hover:border-line-strong hover:text-navy-700'
                       }`}
                     >
                       {ROTULO_STATUS[estado.valor]}
@@ -225,7 +225,7 @@ export function PainelResposta({
                 })}
               </div>
 
-              <p className="mt-2 text-xs text-slate-500 leading-relaxed">
+              <p className="mt-2 text-xs text-ink-500 leading-relaxed">
                 {ESTADOS.find((e) => e.valor === status)?.ajuda}
               </p>
             </fieldset>
@@ -234,7 +234,7 @@ export function PainelResposta({
               <div>
                 <label
                   htmlFor="motivo"
-                  className="text-xs uppercase tracking-wider text-slate-400 font-semibold"
+                  className="text-xs uppercase tracking-wider text-ink-400 font-semibold"
                 >
                   Motivo — com quem está / o que falta
                 </label>
@@ -245,14 +245,14 @@ export function PainelResposta({
                   placeholder="Ex.: enviado para o fiscal da transportadora em 11/08."
                   className={`mt-2 ${CAMPO}`}
                 />
-                <p className="mt-1.5 text-xs text-slate-400">
+                <p className="mt-1.5 text-xs text-ink-400">
                   Aparece na matriz para todo mundo saber por que a tarefa está parada.
                 </p>
               </div>
             )}
 
             <div>
-              <label htmlFor="responsavel" className="text-xs uppercase tracking-wider text-slate-400 font-semibold">
+              <label htmlFor="responsavel" className="text-xs uppercase tracking-wider text-ink-400 font-semibold">
                 Responsável
               </label>
               <select
@@ -271,7 +271,7 @@ export function PainelResposta({
             </div>
 
             <div>
-              <label htmlFor="observacao" className="text-xs uppercase tracking-wider text-slate-400 font-semibold">
+              <label htmlFor="observacao" className="text-xs uppercase tracking-wider text-ink-400 font-semibold">
                 Observação da correção
               </label>
               <textarea
@@ -286,7 +286,7 @@ export function PainelResposta({
                 }
                 className={`mt-2 resize-y ${CAMPO}`}
               />
-              <p className="mt-1.5 text-xs text-slate-400">
+              <p className="mt-1.5 text-xs text-ink-400">
                 {status === 'sem_correcao'
                   ? 'Obrigatória — é o que justifica encerrar sem mexer em nada.'
                   : 'Obrigatória para concluir — é o registro do que foi feito.'}
@@ -301,7 +301,7 @@ export function PainelResposta({
             )}
 
             {tarefa.concluidoEm && (
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-ink-400">
                 Concluída em{' '}
                 {new Date(tarefa.concluidoEm).toLocaleString('pt-BR', {
                   timeZone: 'America/Sao_Paulo',
@@ -313,11 +313,11 @@ export function PainelResposta({
             )}
           </div>
 
-          <section className="rounded-lg border border-slate-200 bg-white p-4">
+          <section className="rounded-lg border border-line bg-white p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <h3 className="text-sm font-bold text-[#063955]">Dados da tarefa</h3>
-                <p className="mt-1 text-xs text-slate-400 leading-relaxed">
+                <h3 className="text-sm font-bold text-navy-700">Dados da tarefa</h3>
+                <p className="mt-1 text-xs text-ink-400 leading-relaxed">
                   Corrija o que veio errado da planilha. A linha original continua guardada abaixo.
                 </p>
               </div>
@@ -328,8 +328,8 @@ export function PainelResposta({
                 aria-pressed={editando}
                 className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-bold transition-colors ${
                   editando
-                    ? 'border-[#0f88a8] bg-[#0f88a8]/10 text-[#063955]'
-                    : 'border-slate-300 text-slate-500 hover:border-[#0f88a8] hover:text-[#0f88a8]'
+                    ? 'border-teal-500 bg-teal-600/10 text-navy-700'
+                    : 'border-line-strong text-ink-500 hover:border-teal-500 hover:text-teal-600'
                 }`}
               >
                 <Pencil size={13} />
@@ -407,7 +407,7 @@ export function PainelResposta({
                   />
                 </div>
 
-                <p className="self-end text-xs text-slate-400 leading-relaxed">
+                <p className="self-end text-xs text-ink-400 leading-relaxed">
                   As alterações vão junto com o botão Salvar, lá embaixo.
                 </p>
               </div>
@@ -420,8 +420,8 @@ export function PainelResposta({
                   { rotulo: 'Tipo de divergência', valor: tarefa.tipoDivergencia || '—' },
                 ].map((item) => (
                   <div key={item.rotulo} className="min-w-0">
-                    <dt className="text-xs text-slate-400">{item.rotulo}</dt>
-                    <dd className="truncate text-sm text-slate-700" title={item.valor}>
+                    <dt className="text-xs text-ink-400">{item.rotulo}</dt>
+                    <dd className="truncate text-sm text-ink-700" title={item.valor}>
                       {item.valor}
                     </dd>
                   </div>
@@ -431,16 +431,16 @@ export function PainelResposta({
           </section>
 
           <section>
-            <h3 className="text-sm font-bold text-[#063955]">Linha da planilha</h3>
-            <p className="mt-1 text-xs text-slate-400">
+            <h3 className="text-sm font-bold text-navy-700">Linha da planilha</h3>
+            <p className="mt-1 text-xs text-ink-400">
               Todos os campos preenchidos na exportação original.
             </p>
 
-            <dl className="mt-3 divide-y divide-slate-100 rounded-lg border border-slate-200 bg-white">
+            <dl className="mt-3 divide-y divide-slate-100 rounded-lg border border-line bg-white">
               {Object.entries(tarefa.dados).map(([campo, valor]) => (
                 <div key={campo} className="flex gap-4 px-4 py-2.5">
-                  <dt className="w-2/5 shrink-0 text-xs text-slate-400">{campo}</dt>
-                  <dd className="min-w-0 flex-1 break-words text-sm text-slate-700">
+                  <dt className="w-2/5 shrink-0 text-xs text-ink-400">{campo}</dt>
+                  <dd className="min-w-0 flex-1 break-words text-sm text-ink-700">
                     {formatarCelula(valor, { moeda: layout.colunasMoeda.includes(campo) })}
                   </dd>
                 </div>
@@ -449,12 +449,12 @@ export function PainelResposta({
           </section>
         </div>
 
-        <footer className="flex flex-wrap items-center gap-3 border-t border-slate-200 bg-white p-5">
+        <footer className="flex flex-wrap items-center gap-3 border-t border-line bg-white p-5">
           <button
             type="button"
             onClick={enviar}
             disabled={salvando}
-            className="inline-flex items-center gap-2 rounded-md bg-[#0f88a8] px-5 py-2.5 text-sm font-bold text-white transition-all hover:brightness-110 disabled:opacity-40"
+            className="inline-flex items-center gap-2 rounded-md bg-teal-600 px-5 py-2.5 text-sm font-bold text-white transition-all hover:brightness-110 disabled:opacity-40"
           >
             {salvando ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
             {encerrando ? `Encerrar como ${ROTULO_STATUS[status].toLowerCase()}` : 'Salvar resposta'}
@@ -464,13 +464,13 @@ export function PainelResposta({
             type="button"
             onClick={aoFechar}
             disabled={salvando}
-            className="rounded-md border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-40"
+            className="rounded-md border border-line-strong px-5 py-2.5 text-sm font-semibold text-ink-700 transition-colors hover:bg-navy-50 disabled:opacity-40"
           >
             Cancelar
           </button>
 
           {estaFinalizada(tarefa.status) && !encerrando && (
-            <span className="text-xs text-slate-500">
+            <span className="text-xs text-ink-500">
               Vai reabrir a tarefa e limpar a data de conclusão.
             </span>
           )}
@@ -478,7 +478,7 @@ export function PainelResposta({
           <div className="ml-auto">
             {confirmandoExclusao ? (
               <div className="flex flex-wrap items-center justify-end gap-3">
-                <span className="text-xs leading-relaxed text-slate-600">
+                <span className="text-xs leading-relaxed text-ink-700">
                   Apagar a tarefa nº {tarefa.numero}? Ela volta na próxima importação da mesma
                   planilha, mas a resposta se perde.
                 </span>
@@ -498,7 +498,7 @@ export function PainelResposta({
                   type="button"
                   onClick={() => setConfirmandoExclusao(false)}
                   disabled={excluindo}
-                  className="text-sm text-slate-500 transition-colors hover:text-[#063955] disabled:opacity-40"
+                  className="text-sm text-ink-500 transition-colors hover:text-navy-700 disabled:opacity-40"
                 >
                   Manter
                 </button>
@@ -508,7 +508,7 @@ export function PainelResposta({
                 type="button"
                 onClick={() => setConfirmandoExclusao(true)}
                 disabled={salvando}
-                className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-400 transition-colors hover:border-[#b1272d] hover:text-[#b1272d] disabled:opacity-40"
+                className="inline-flex items-center gap-1.5 rounded-md border border-line px-4 py-2.5 text-sm font-semibold text-ink-400 transition-colors hover:border-[#b1272d] hover:text-negativo disabled:opacity-40"
               >
                 <Trash2 size={15} />
                 Excluir

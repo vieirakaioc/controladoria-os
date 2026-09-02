@@ -97,37 +97,37 @@ export function ScoreConfigPanel({ weights, onSaved }: Props) {
     .join(' + ')
 
   return (
-    <div className="mb-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-lg shadow-sm overflow-hidden">
+    <div className="mb-6 bg-white dark:bg-slate-900 border border-line dark:border-slate-800 rounded-lg shadow-card overflow-hidden">
       <button
         onClick={() => setOpen(o => !o)}
-        className="w-full p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+        className="w-full p-4 flex items-center justify-between hover:bg-navy-50 dark:hover:bg-slate-800/50 transition-colors"
       >
         <div className="flex items-center gap-3">
           <div className="bg-[#C7A77B]/10 dark:bg-[#C7A77B]/20 p-2 rounded-md text-[#C7A77B]">
             <Settings size={18} />
           </div>
           <div className="text-left">
-            <div className="text-sm font-bold text-[#063955] dark:text-white">Configuração do Score</div>
-            <div className="text-xs text-slate-500 dark:text-slate-400">
+            <div className="text-sm font-bold text-navy-700 dark:text-white">Configuração do Score</div>
+            <div className="text-xs text-ink-500 dark:text-slate-400">
               Atual: <strong>{resumo || '—'}</strong> · admin only
             </div>
           </div>
         </div>
-        {open ? <ChevronUp size={18} className="text-slate-400" /> : <ChevronDown size={18} className="text-slate-400" />}
+        {open ? <ChevronUp size={18} className="text-ink-400" /> : <ChevronDown size={18} className="text-ink-400" />}
       </button>
 
       {open && (
-        <div className="px-6 pb-6 pt-2 border-t border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-950/30">
-          <p className="text-xs text-slate-600 dark:text-slate-400 mb-5 leading-relaxed">
+        <div className="px-6 pb-6 pt-2 border-t border-line dark:border-slate-800 bg-navy-50/30 dark:bg-slate-950/30">
+          <p className="text-xs text-ink-700 dark:text-slate-400 mb-5 leading-relaxed">
             Defina o peso de cada dimensão. A soma <strong>precisa ser 100</strong> pra salvar.
             Use o botão "Normalizar pra 100" pra ajustar automaticamente.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
             {SCORE_DIMENSIONS.map(dim => (
-              <div key={dim.key} className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-md p-4">
+              <div key={dim.key} className="bg-white dark:bg-slate-900 border border-line dark:border-slate-800 rounded-md p-4">
                 <div className="flex items-center justify-between mb-1">
-                  <label className="text-sm font-bold text-[#063955] dark:text-white">
+                  <label className="text-sm font-bold text-navy-700 dark:text-white">
                     {dim.label}
                   </label>
                   <div className="flex items-center gap-2">
@@ -138,12 +138,12 @@ export function ScoreConfigPanel({ weights, onSaved }: Props) {
                       value={local[dim.key]}
                       onChange={e => set(dim.key, Number(e.target.value))}
                       disabled={saving}
-                      className="w-16 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 dark:text-white rounded-md px-2 py-1 text-sm font-bold text-center outline-none focus:border-[#0f88a8] disabled:opacity-50"
+                      className="w-16 bg-navy-50 dark:bg-slate-950 border border-line dark:border-slate-700 dark:text-white rounded-md px-2 py-1 text-sm font-bold text-center outline-none focus:border-teal-500 disabled:opacity-50"
                     />
-                    <span className="text-sm text-slate-400 font-medium">%</span>
+                    <span className="text-sm text-ink-400 font-medium">%</span>
                   </div>
                 </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed mb-3">
+                <p className="text-[11px] text-ink-500 dark:text-slate-400 leading-relaxed mb-3">
                   {dim.desc}
                 </p>
                 <input
@@ -169,10 +169,10 @@ export function ScoreConfigPanel({ weights, onSaved }: Props) {
           {/* Barra visual da composição total (segmented) */}
           {total > 0 && (
             <div className="mb-5">
-              <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+              <div className="text-xs font-bold text-ink-500 dark:text-slate-400 uppercase tracking-wider mb-2">
                 Composição visual ({total}%)
               </div>
-              <div className="h-4 w-full rounded-full overflow-hidden flex bg-slate-100 dark:bg-slate-800">
+              <div className="h-4 w-full rounded-full overflow-hidden flex bg-navy-100 dark:bg-slate-800">
                 {SCORE_DIMENSIONS.map(dim => {
                   // Normaliza pra mostrar proporcional, mesmo se total ≠ 100
                   const w = total > 0 ? (local[dim.key] / total) * 100 : 0
@@ -194,7 +194,7 @@ export function ScoreConfigPanel({ weights, onSaved }: Props) {
 
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="text-xs text-slate-500 dark:text-slate-400">
+              <div className="text-xs text-ink-500 dark:text-slate-400">
                 Total:{' '}
                 <strong className={valido ? 'text-emerald-600 dark:text-emerald-400' : 'text-[#b43a3d]'}>
                   {total}%
@@ -207,7 +207,7 @@ export function ScoreConfigPanel({ weights, onSaved }: Props) {
               <button
                 onClick={resetDefaults}
                 disabled={saving}
-                className="flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 px-3 py-2 rounded-md text-xs font-semibold transition-colors disabled:opacity-50"
+                className="flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-line dark:border-slate-700 hover:bg-navy-100 dark:hover:bg-slate-700 text-ink-700 dark:text-slate-300 px-3 py-2 rounded-md text-xs font-semibold transition-colors disabled:opacity-50"
                 title="Restaura 60/20/10/10"
               >
                 <RotateCcw size={13} /> Defaults
@@ -223,7 +223,7 @@ export function ScoreConfigPanel({ weights, onSaved }: Props) {
               <button
                 onClick={salvar}
                 disabled={saving || !dirty || !valido}
-                className="flex items-center gap-2 bg-[#063955] hover:bg-[#042436] text-white px-5 py-2 rounded-md text-sm font-semibold transition-colors shadow-sm disabled:opacity-50"
+                className="flex items-center gap-2 bg-navy-700 hover:bg-[#042436] text-white px-5 py-2 rounded-md text-sm font-semibold transition-colors shadow-sm disabled:opacity-50"
               >
                 <Save size={14} /> {saving ? 'A salvar...' : 'Salvar'}
               </button>

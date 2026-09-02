@@ -39,22 +39,22 @@ export function AnexoUploader({ value, onChange }: Props) {
   }
 
   return (
-    <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-md border border-slate-100 dark:border-slate-700/50">
-      <label className="text-xs text-[#063955] dark:text-slate-300 font-bold tracking-wide uppercase block mb-3">
+    <div className="bg-navy-50 dark:bg-slate-800/50 p-4 rounded-md border border-line dark:border-slate-700/50">
+      <label className="text-xs text-navy-700 dark:text-slate-300 font-bold tracking-wide uppercase block mb-3">
         Evidência / Anexo
       </label>
       <div className="flex items-center gap-3">
         {value ? (
-          <div className="flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-2 rounded-md text-sm font-medium w-full justify-between border border-slate-200 dark:border-slate-700 shadow-sm">
-            <a href={value} target="_blank" rel="noreferrer" className="text-[#0f88a8] dark:text-[#38bdf8] hover:underline truncate w-full">
+          <div className="flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-2 rounded-md text-sm font-medium w-full justify-between border border-line dark:border-slate-700 shadow-card">
+            <a href={value} target="_blank" rel="noreferrer" className="text-teal-600 dark:text-[#38bdf8] hover:underline truncate w-full">
               📎 Ver Documento Anexado
             </a>
-            <button onClick={() => onChange('')} className="text-slate-400 hover:text-[#b43a3d] p-1 ml-2 transition-colors">✕</button>
+            <button onClick={() => onChange('')} className="text-ink-400 hover:text-[#b43a3d] p-1 ml-2 transition-colors">✕</button>
           </div>
         ) : (
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center justify-center gap-2 w-full bg-white dark:bg-slate-800 border border-dashed border-slate-300 dark:border-slate-600 rounded-md px-4 py-3 text-sm text-slate-500 dark:text-slate-400 hover:border-[#0f88a8] hover:text-[#0f88a8] transition-colors"
+            className="flex items-center justify-center gap-2 w-full bg-white dark:bg-slate-800 border border-dashed border-line-strong dark:border-slate-600 rounded-md px-4 py-3 text-sm text-ink-500 dark:text-slate-400 hover:border-teal-500 hover:text-teal-600 transition-colors"
           >
             📎 Clique para anexar uma evidência
           </button>
