@@ -2,6 +2,7 @@
 
 import { use, useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import {
   AlertCircle,
   ArrowLeft,
@@ -35,6 +36,7 @@ import {
   buscarItem,
   concluirEtapa,
   descreverErro,
+  excluirItem,
   impedimentos,
   listarAnexos,
   listarFiliais,
@@ -142,11 +144,15 @@ export default function PaginaFicha({ params }: { params: Promise<{ id: string }
           Fila
         </Link>
 
-        {!editavel && (
-          <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-500">
-            Você acompanha este processo como observador
-          </span>
-        )}
+        <div className="flex flex-wrap items-center gap-3">
+          {!editavel && (
+            <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-500">
+              Você acompanha este processo como observador
+            </span>
+          )}
+
+          {editavel && <ExcluirItem item={item} anexos={anexos} />}
+        </div>
       </div>
 
       <Cabecalho
@@ -920,5 +926,76 @@ function Historico({ movimentos }: { movimentos: Movimento[] }) {
         </ol>
       )}
     </Painel>
+  )
+}
+
+/* ─────────────────────────── excluir item ─────────────────────────── */
+
+/**
+ * Apaga o item inteiro.
+ *
+ * Fica no topo, longe dos botões de trabalho, e exige confirmação com o número
+ * à vista: é a única ação da tela que não tem volta — etapas, anexos e
+ * histórico vão junto.
+ */
+function ExcluirItem({ item, anexos }: { item: Item; anexos: Anexo[] }) {
+  const router = useRouter()
+  const [confirmando, setConfirmando] = useState(false)
+  const [excluindo, setExcluindo] = useState(false)
+  const [erro, setErro] = useState<string | null>(null)
+
+  const remover = async () => {
+    setExcluindo(true)
+    setErro(null)
+    try {
+      await excluirItem(item, anexos)
+      router.push('/imobilizado')
+    } catch (falha) {
+      setErro(descreverErro(falha))
+      setExcluindo(false)
+    }
+  }
+
+  if (!confirmando) {
+    return (
+      <button
+        type="button"
+        onClick={() => setConfirmando(true)}
+        className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-ink-400 transition-colors hover:border-negativo hover:text-negativo"
+      >
+        <Trash2 size={13} />
+        Excluir item
+      </button>
+    )
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-3 rounded-md border border-negativo-border bg-negativo-bg px-3 py-2">
+      <span className="text-xs leading-snug text-ink-700">
+        Apagar o item nº {item.numero}, suas {item.etapas.length} etapas
+        {anexos.length > 0 ? ` e ${anexos.length} documento(s)` : ''}? Não há como desfazer.
+      </span>
+
+      <button
+        type="button"
+        onClick={remover}
+        disabled={excluindo}
+        className="inline-flex items-center gap-1.5 rounded-md bg-negativo px-3 py-1.5 text-xs font-bold text-white transition-all hover:brightness-110 disabled:opacity-40"
+      >
+        {excluindo ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
+        Apagar
+      </button>
+
+      <button
+        type="button"
+        onClick={() => setConfirmando(false)}
+        disabled={excluindo}
+        className="text-xs font-semibold text-ink-500 transition-colors hover:text-navy-700 disabled:opacity-40"
+      >
+        Manter
+      </button>
+
+      {erro && <span className="text-xs text-negativo">{erro}</span>}
+    </div>
   )
 }

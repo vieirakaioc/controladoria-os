@@ -6,6 +6,7 @@ import { Boxes } from 'lucide-react'
 
 const ABAS = [
   { href: '/imobilizado', rotulo: 'Fila' },
+  { href: '/imobilizado/quadro', rotulo: 'Quadro' },
   { href: '/imobilizado/novo', rotulo: 'Novo item' },
   { href: '/imobilizado/processo', rotulo: 'Processo' },
 ]

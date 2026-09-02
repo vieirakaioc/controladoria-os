@@ -380,6 +380,22 @@ export async function criarItem(entrada: NovoItem, usuario: string): Promise<Ite
   return item
 }
 
+/**
+ * Apaga o item inteiro.
+ *
+ * Etapas, anexos e histórico caem junto pela cascata do banco. Os arquivos no
+ * Storage são removidos antes: sem isso ficariam órfãos ocupando espaço, sem
+ * nenhuma linha apontando para eles.
+ */
+export async function excluirItem(item: Item, anexos: Anexo[]): Promise<void> {
+  if (anexos.length > 0) {
+    await supabase.storage.from(BUCKET).remove(anexos.map((a) => a.caminho))
+  }
+
+  const { error } = await supabase.from(TAB_ITENS).delete().eq('id', item.id)
+  if (error) throw error
+}
+
 /** O que impede uma etapa de ser concluída. Vazio = pode concluir. */
 export function impedimentos(item: Item, etapa: Etapa, anexos: Anexo[]): string[] {
   const faltas: string[] = []
