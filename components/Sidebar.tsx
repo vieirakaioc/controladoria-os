@@ -24,7 +24,8 @@ import {
   Users,
   BookOpen,
   Plane,
-  ScanLine
+  ScanLine,
+  Boxes
 } from 'lucide-react'
 
 const allNavItems = [
@@ -33,6 +34,7 @@ const allNavItems = [
   { name: 'Gestão de Projetos', href: '/projetos', icon: Briefcase, adminOnly: false },
   { name: 'Controle de Tarefas', href: '/tarefas', icon: CheckSquare, adminOnly: false },
   { name: 'Validação Fiscal', href: '/validacao-fiscal', icon: ScanLine, adminOnly: false },
+  { name: 'Imobilizado', href: '/imobilizado', icon: Boxes, adminOnly: false },
   { name: 'Monitor da Equipe', href: '/equipe', icon: Users, adminOnly: true },
   { name: 'Férias da Equipe', href: '/ferias', icon: Plane, adminOnly: false },
   { name: 'Workflows', href: '/workflows', icon: GitMerge, adminOnly: true },
