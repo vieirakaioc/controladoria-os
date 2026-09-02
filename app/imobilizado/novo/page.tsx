@@ -10,6 +10,7 @@ import { CORES } from '@/app/validacao-fiscal/_lib/cores'
 import { Carregando, Painel, SemAcesso } from '../_components/Ui'
 import { useImobilizado } from '../_hooks/useImobilizado'
 import { criarItem, descreverErro, listarFiliais } from '../_lib/api'
+import { caixaAlta, moedaDoTexto, textoDaMoeda } from '../_lib/formato'
 import { podeAgir, rotuloFilial, type Filial } from '../_lib/types'
 
 const CAMPO =
@@ -26,7 +27,7 @@ export default function PaginaNovoItem() {
   const [nfChave, setNfChave] = useState('')
   const [fornecedor, setFornecedor] = useState('')
   const [descricao, setDescricao] = useState('')
-  const [valor, setValor] = useState('')
+  const [valor, setValor] = useState<number | null>(null)
   const [filiais, setFiliais] = useState<Filial[]>([])
   const [filialId, setFilialId] = useState('')
   const [ehFrota, setEhFrota] = useState(false)
@@ -67,7 +68,7 @@ export default function PaginaNovoItem() {
           nfChave: nfChave.trim() || null,
           fornecedor: fornecedor.trim(),
           descricao: descricao.trim(),
-          valor: valor.trim() === '' ? null : Number(valor.replace(',', '.')),
+          valor,
           filial: filiais.find((f) => f.id === filialId) ?? null,
           ehFrota,
         },
@@ -92,7 +93,12 @@ export default function PaginaNovoItem() {
             <label htmlFor="nf" className={ROTULO}>
               Número da nota
             </label>
-            <input id="nf" value={nfNumero} onChange={(e) => setNfNumero(e.target.value)} className={`mt-1.5 ${CAMPO}`} />
+            <input
+              id="nf"
+              value={nfNumero}
+              onChange={(e) => setNfNumero(caixaAlta(e.target.value))}
+              className={`mt-1.5 uppercase ${CAMPO}`}
+            />
           </div>
 
           <div>
@@ -126,8 +132,8 @@ export default function PaginaNovoItem() {
             <input
               id="fornecedor"
               value={fornecedor}
-              onChange={(e) => setFornecedor(e.target.value)}
-              className={`mt-1.5 ${CAMPO}`}
+              onChange={(e) => setFornecedor(caixaAlta(e.target.value))}
+              className={`mt-1.5 uppercase ${CAMPO}`}
             />
           </div>
 
@@ -138,9 +144,9 @@ export default function PaginaNovoItem() {
             <input
               id="descricao"
               value={descricao}
-              onChange={(e) => setDescricao(e.target.value)}
-              placeholder="O que é o item — aparece na fila e na ficha."
-              className={`mt-1.5 ${CAMPO}`}
+              onChange={(e) => setDescricao(caixaAlta(e.target.value))}
+              placeholder="O QUE É O ITEM — APARECE NA FILA E NA FICHA"
+              className={`mt-1.5 uppercase ${CAMPO}`}
             />
           </div>
 
@@ -148,13 +154,16 @@ export default function PaginaNovoItem() {
             <label htmlFor="valor" className={ROTULO}>
               Valor
             </label>
+            {/* Máscara em vez de type="number": o campo mostra R$ enquanto a
+                pessoa digita, e aceita tanto "750000" quanto "R$ 7.500,00". */}
             <input
               id="valor"
-              type="number"
-              step="0.01"
-              value={valor}
-              onChange={(e) => setValor(e.target.value)}
-              className={`mt-1.5 ${CAMPO}`}
+              type="text"
+              inputMode="numeric"
+              value={textoDaMoeda(valor)}
+              onChange={(e) => setValor(moedaDoTexto(e.target.value))}
+              placeholder="R$ 0,00"
+              className={`mt-1.5 tabular-nums ${CAMPO}`}
             />
           </div>
 
@@ -165,8 +174,9 @@ export default function PaginaNovoItem() {
             <input
               id="chave"
               value={nfChave}
-              onChange={(e) => setNfChave(e.target.value)}
-              className={`mt-1.5 font-mono text-xs ${CAMPO}`}
+              onChange={(e) => setNfChave(caixaAlta(e.target.value))}
+              inputMode="numeric"
+              className={`mt-1.5 font-mono text-xs uppercase ${CAMPO}`}
             />
           </div>
         </div>

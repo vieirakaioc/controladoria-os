@@ -24,6 +24,7 @@ import type { Responsavel } from '@/app/validacao-fiscal/_lib/types'
 
 import { AvisoErro, Carregando, ChipPrazo, Painel, SemAcesso } from '../_components/Ui'
 import { agingPlaca, agingProcesso, textoAging } from '../_lib/aging'
+import { caixaAlta } from '../_lib/formato'
 import {
   anexar,
   atribuirEtapa,
@@ -380,9 +381,9 @@ function CartaoEtapa({
               </label>
               <input
                 value={valorCampo}
-                onChange={(e) => setValorCampo(e.target.value)}
-                placeholder="Obrigatório para concluir esta etapa"
-                className={`mt-1.5 ${CAMPO}`}
+                onChange={(e) => setValorCampo(caixaAlta(e.target.value))}
+                placeholder="OBRIGATÓRIO PARA CONCLUIR ESTA ETAPA"
+                className={`mt-1.5 uppercase ${CAMPO}`}
               />
             </div>
           )}
