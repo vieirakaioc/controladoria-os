@@ -46,9 +46,14 @@ alter table public.imobilizado_participantes
 alter table public.imobilizado_participantes
   alter column responsavel_id drop not null;
 
+-- Índice único SEM cláusula WHERE: o Postgres não aceita índice parcial na
+-- inferência do ON CONFLICT, e é assim que a tela inclui alguém. Nulo não
+-- conflita com nulo num índice único, então quem ficou sem profile_id (linha
+-- antiga) continua convivendo aqui sem colidir.
+drop index if exists public.imob_participantes_profile_idx;
+
 create unique index if not exists imob_participantes_profile_idx
-  on public.imobilizado_participantes (profile_id)
-  where profile_id is not null;
+  on public.imobilizado_participantes (profile_id);
 
 -- Traz quem já estava cadastrado: casa o responsável antigo com o perfil de
 -- mesmo e-mail. Quem não tiver login fica sem profile_id e continua valendo
