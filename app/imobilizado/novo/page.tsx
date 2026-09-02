@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { AlertCircle, Loader2, Plus, Truck } from 'lucide-react'
 
@@ -9,8 +9,8 @@ import { CORES } from '@/app/validacao-fiscal/_lib/cores'
 
 import { Carregando, Painel, SemAcesso } from '../_components/Ui'
 import { useImobilizado } from '../_hooks/useImobilizado'
-import { criarItem, descreverErro } from '../_lib/api'
-import { podeAgir } from '../_lib/types'
+import { criarItem, descreverErro, listarFiliais } from '../_lib/api'
+import { podeAgir, rotuloFilial, type Filial } from '../_lib/types'
 
 const CAMPO =
   'w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-[#0f88a8] focus:ring-2 focus:ring-[#0f88a8]/20'
@@ -27,10 +27,17 @@ export default function PaginaNovoItem() {
   const [fornecedor, setFornecedor] = useState('')
   const [descricao, setDescricao] = useState('')
   const [valor, setValor] = useState('')
-  const [filial, setFilial] = useState('')
+  const [filiais, setFiliais] = useState<Filial[]>([])
+  const [filialId, setFilialId] = useState('')
   const [ehFrota, setEhFrota] = useState(false)
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
+
+  useEffect(() => {
+    listarFiliais()
+      .then(setFiliais)
+      .catch(() => setFiliais([]))
+  }, [])
 
   if (carregando) return <Carregando linhas={2} />
   if (!acesso) return <SemAcesso />
@@ -61,7 +68,7 @@ export default function PaginaNovoItem() {
           fornecedor: fornecedor.trim(),
           descricao: descricao.trim(),
           valor: valor.trim() === '' ? null : Number(valor.replace(',', '.')),
-          filial: filial.trim(),
+          filial: filiais.find((f) => f.id === filialId) ?? null,
           ehFrota,
         },
         userName,
@@ -90,9 +97,26 @@ export default function PaginaNovoItem() {
 
           <div>
             <label htmlFor="filial" className={ROTULO}>
-              Filial
+              Empresa e filial
             </label>
-            <input id="filial" value={filial} onChange={(e) => setFilial(e.target.value)} className={`mt-1.5 ${CAMPO}`} />
+            <select
+              id="filial"
+              value={filialId}
+              onChange={(e) => setFilialId(e.target.value)}
+              className={`mt-1.5 ${CAMPO}`}
+            >
+              <option value="">Selecione…</option>
+              {filiais.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {rotuloFilial(f)}
+                </option>
+              ))}
+            </select>
+            {filiais.length === 0 && (
+              <p className="mt-1.5 text-xs text-slate-400">
+                Nenhuma filial cadastrada ainda — a lista vem da tabela <code>filiais</code>.
+              </p>
+            )}
           </div>
 
           <div className="sm:col-span-2">

@@ -75,6 +75,8 @@ export type Item = {
   fornecedor: string
   descricao: string
   valor: number | null
+  filialId: string | null
+  empresa: string
   filial: string
   ehFrota: boolean
   centroCusto: string | null
@@ -91,6 +93,21 @@ export type Item = {
   criadoEm: string
   finalizadoEm: string | null
   etapas: Etapa[]
+}
+
+export type Filial = {
+  id: string
+  codEmpresa: string
+  empresa: string
+  codFilial: string
+  filial: string
+  cnpj: string | null
+  ativo: boolean
+}
+
+/** "1 · COMBER LOGISTICA · 6 · Filial 6" — o rótulo do seletor. */
+export function rotuloFilial(f: Filial): string {
+  return `${f.empresa} · ${f.codFilial} ${f.filial}`
 }
 
 export type Participante = {

@@ -5,6 +5,7 @@ import type {
   Acesso,
   Anexo,
   Etapa,
+  Filial,
   Item,
   ModeloEtapa,
   Participante,
@@ -26,6 +27,7 @@ const TAB_ETAPAS = 'imobilizado_etapas'
 const TAB_ANEXOS = 'imobilizado_anexos'
 const TAB_MOVS = 'imobilizado_movimentos'
 const TAB_PARTICIPANTES = 'imobilizado_participantes'
+const TAB_FILIAIS = 'filiais'
 const BUCKET = 'evidencias'
 
 /* ────────────────────────────── leitura ────────────────────────────── */
@@ -76,6 +78,8 @@ function mapearItem(l: LinhaItem, etapas: Etapa[]): Item {
     fornecedor: texto(l.fornecedor),
     descricao: texto(l.descricao),
     valor: l.valor === null || l.valor === undefined ? null : Number(l.valor),
+    filialId: l.filial_id === null || l.filial_id === undefined ? null : String(l.filial_id),
+    empresa: texto(l.empresa),
     filial: texto(l.filial),
     ehFrota: Boolean(l.eh_frota),
     centroCusto: ouNulo(l.centro_custo),
@@ -118,6 +122,22 @@ export async function listarModelo(): Promise<ModeloEtapa[]> {
     responsavelId: l.responsavel_id === null ? null : String(l.responsavel_id),
     ativo: Boolean(l.ativo),
   }))
+}
+
+/**
+ * Muda o prazo de uma etapa do processo.
+ *
+ * Vale para os itens criados daqui em diante: mexer no prazo de quem já está
+ * em andamento moveria a régua no meio do jogo, e uma etapa que estava no
+ * prazo ontem apareceria atrasada hoje sem ninguém ter feito nada.
+ */
+export async function atualizarPrazoModelo(chave: string, dias: number): Promise<void> {
+  const { error } = await supabase
+    .from(TAB_MODELO)
+    .update({ prazo_dias_uteis: dias })
+    .eq('chave', chave)
+
+  if (error) throw error
 }
 
 const PAGINA = 500
@@ -250,13 +270,36 @@ async function registrar(
   }
 }
 
+/** Empresas e filiais para o seletor. Cadastro de referência, fora do módulo. */
+export async function listarFiliais(): Promise<Filial[]> {
+  const { data, error } = await supabase
+    .from(TAB_FILIAIS)
+    .select('*')
+    .eq('ativo', true)
+    .order('empresa')
+    .order('cod_filial')
+
+  if (error) throw error
+
+  return (data ?? []).map((l) => ({
+    id: String(l.id),
+    codEmpresa: texto(l.cod_empresa),
+    empresa: texto(l.empresa),
+    codFilial: texto(l.cod_filial),
+    filial: texto(l.filial),
+    cnpj: ouNulo(l.cnpj),
+    ativo: Boolean(l.ativo),
+  }))
+}
+
 export type NovoItem = {
   nfNumero: string
   nfChave: string | null
   fornecedor: string
   descricao: string
   valor: number | null
-  filial: string
+  /** A filial escolhida no seletor. Nome e empresa são copiados junto. */
+  filial: Filial | null
   ehFrota: boolean
 }
 
@@ -278,7 +321,9 @@ export async function criarItem(entrada: NovoItem, usuario: string): Promise<Ite
       fornecedor: entrada.fornecedor,
       descricao: entrada.descricao,
       valor: entrada.valor,
-      filial: entrada.filial,
+      filial_id: entrada.filial?.id ?? null,
+      empresa: entrada.filial?.empresa ?? '',
+      filial: entrada.filial ? `${entrada.filial.codFilial} ${entrada.filial.filial}`.trim() : '',
       eh_frota: entrada.ehFrota,
       criado_por: usuario || null,
       // O número só existe depois do insert, e a pasta é nomeada por ele.
@@ -482,7 +527,12 @@ export async function atribuirEtapa(
 /** Campos do item que a tela edita direto (flags e números das etapas). */
 export async function atualizarItem(
   item: Item,
-  mudancas: Partial<Record<'oc_numero' | 'placa' | 'centro_custo' | 'nf_numero' | 'fornecedor' | 'descricao' | 'filial', string | null>>,
+  mudancas: Partial<
+    Record<
+      'oc_numero' | 'placa' | 'centro_custo' | 'nf_numero' | 'fornecedor' | 'descricao' | 'filial',
+      string | null
+    >
+  >,
   usuario: string,
 ): Promise<void> {
   const { error } = await supabase.from(TAB_ITENS).update(mudancas).eq('id', item.id)

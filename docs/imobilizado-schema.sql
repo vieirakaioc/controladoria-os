@@ -16,6 +16,97 @@
 -- =============================================================================
 
 
+-- ─── 0. EMPRESAS E FILIAIS ──────────────────────────────────────────────────
+-- Cadastro de referência, não do módulo: o nome é `filiais` porque outros
+-- lugares do portal vão precisar da mesma lista. Uma linha por filial, com o
+-- código da empresa e o código da filial como eles aparecem no Sênior — é por
+-- esses códigos que as planilhas chegam.
+create table if not exists public.filiais (
+  id          bigserial primary key,
+  cod_empresa text        not null,
+  empresa     text        not null,
+  cod_filial  text        not null,
+  filial      text        not null,
+  cnpj        text,
+  ativo       boolean     not null default true,
+  criado_em   timestamptz not null default now(),
+  unique (cod_empresa, cod_filial)
+);
+
+alter table public.filiais enable row level security;
+
+-- Lista de referência: qualquer pessoa logada lê, porque vai virar seletor em
+-- várias telas. Só admin mantém o cadastro.
+drop policy if exists "filiais_select" on public.filiais;
+create policy "filiais_select"
+  on public.filiais for select
+  to authenticated using (true);
+
+drop policy if exists "filiais_write_admin" on public.filiais;
+create policy "filiais_write_admin"
+  on public.filiais for all
+  to authenticated
+  using (public.current_user_is_admin())
+  with check (public.current_user_is_admin());
+
+
+-- ─── 0.1 AS FILIAIS DO GRUPO ────────────────────────────────────────────────
+-- Cadastro do Sênior, importado da planilha de empresas. "do nothing" no
+-- conflito: se alguém corrigir um nome pela tela, rodar o script de novo não
+-- desfaz a correção.
+insert into public.filiais (cod_empresa, empresa, cod_filial, filial) values
+  ('1', 'COMBER LOGISTICA LTDA', '1', 'COMBER LOGISTICA RVD'),
+  ('1', 'COMBER LOGISTICA LTDA', '2', 'COMBER LOGISTICA UDI'),
+  ('1', 'COMBER LOGISTICA LTDA', '3', 'COMBER LOGISTICA TJL'),
+  ('1', 'COMBER LOGISTICA LTDA', '4', 'COMBER LOGISTICA ALT ARAG'),
+  ('1', 'COMBER LOGISTICA LTDA', '5', 'COMBER LOGISTICA CHP'),
+  ('1', 'COMBER LOGISTICA LTDA', '6', 'COMBER LOGISTICA ROO'),
+  ('1', 'COMBER LOGISTICA LTDA', '7', 'COMBER LOGISTICA LTDA'),
+  ('1', 'COMBER LOGISTICA LTDA', '8', 'COMBER LOGISTICA CTD'),
+  ('1', 'COMBER LOGISTICA LTDA', '9', 'COMBER LOGISTICA TO'),
+  ('2', 'RODO SUINOS LTDA', '1', 'COMELLI E OLIVEIRA TRANSPORTES'),
+  ('3', 'COMBER INDUSTRIA LTDA', '1', 'COMBER RVD'),
+  ('4', 'DIP.LOG LTDA', '1', 'DIP.LOG'),
+  ('5', 'COMBER BIOMASSA LTDA', '1', 'COMBER BIOMASSA RVD'),
+  ('5', 'COMBER BIOMASSA LTDA', '2', 'COMBER BIOMASSA AGU'),
+  ('5', 'COMBER BIOMASSA LTDA', '3', 'COMBER BIOMASSA MS'),
+  ('5', 'COMBER BIOMASSA LTDA', '4', 'COMBER BIOMASSA MG'),
+  ('5', 'COMBER BIOMASSA LTDA', '5', 'COMBER BIOMASSA SRA'),
+  ('5', 'COMBER BIOMASSA LTDA', '6', 'COMBER BIOMASSA MS'),
+  ('5', 'COMBER BIOMASSA LTDA', '7', 'COMBER BIOMASSA ITI'),
+  ('5', 'COMBER BIOMASSA LTDA', '8', 'COMBER BIOMASSA TO'),
+  ('5', 'COMBER BIOMASSA LTDA', '9', 'COMBER BIOMASSA MT'),
+  ('5', 'COMBER BIOMASSA LTDA', '10', 'COMBER BIOMASSA FAZ STA VERGIN'),
+  ('5', 'COMBER BIOMASSA LTDA', '11', 'COMBER BIOMASSA FAZ TARUMA'),
+  ('5', 'COMBER BIOMASSA LTDA', '12', 'COMBER BIOMASSA SETE ESTRELAS'),
+  ('5', 'COMBER BIOMASSA LTDA', '13', 'COMBER BIOMASSA BOA ESPERANÇA'),
+  ('6', 'COMBER SEMINOVOS LTDA', '1', 'COMBER SEMINOVOS'),
+  ('7', 'COMPANHIA BRASILEIRA DE ENERGIA RENOVÁVEL SA', '1', 'COMBER FLORESTAL RVD'),
+  ('7', 'COMPANHIA BRASILEIRA DE ENERGIA RENOVÁVEL SA', '2', 'FAZENDA GRACIOSA'),
+  ('7', 'COMPANHIA BRASILEIRA DE ENERGIA RENOVÁVEL SA', '3', 'FAZENDA ARUANDA'),
+  ('7', 'COMPANHIA BRASILEIRA DE ENERGIA RENOVÁVEL SA', '4', 'FAZENDA AGUA BRANCA'),
+  ('7', 'COMPANHIA BRASILEIRA DE ENERGIA RENOVÁVEL SA', '5', 'FAZENDA SANTO ANTONIO'),
+  ('7', 'COMPANHIA BRASILEIRA DE ENERGIA RENOVÁVEL SA', '6', 'FAZENDA BURITI DO PRATA'),
+  ('7', 'COMPANHIA BRASILEIRA DE ENERGIA RENOVÁVEL SA', '7', 'FAZENDA SANTA ANNA'),
+  ('7', 'COMPANHIA BRASILEIRA DE ENERGIA RENOVÁVEL SA', '8', 'FAZENDA SANTA MAE'),
+  ('8', 'COMBER CAMINHOES LTDA', '1', 'COMBER CAMINHOES'),
+  ('9', 'IJC PARTICIPACOES LTDA', '1', 'IJC PARTICIPACOES'),
+  ('10', 'COMBER FLORESTAL TO LTDA', '1', 'COMBER FLORESTAL TO'),
+  ('10', 'COMBER FLORESTAL TO LTDA', '2', 'COMBER FLORESTAL TO'),
+  ('10', 'COMBER FLORESTAL TO LTDA', '3', 'COMBER FLORESTAL TO'),
+  ('10', 'COMBER FLORESTAL TO LTDA', '4', 'COMBER FLORESTAL TO'),
+  ('11', 'IFL COMELLI PARTICIPACOES LTDA', '1', 'IFL COMELLI PARTICIPACOES'),
+  ('12', 'IFL COMELLI PATRIMONIAL LTDA', '1', 'IFL COMELLI PATRIMONIAL'),
+  ('13', 'FT4 COMELLI HOLDING LTDA', '1', 'FT4 COMELLI HOLDING'),
+  ('14', 'COMBER INDUSTRIA SUL', '1', 'COMBER INDUSTRIA SUL'),
+  ('15', 'LC COMELLI HOLDING LTDA', '1', 'LC COMELLI HOLDING'),
+  ('16', 'COMBER LOCAÇÕES LTDA', '1', 'COMBER LOCAÇÕES'),
+  ('17', 'MSO HOLDING LTDA', '1', 'MSO HOLDING'),
+  ('18', 'GRUNE GOLDFARM LTDA', '1', 'GRUNE GOLDFARM LTDA'),
+  ('19', 'EUCAFIL PARTICIPACOES LTDA', '1', 'EUCAFIL PARTICIPACOES')
+on conflict (cod_empresa, cod_filial) do nothing;
+
+
 -- ─── 1. O DESENHO DO PROCESSO ───────────────────────────────────────────────
 create table if not exists public.imobilizado_modelo_etapas (
   chave             text primary key,
@@ -53,6 +144,11 @@ create table if not exists public.imobilizado_itens (
   fornecedor     text        not null default '',
   descricao      text        not null default '',
   valor          numeric(18, 2),
+  -- filial_id é a escolha no seletor; `filial` e `empresa` guardam o nome no
+  -- momento do cadastro. Se a filial for renomeada depois, o item continua
+  -- mostrando o que valia quando ele nasceu.
+  filial_id      bigint      references public.filiais (id) on delete set null,
+  empresa        text        not null default '',
   filial         text        not null default '',
   eh_frota       boolean     not null default false,
   centro_custo   text,
@@ -80,7 +176,14 @@ create sequence if not exists public.imobilizado_itens_numero_seq
 alter table public.imobilizado_itens
   alter column numero set default nextval('public.imobilizado_itens_numero_seq');
 
+alter table public.imobilizado_itens
+  add column if not exists filial_id bigint references public.filiais (id) on delete set null;
+
+alter table public.imobilizado_itens
+  add column if not exists empresa text not null default '';
+
 create index if not exists imob_itens_status_idx on public.imobilizado_itens (status);
+create index if not exists imob_itens_filial_idx on public.imobilizado_itens (filial_id);
 create index if not exists imob_itens_frota_idx  on public.imobilizado_itens (eh_frota);
 
 
@@ -400,3 +503,10 @@ on conflict (responsavel_id) do nothing;
 --   from public.imobilizado_modelo_etapas order by ordem;
 --
 -- select public.imob_meu_tipo();   -- deve devolver 'admin' ou 'participante'
+--
+-- Cadastro de filiais (uma linha por filial, códigos como no Sênior):
+-- insert into public.filiais (cod_empresa, empresa, cod_filial, filial, cnpj) values
+--   ('1', 'COMBER LOGISTICA LTDA', '1', 'Matriz',       '05.094.194/0001-55'),
+--   ('1', 'COMBER LOGISTICA LTDA', '4', 'Filial 4',     '05.094.194/0004-06'),
+--   ('1', 'COMBER LOGISTICA LTDA', '6', 'Filial 6',     '05.094.194/0006-60')
+-- on conflict (cod_empresa, cod_filial) do nothing;

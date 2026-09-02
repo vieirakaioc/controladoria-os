@@ -42,6 +42,7 @@ function temAtraso(item: Item, hoje: string): boolean {
 export default function PaginaFila() {
   const { itens, acesso, carregando, erro } = useImobilizado()
   const [filtro, setFiltro] = useState<Filtro>('andamento')
+  const [filtroFilial, setFiltroFilial] = useState('todas')
   const [busca, setBusca] = useState('')
   const hoje = dataDeHoje()
 
@@ -54,6 +55,8 @@ export default function PaginaFila() {
       if (filtro === 'frota' && !item.ehFrota) return false
       if (filtro === 'atrasados' && !temAtraso(item, hoje)) return false
 
+      if (filtroFilial !== 'todas' && item.filialId !== filtroFilial) return false
+
       if (termo) {
         const alvo = [
           item.numero,
@@ -61,6 +64,7 @@ export default function PaginaFila() {
           item.fornecedor,
           item.descricao,
           item.filial,
+          item.empresa,
           item.placa ?? '',
           item.ocNumero ?? '',
         ]
@@ -71,7 +75,17 @@ export default function PaginaFila() {
 
       return true
     })
-  }, [itens, filtro, busca, hoje])
+  }, [itens, filtro, filtroFilial, busca, hoje])
+
+  // O seletor sai dos itens que existem, não da tabela inteira: filtrar por
+  // uma filial sem item nenhum só geraria tela vazia.
+  const filiaisEmUso = useMemo(() => {
+    const mapa = new Map<string, string>()
+    for (const item of itens) {
+      if (item.filialId) mapa.set(item.filialId, `${item.empresa} · ${item.filial}`.trim())
+    }
+    return [...mapa.entries()].sort((a, b) => a[1].localeCompare(b[1], 'pt-BR'))
+  }, [itens])
 
   const resumo = useMemo(() => {
     const abertos = itens.filter((i) => i.status === 'em_andamento')
@@ -176,6 +190,22 @@ export default function PaginaFila() {
             ))}
           </div>
 
+          {filiaisEmUso.length > 0 && (
+            <select
+              value={filtroFilial}
+              onChange={(e) => setFiltroFilial(e.target.value)}
+              aria-label="Filtrar por empresa e filial"
+              className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#0f88a8]"
+            >
+              <option value="todas">Todas as filiais</option>
+              {filiaisEmUso.map(([id, rotulo]) => (
+                <option key={id} value={id}>
+                  {rotulo}
+                </option>
+              ))}
+            </select>
+          )}
+
           <span className="ml-auto text-sm text-slate-500">
             {formatarInteiro(visiveis.length)} de {formatarInteiro(itens.length)} itens
           </span>
@@ -187,7 +217,7 @@ export default function PaginaFila() {
           <table className="w-max min-w-full border-collapse text-sm">
             <thead className="bg-slate-50">
               <tr>
-                {['Nº', 'Nota / fornecedor', 'Filial', 'Valor', 'Etapa atual', 'Prazo', 'Aging', ''].map(
+                {['Nº', 'Nota / fornecedor', 'Empresa · filial', 'Valor', 'Etapa atual', 'Prazo', 'Aging', ''].map(
                   (coluna) => (
                     <th
                       key={coluna}
@@ -238,8 +268,9 @@ export default function PaginaFila() {
                       </div>
                     </td>
 
-                    <td className="whitespace-nowrap px-4 py-3 align-top text-slate-600">
-                      {item.filial || '—'}
+                    <td className="px-4 py-3 align-top">
+                      <div className="whitespace-nowrap text-slate-600">{item.filial || '—'}</div>
+                      <div className="line-clamp-1 w-40 text-xs text-slate-400">{item.empresa}</div>
                     </td>
 
                     <td className="whitespace-nowrap px-4 py-3 text-right align-top tabular-nums text-slate-700">

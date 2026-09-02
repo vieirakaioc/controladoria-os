@@ -1,20 +1,25 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { Truck, Users } from 'lucide-react'
+import { Check, Loader2, Truck, Users } from 'lucide-react'
 
 import { CORES } from '@/app/validacao-fiscal/_lib/cores'
 
 import { AvisoErro, Carregando, Painel, SemAcesso } from '../_components/Ui'
-import { descreverErro, listarModelo, listarParticipantes, meuAcesso } from '../_lib/api'
+import {
+  atualizarPrazoModelo,
+  descreverErro,
+  listarModelo,
+  listarParticipantes,
+  meuAcesso,
+} from '../_lib/api'
 import type { Acesso, ModeloEtapa, Participante } from '../_lib/types'
 
 /**
  * O desenho do processo, como ele está no banco.
  *
- * Só leitura por enquanto: mostra prazo, dono e regras de cada etapa, e quem
- * participa. Editar aqui é o próximo passo — hoje o ajuste é um update no
- * Supabase, e esta tela é o lugar onde se vê o efeito dele.
+ * Mostra prazo, área dona e regras de cada etapa, e quem participa. O prazo é
+ * editável por admin; o resto ainda é ajuste no Supabase.
  */
 export default function PaginaProcesso() {
   const [modelo, setModelo] = useState<ModeloEtapa[]>([])
@@ -51,7 +56,11 @@ export default function PaginaProcesso() {
     <div className="space-y-6">
       <Painel
         titulo="As etapas do processo"
-        descricao="É este desenho que gera as etapas de cada item novo. Mudar aqui não mexe nos itens que já estão em andamento."
+        descricao={
+          acesso === 'admin'
+            ? 'É este desenho que gera as etapas de cada item novo. O prazo é editável e vale a partir do próximo item — mexer no de quem já está em andamento moveria a régua no meio do jogo.'
+            : 'É este desenho que gera as etapas de cada item novo. Só administrador ajusta o prazo.'
+        }
       >
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] border-collapse text-sm">
@@ -81,8 +90,16 @@ export default function PaginaProcesso() {
                     </div>
                   </td>
                   <td className="whitespace-nowrap px-3 py-3 text-slate-600">{etapa.area || '—'}</td>
-                  <td className="whitespace-nowrap px-3 py-3 tabular-nums text-slate-600">
-                    {etapa.prazoDiasUteis} d.u.
+                  <td className="whitespace-nowrap px-3 py-3">
+                    {acesso === 'admin' ? (
+                      <CampoPrazo
+                        chave={etapa.chave}
+                        valor={etapa.prazoDiasUteis}
+                        aoSalvar={carregar}
+                      />
+                    ) : (
+                      <span className="tabular-nums text-slate-600">{etapa.prazoDiasUteis} d.u.</span>
+                    )}
                   </td>
                   <td className="px-3 py-3 text-xs text-slate-500">
                     {[
@@ -166,6 +183,76 @@ export default function PaginaProcesso() {
           em seguida — quis primeiro colocar o fluxo de pé.
         </p>
       </Painel>
+    </div>
+  )
+}
+
+/**
+ * Prazo editável de uma etapa.
+ *
+ * Salva no blur e não a cada tecla: com salvamento por tecla, digitar "10"
+ * gravaria 1 antes de gravar 10, e por um instante a etapa teria prazo errado.
+ */
+function CampoPrazo({
+  chave,
+  valor,
+  aoSalvar,
+}: {
+  chave: string
+  valor: number
+  aoSalvar: () => Promise<void>
+}) {
+  const [rascunho, setRascunho] = useState(String(valor))
+  const [salvando, setSalvando] = useState(false)
+  const [salvo, setSalvo] = useState(false)
+  const [erro, setErro] = useState<string | null>(null)
+
+  const gravar = async () => {
+    const dias = Number(rascunho)
+
+    if (!Number.isInteger(dias) || dias < 1 || dias > 365) {
+      setErro('Entre 1 e 365')
+      setRascunho(String(valor))
+      return
+    }
+
+    if (dias === valor) return
+
+    setErro(null)
+    setSalvando(true)
+    try {
+      await atualizarPrazoModelo(chave, dias)
+      await aoSalvar()
+      setSalvo(true)
+      setTimeout(() => setSalvo(false), 1800)
+    } catch (falha) {
+      setErro(descreverErro(falha))
+      setRascunho(String(valor))
+    } finally {
+      setSalvando(false)
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <input
+        type="number"
+        min={1}
+        max={365}
+        value={rascunho}
+        onChange={(e) => setRascunho(e.target.value)}
+        onBlur={gravar}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') e.currentTarget.blur()
+          if (e.key === 'Escape') setRascunho(String(valor))
+        }}
+        aria-label={`Prazo da etapa em dias úteis`}
+        className="w-16 rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm tabular-nums text-slate-700 outline-none focus:border-[#0f88a8]"
+      />
+      <span className="text-xs text-slate-400">d.u.</span>
+      {salvando && <Loader2 size={13} className="animate-spin text-slate-400" />}
+      {salvo && <Check size={13} style={{ color: CORES.bom }} />}
+      {erro && <span className="text-[11px]" style={{ color: CORES.critico }}>{erro}</span>}
     </div>
   )
 }
