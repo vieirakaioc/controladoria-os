@@ -15,21 +15,21 @@ export default function LayoutValidacaoFiscal({ children }: { children: React.Re
 
   return (
     <div className="p-6 space-y-6">
-      <header className="bg-white rounded-lg border border-line shadow-card p-5">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+      <header className="surge overflow-hidden rounded-lg bg-navy-700 shadow-card">
+        <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-4">
           <div className="flex items-center gap-3">
-            <div className="rounded-md bg-navy-700 p-2.5 text-white shrink-0">
+            <div className="shrink-0 rounded-md bg-white/10 p-2.5 text-white">
               <ScanLine size={22} />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-navy-700 leading-tight">Validação Fiscal</h1>
-              <p className="text-sm text-ink-500">
+              <h1 className="text-[22px] font-semibold leading-tight text-white">Validação Fiscal</h1>
+              <p className="text-[13px] text-navy-200">
                 Correções geradas das planilhas de divergências, com prazo de resposta por tarefa.
               </p>
             </div>
           </div>
 
-          <nav className="flex flex-wrap items-center gap-1 rounded-md bg-navy-100 p-1">
+          <nav className="flex flex-wrap items-center gap-1 rounded-md bg-white/10 p-1">
             {ABAS.map((aba) => {
               // "/validacao-fiscal" é prefixo das demais; só fica ativa exata.
               const ativa =

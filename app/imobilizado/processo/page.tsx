@@ -150,6 +150,7 @@ export default function PaginaProcesso() {
       <Participantes
         pessoas={pessoas}
         responsaveis={responsaveis}
+        areas={[...new Set(modelo.map((m) => m.area).filter(Boolean))].sort()}
         ehAdmin={acesso === 'admin'}
         aoMudar={carregar}
       />

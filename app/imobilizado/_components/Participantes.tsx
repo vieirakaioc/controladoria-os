@@ -27,11 +27,14 @@ const CAMPO =
 export function Participantes({
   pessoas,
   responsaveis,
+  areas,
   ehAdmin,
   aoMudar,
 }: {
   pessoas: Participante[]
   responsaveis: Responsavel[]
+  /** Áreas donas das etapas — é o que a pessoa faz no processo. */
+  areas: string[]
   ehAdmin: boolean
   aoMudar: () => Promise<void>
 }) {
@@ -52,7 +55,7 @@ export function Participantes({
     setSalvando(true)
     setErro(null)
     try {
-      await incluirParticipante({ responsavelId: novoId, papel: novoPapel.trim(), tipo: novoTipo })
+      await incluirParticipante({ responsavelId: novoId, papel: novoPapel, tipo: novoTipo })
       setNovoId('')
       setNovoPapel('')
       await aoMudar()
@@ -93,13 +96,22 @@ export function Participantes({
             <label htmlFor="papel" className="eyebrow">
               O que faz no processo
             </label>
-            <input
+            {/* As áreas saem das etapas: papel digitado à mão criaria "Frota",
+                "frota" e "FROTA" como se fossem três coisas. */}
+            <select
               id="papel"
               value={novoPapel}
               onChange={(e) => setNovoPapel(e.target.value)}
-              placeholder="Patrimônio, Seguros, Frota…"
               className={`mt-1.5 ${CAMPO}`}
-            />
+            >
+              <option value="">Selecione a área…</option>
+              {areas.map((area) => (
+                <option key={area} value={area}>
+                  {area}
+                </option>
+              ))}
+              <option value="Acompanhamento">Acompanhamento (não responde etapa)</option>
+            </select>
           </div>
 
           <div>
@@ -140,7 +152,7 @@ export function Participantes({
       ) : (
         <ul className="grid gap-2 lg:grid-cols-2">
           {pessoas.map((p) => (
-            <LinhaPessoa key={p.id} pessoa={p} ehAdmin={ehAdmin} aoMudar={aoMudar} />
+            <LinhaPessoa key={p.id} pessoa={p} areas={areas} ehAdmin={ehAdmin} aoMudar={aoMudar} />
           ))}
         </ul>
       )}
@@ -150,10 +162,12 @@ export function Participantes({
 
 function LinhaPessoa({
   pessoa,
+  areas,
   ehAdmin,
   aoMudar,
 }: {
   pessoa: Participante
+  areas: string[]
   ehAdmin: boolean
   aoMudar: () => Promise<void>
 }) {
@@ -192,10 +206,34 @@ function LinhaPessoa({
 
       <div className="min-w-0 flex-1">
         <div className="truncate text-sm font-semibold text-navy-700">{pessoa.nome}</div>
-        <div className="truncate text-xs text-ink-500">
-          {pessoa.papel || '—'}
-          {pessoa.email ? ` · ${pessoa.email}` : ''}
-        </div>
+
+        {ehAdmin ? (
+          <select
+            value={pessoa.papel}
+            onChange={(e) => mudar({ papel: e.target.value })}
+            disabled={salvando}
+            aria-label={`Área de ${pessoa.nome}`}
+            className="mt-0.5 w-full truncate rounded border border-transparent bg-transparent px-1 py-0.5 text-xs text-ink-500 outline-none hover:border-line focus:border-teal-500"
+          >
+            {/* Papel que veio de antes do seletor continua listado, senão ele
+                sumiria da tela ao abrir o campo. */}
+            {pessoa.papel && !areas.includes(pessoa.papel) && (
+              <option value={pessoa.papel}>{pessoa.papel}</option>
+            )}
+            <option value="">Sem área</option>
+            {areas.map((area) => (
+              <option key={area} value={area}>
+                {area}
+              </option>
+            ))}
+            <option value="Acompanhamento">Acompanhamento</option>
+          </select>
+        ) : (
+          <div className="truncate text-xs text-ink-500">
+            {pessoa.papel || '—'}
+            {pessoa.email ? ` · ${pessoa.email}` : ''}
+          </div>
+        )}
       </div>
 
       {ehAdmin ? (

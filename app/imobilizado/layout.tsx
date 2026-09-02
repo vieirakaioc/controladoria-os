@@ -16,22 +16,24 @@ export default function LayoutImobilizado({ children }: { children: React.ReactN
 
   return (
     <div className="space-y-6 p-6">
-      <header className="rounded-lg border border-line bg-white p-5 shadow-card">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+      {/* Faixa navy: dá âncora à tela e separa o módulo do resto do portal
+          sem precisar de mais uma borda. */}
+      <header className="surge overflow-hidden rounded-lg bg-navy-700 shadow-card">
+        <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-4">
           <div className="flex items-center gap-3">
-            <div className="shrink-0 rounded-md bg-navy-700 p-2.5 text-white">
+            <div className="shrink-0 rounded-md bg-white/10 p-2.5 text-white">
               <Boxes size={22} />
             </div>
             <div>
-              <h1 className="text-2xl font-bold leading-tight text-navy-700">Imobilizado</h1>
-              <p className="text-sm text-ink-500">
+              <h1 className="text-[22px] font-semibold leading-tight text-white">Imobilizado</h1>
+              <p className="text-[13px] text-navy-200">
                 Cada nota de patrimônio percorre as etapas do processo, com a pasta de documentos
                 junto.
               </p>
             </div>
           </div>
 
-          <nav className="flex flex-wrap items-center gap-1 rounded-md bg-navy-100 p-1">
+          <nav className="flex flex-wrap items-center gap-1 rounded-md bg-white/10 p-1">
             {ABAS.map((aba) => {
               // "/imobilizado" é prefixo das demais; só fica ativa exata.
               const ativa =

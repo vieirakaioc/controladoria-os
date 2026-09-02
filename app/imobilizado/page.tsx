@@ -212,17 +212,17 @@ export default function PaginaFila() {
         </div>
       </Painel>
 
-      <div className="overflow-hidden rounded-lg border border-line bg-white shadow-card">
+      <div className="panel surge overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-max min-w-full border-collapse text-sm">
-            <thead className="bg-navy-50">
+            <thead className="bg-navy-50/70">
               <tr>
                 {['Nº', 'Nota / fornecedor', 'Empresa · filial', 'Valor', 'Etapa atual', 'Prazo', 'Aging', ''].map(
                   (coluna) => (
                     <th
                       key={coluna}
                       scope="col"
-                      className="whitespace-nowrap border-b border-line px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-ink-500"
+                      className="eyebrow whitespace-nowrap border-b border-line px-4 py-2.5 text-left"
                     >
                       {coluna}
                     </th>
@@ -249,7 +249,7 @@ export default function PaginaFila() {
                 return (
                   <tr
                     key={item.id}
-                    className={`border-b border-line ${linha % 2 === 1 ? 'bg-navy-50/70' : ''} hover:bg-teal-600/[0.06]`}
+                    className={`border-b border-line ${linha % 2 === 1 ? 'bg-navy-50/40' : ''} transition-colors hover:bg-teal-50/60`}
                   >
                     <td className="whitespace-nowrap px-4 py-3 align-top">
                       <span className="font-bold tabular-nums text-navy-700">{item.numero}</span>
@@ -273,7 +273,7 @@ export default function PaginaFila() {
                       <div className="line-clamp-1 w-40 text-xs text-ink-400">{item.empresa}</div>
                     </td>
 
-                    <td className="whitespace-nowrap px-4 py-3 text-right align-top tabular-nums text-ink-700">
+                    <td className="whitespace-nowrap px-4 py-3 text-right align-top num text-ink-900">
                       {formatarMoeda(item.valor)}
                     </td>
 

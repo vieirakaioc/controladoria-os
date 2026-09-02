@@ -101,4 +101,55 @@ body {
     text-transform: uppercase;
     color: var(--color-ink-400);
   }
+
+  /* Superfície padrão: branco sobre um cinza-azulado muito claro.
+
+     Quem separa o painel do fundo é a sombra, não a cor — por isso ela é leve
+     mas com raio largo, que é o que o olho lê como elevação em vez de
+     contorno. A borda hairline segura o limite nos monitores em que a sombra
+     some (brilho alto, projetor). */
+  .panel {
+    border-radius: 8px;
+    border: 1px solid var(--color-line);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-card);
+  }
+
+  .panel-hover {
+    transition: box-shadow 0.2s ease;
+  }
+
+  .panel-hover:hover {
+    box-shadow: var(--shadow-card-hover);
+  }
+
+  /* Números com algarismos tabulares: todo dígito na mesma largura, coluna que
+     não dança quando o valor muda. */
+  .num {
+    font-variant-numeric: tabular-nums lining-nums;
+    font-feature-settings: "tnum" 1, "lnum" 1;
+  }
+
+  /* Entrada suave dos painéis. Sem biblioteca de animação: uma transformação
+     de 6px é o suficiente para o olho perceber que o bloco chegou. */
+  .surge {
+    animation: surge 0.28s ease-out both;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .surge {
+      animation: none;
+    }
+  }
+}
+
+@keyframes surge {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

@@ -21,12 +21,16 @@ export function Painel({
   className?: string
 }) {
   return (
-    <section className={`bg-white rounded-lg border border-line shadow-card p-5 ${className}`}>
+    <section className={`panel surge p-5 ${className}`}>
       {(titulo || acao) && (
         <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
           <div>
-            {titulo && <h2 className="text-base font-bold text-navy-700">{titulo}</h2>}
-            {descricao && <p className="mt-1 text-sm text-ink-500 leading-relaxed">{descricao}</p>}
+            {titulo && (
+              <h2 className="text-[15px] font-semibold leading-tight text-navy-700">{titulo}</h2>
+            )}
+            {descricao && (
+              <p className="mt-1 max-w-prose text-[13px] leading-relaxed text-ink-500">{descricao}</p>
+            )}
           </div>
           {acao}
         </div>
@@ -56,12 +60,12 @@ export function Kpi({
   }[tom]
 
   return (
-    <div className="bg-white rounded-lg border border-line shadow-card p-4">
-      <p className="text-[11px] uppercase tracking-wider text-ink-400 font-semibold">{rotulo}</p>
-      <p className="mt-2 text-3xl font-bold leading-none" style={{ color: cor }}>
+    <div className="panel panel-hover surge p-4">
+      <p className="eyebrow truncate">{rotulo}</p>
+      <p className="num mt-1.5 truncate text-[26px] font-semibold leading-none" style={{ color: cor }}>
         {valor}
       </p>
-      {detalhe && <p className="mt-2 text-xs text-ink-500 leading-relaxed">{detalhe}</p>}
+      {detalhe && <p className="mt-2 text-[11px] leading-relaxed text-ink-400">{detalhe}</p>}
     </div>
   )
 }
