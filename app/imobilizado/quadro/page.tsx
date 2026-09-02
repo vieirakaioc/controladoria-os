@@ -176,29 +176,37 @@ function ColunaQuadro({ coluna, hoje }: { coluna: Coluna; hoje: string }) {
   }).length
 
   return (
-    <section className="flex w-[300px] shrink-0 flex-col rounded-lg border border-line bg-navy-50/60">
-      <header className="flex items-start justify-between gap-2 border-b border-line px-4 py-3">
+    <section
+      className={`panel surge flex w-[300px] shrink-0 flex-col overflow-hidden ${
+        coluna.itens.length === 0 ? 'opacity-70' : ''
+      }`}
+    >
+      {/* Faixa de 2px no topo: a coluna com atraso se identifica de longe, sem
+          tingir as cartas que estão dentro dela. */}
+      <div className={`h-[2px] w-full ${atrasados > 0 ? 'bg-negativo' : final ? 'bg-ink-400/40' : 'bg-teal-500'}`} />
+
+      <header className="flex items-start justify-between gap-2 border-b border-line bg-navy-50/70 px-4 py-3">
         <div className="min-w-0">
-          <h2 className="truncate text-sm font-bold text-navy-700" title={coluna.titulo}>
+          <h2 className="truncate text-[13px] font-semibold text-navy-700" title={coluna.titulo}>
             {coluna.titulo}
           </h2>
-          <p className="eyebrow mt-0.5">{final ? 'encerrados' : coluna.area || '—'}</p>
+          <p className="eyebrow mt-0.5 truncate">{final ? 'encerrados' : coluna.area || '—'}</p>
         </div>
 
         <div className="flex shrink-0 items-center gap-1.5">
           {atrasados > 0 && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-negativo-bg px-2 py-0.5 text-[11px] font-bold text-negativo">
+            <span className="inline-flex items-center gap-1 rounded-full border border-negativo-border bg-negativo-bg px-2 py-0.5 text-[11px] font-bold text-negativo">
               <AlertTriangle size={10} />
               {atrasados}
             </span>
           )}
-          <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-bold tabular-nums text-ink-500 shadow-sm">
+          <span className="num rounded-full bg-navy-700 px-2 py-0.5 text-[11px] font-bold text-white">
             {coluna.itens.length}
           </span>
         </div>
       </header>
 
-      <div className="flex flex-1 flex-col gap-2.5 p-3">
+      <div className="flex flex-1 flex-col gap-2.5 bg-navy-50/30 p-3">
         {coluna.itens.length === 0 ? (
           <p className="px-1 py-6 text-center text-xs text-ink-400">Nada aqui.</p>
         ) : (
@@ -227,8 +235,12 @@ function Carta({ item, hoje, final }: { item: Item; hoje: string; final: boolean
   return (
     <Link
       href={`/imobilizado/${item.id}`}
-      className={`group block rounded-md border bg-white p-3 shadow-card transition-shadow hover:shadow-card-hover ${
-        atrasada ? 'border-negativo-border' : venceHoje ? 'border-alerta-border' : 'border-line'
+      className={`group relative block overflow-hidden rounded-md border bg-white p-3 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover ${
+        atrasada
+          ? "border-negativo-border before:absolute before:inset-y-0 before:left-0 before:w-[3px] before:bg-negativo before:content-['']"
+          : venceHoje
+            ? "border-alerta-border before:absolute before:inset-y-0 before:left-0 before:w-[3px] before:bg-alerta before:content-['']"
+            : 'border-line'
       }`}
     >
       <div className="flex items-start justify-between gap-2">
@@ -252,7 +264,7 @@ function Carta({ item, hoje, final }: { item: Item; hoje: string; final: boolean
         {item.filial || '—'}
       </p>
 
-      <p className="mt-1.5 text-xs font-semibold tabular-nums text-ink-700">
+      <p className="num mt-1.5 text-[13px] font-semibold text-navy-900">
         {formatarMoeda(item.valor)}
       </p>
 
@@ -261,7 +273,7 @@ function Carta({ item, hoje, final }: { item: Item; hoje: string; final: boolean
       <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-line pt-2 text-[11px]">
         {!final && naEtapa !== null && (
           <span
-            className={`font-bold tabular-nums ${
+            className={`num font-bold ${
               atrasada ? 'text-negativo' : venceHoje ? 'text-alerta' : 'text-ink-500'
             }`}
           >
@@ -270,11 +282,11 @@ function Carta({ item, hoje, final }: { item: Item; hoje: string; final: boolean
         )}
 
         {processo && (
-          <span className="tabular-nums text-ink-400">{processo.dias}d no total</span>
+          <span className="num text-ink-400">{processo.dias}d no total</span>
         )}
 
         {!final && aberta?.prazo && (
-          <span className={`ml-auto tabular-nums ${atrasada ? 'text-negativo' : 'text-ink-400'}`}>
+          <span className={`num ml-auto ${atrasada ? 'text-negativo' : 'text-ink-400'}`}>
             {atrasada ? 'venceu ' : 'vence '}
             {formatarData(aberta.prazo)}
           </span>

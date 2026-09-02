@@ -26,14 +26,14 @@ export default function LayoutImobilizado({ children }: { children: React.ReactN
             </div>
             <div>
               <h1 className="text-[22px] font-semibold leading-tight text-white">Imobilizado</h1>
-              <p className="text-[13px] text-navy-200">
+              <p className="text-[13px] text-white/70">
                 Cada nota de patrimônio percorre as etapas do processo, com a pasta de documentos
                 junto.
               </p>
             </div>
           </div>
 
-          <nav className="flex flex-wrap items-center gap-1 rounded-md bg-white/10 p-1">
+          <nav className="flex flex-wrap items-center gap-1 rounded-md bg-navy-900/40 p-1">
             {ABAS.map((aba) => {
               // "/imobilizado" é prefixo das demais; só fica ativa exata.
               const ativa =

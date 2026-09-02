@@ -23,13 +23,13 @@ export default function LayoutValidacaoFiscal({ children }: { children: React.Re
             </div>
             <div>
               <h1 className="text-[22px] font-semibold leading-tight text-white">Validação Fiscal</h1>
-              <p className="text-[13px] text-navy-200">
+              <p className="text-[13px] text-white/70">
                 Correções geradas das planilhas de divergências, com prazo de resposta por tarefa.
               </p>
             </div>
           </div>
 
-          <nav className="flex flex-wrap items-center gap-1 rounded-md bg-white/10 p-1">
+          <nav className="flex flex-wrap items-center gap-1 rounded-md bg-navy-900/40 p-1">
             {ABAS.map((aba) => {
               // "/validacao-fiscal" é prefixo das demais; só fica ativa exata.
               const ativa =
