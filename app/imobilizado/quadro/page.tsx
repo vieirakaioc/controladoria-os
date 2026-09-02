@@ -191,10 +191,14 @@ function ColunaQuadro({ coluna, hoje }: { coluna: Coluna; hoje: string }) {
 
       <header className="flex items-start justify-between gap-2 border-b border-line bg-navy-50/70 px-4 py-3">
         <div className="min-w-0">
-          <h2 className="truncate text-[13px] font-semibold text-navy-700" title={coluna.titulo}>
+          <h2 className="truncate text-[15px] font-semibold text-navy-700" title={coluna.titulo}>
             {coluna.titulo}
           </h2>
-          <p className="eyebrow mt-0.5 truncate">{final ? 'encerrados' : coluna.area || '—'}</p>
+          {/* A área é o segundo nível de leitura da coluna: sobe junto com o
+              título, senão vira legenda ilegível ao lado de um nome grande. */}
+          <p className="mt-0.5 truncate text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-400">
+            {final ? 'encerrados' : coluna.area || '—'}
+          </p>
         </div>
 
         <div className="flex shrink-0 items-center gap-1.5">
@@ -204,7 +208,7 @@ function ColunaQuadro({ coluna, hoje }: { coluna: Coluna; hoje: string }) {
               {atrasados}
             </span>
           )}
-          <span className="num rounded-full bg-navy-700 px-2 py-0.5 text-[11px] font-bold text-white">
+          <span className="num rounded-full bg-navy-700 px-2.5 py-0.5 text-[12px] font-bold text-white">
             {coluna.itens.length}
           </span>
         </div>

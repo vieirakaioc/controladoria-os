@@ -204,7 +204,7 @@ export default function PaginaMatriz() {
                       scope="col"
                       className="border-b border-l border-line px-3 py-2.5 text-center align-bottom"
                     >
-                      <div className="eyebrow mx-auto max-w-[90px] leading-tight">
+                      <div className="mx-auto max-w-[110px] text-[12px] font-semibold leading-tight text-navy-700">
                         {coluna.titulo}
                       </div>
                       {/* O contador de abertos transforma a coluna em medida:
