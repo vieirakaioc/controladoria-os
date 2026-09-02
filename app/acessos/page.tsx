@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Toaster, toast } from 'react-hot-toast'
-import { ShieldAlert, ShieldCheck, Users } from 'lucide-react'
+import { Check, Loader2, Pencil, ShieldAlert, ShieldCheck, Users, X } from 'lucide-react'
 
 type Profile = {
   id: string
@@ -20,6 +20,12 @@ export default function AcessosPage() {
   const [profiles, setProfiles] = useState<Profile[]>([])
   const [updating, setUpdating] = useState<string | null>(null)
   const [currentUserId, setCurrentUserId] = useState<string>('')
+
+  // Edicao do perfil: nome e foto. O nivel de acesso continua no seletor ao
+  // lado — sao decisoes diferentes, e juntar as duas num formulario so faria
+  // "corrigir um nome" parecer "mexer em permissao".
+  const [editando, setEditando] = useState<string | null>(null)
+  const [rascunho, setRascunho] = useState({ full_name: '', avatar_url: '' })
 
   useEffect(() => {
     const carregarAcessos = async () => {
@@ -71,9 +77,48 @@ export default function AcessosPage() {
 
       setProfiles(prev => prev.map(p => p.id === userId ? { ...p, role: newRole } : p))
       toast.success('Nível de acesso atualizado com sucesso!', { id: toastId })
-    } catch (err: any) {
+    } catch (err) {
       console.error(err)
       toast.error('Erro ao atualizar permissões.', { id: toastId })
+    } finally {
+      setUpdating(null)
+    }
+  }
+
+  const abrirEdicao = (p: Profile) => {
+    setRascunho({ full_name: p.full_name ?? '', avatar_url: p.avatar_url ?? '' })
+    setEditando(p.id)
+  }
+
+  const salvarPerfil = async (userId: string) => {
+    const nome = rascunho.full_name.trim()
+
+    if (!nome) {
+      toast.error('O nome nao pode ficar em branco.')
+      return
+    }
+
+    setUpdating(userId)
+    const toastId = toast.loading('A guardar alteracoes...')
+
+    try {
+      const avatar = rascunho.avatar_url.trim() || null
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ full_name: nome, avatar_url: avatar })
+        .eq('id', userId)
+
+      if (error) throw error
+
+      setProfiles(prev =>
+        prev.map(p => (p.id === userId ? { ...p, full_name: nome, avatar_url: avatar } : p)),
+      )
+      setEditando(null)
+      toast.success('Perfil atualizado.', { id: toastId })
+    } catch (err) {
+      console.error(err)
+      toast.error('Erro ao guardar o perfil.', { id: toastId })
     } finally {
       setUpdating(null)
     }
@@ -130,18 +175,43 @@ export default function AcessosPage() {
                 <tr key={p.id} className={`transition-colors text-sm ${p.id === currentUserId ? 'bg-teal-600/5 dark:bg-[#38bdf8]/10' : 'hover:bg-navy-50 dark:hover:bg-slate-800/50'}`}>
                   
                   {/* IDENTIFICAÇÃO */}
-                  <td className="p-4 flex items-center gap-3">
-                    {p.avatar_url ? (
-                      <img src={p.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover border border-line dark:border-slate-700 shadow-sm" />
+                  <td className="p-4">
+                    {editando === p.id ? (
+                      <div className="flex max-w-sm flex-col gap-2">
+                        <div>
+                          <label className="eyebrow">Nome completo</label>
+                          <input
+                            value={rascunho.full_name}
+                            onChange={(e) => setRascunho(r => ({ ...r, full_name: e.target.value }))}
+                            autoFocus
+                            className="mt-1 w-full rounded-md border border-line-strong bg-white px-3 py-1.5 text-sm text-ink-900 outline-none focus:border-teal-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                          />
+                        </div>
+                        <div>
+                          <label className="eyebrow">Foto (URL)</label>
+                          <input
+                            value={rascunho.avatar_url}
+                            onChange={(e) => setRascunho(r => ({ ...r, avatar_url: e.target.value }))}
+                            placeholder="Vazio usa a inicial do nome"
+                            className="mt-1 w-full rounded-md border border-line-strong bg-white px-3 py-1.5 font-mono text-xs text-ink-700 outline-none focus:border-teal-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                          />
+                        </div>
+                      </div>
                     ) : (
-                      <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 text-ink-700 dark:text-slate-300 flex items-center justify-center font-bold shadow-sm">
-                        {(p.full_name || '?').charAt(0).toUpperCase()}
+                      <div className="flex items-center gap-3">
+                        {p.avatar_url ? (
+                          <img src={p.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover border border-line dark:border-slate-700 shadow-sm" />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-navy-100 dark:bg-slate-800 text-navy-700 dark:text-slate-300 flex items-center justify-center font-bold shadow-sm">
+                            {(p.full_name || '?').charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <div>
+                          <span className="font-bold text-navy-700 dark:text-white block">{p.full_name || 'Sem nome definido'}</span>
+                          {p.id === currentUserId && <span className="text-[10px] uppercase font-bold text-teal-600 dark:text-[#38bdf8] tracking-widest block mt-0.5">Você</span>}
+                        </div>
                       </div>
                     )}
-                    <div>
-                      <span className="font-bold text-navy-700 dark:text-white block">{p.full_name || 'Sem nome definido'}</span>
-                      {p.id === currentUserId && <span className="text-[10px] uppercase font-bold text-teal-600 dark:text-[#38bdf8] tracking-widest block mt-0.5">Você</span>}
-                    </div>
                   </td>
 
                   {/* ID */}
@@ -159,7 +229,40 @@ export default function AcessosPage() {
                   </td>
 
                   {/* AÇÕES DE MUDANÇA */}
-                  <td className="p-4 text-right">
+                  <td className="p-4">
+                    <div className="flex flex-wrap items-center justify-end gap-2">
+                    {editando === p.id ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => salvarPerfil(p.id)}
+                          disabled={updating === p.id}
+                          className="inline-flex items-center gap-1.5 rounded-md bg-teal-600 px-3 py-2 text-xs font-bold text-white transition-all hover:brightness-110 disabled:opacity-40"
+                        >
+                          {updating === p.id ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
+                          Guardar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditando(null)}
+                          disabled={updating === p.id}
+                          aria-label="Cancelar edicao"
+                          className="rounded-md border border-line-strong p-2 text-ink-400 transition-colors hover:text-navy-700 disabled:opacity-40 dark:border-slate-700"
+                        >
+                          <X size={13} />
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => abrirEdicao(p)}
+                        className="inline-flex items-center gap-1.5 rounded-md border border-line-strong px-3 py-2 text-xs font-semibold text-ink-500 transition-colors hover:border-teal-500 hover:text-teal-600 dark:border-slate-700 dark:text-slate-300"
+                      >
+                        <Pencil size={13} />
+                        Editar
+                      </button>
+                    )}
+
                     <select 
                       value={p.role}
                       onChange={(e) => alterarRole(p.id, e.target.value)}
@@ -169,6 +272,7 @@ export default function AcessosPage() {
                       <option value="membro">Membro (Padrão)</option>
                       <option value="admin">Administrador</option>
                     </select>
+                    </div>
                   </td>
 
                 </tr>
