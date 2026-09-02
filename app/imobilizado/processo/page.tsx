@@ -1,10 +1,14 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { Check, Loader2, Truck, Users } from 'lucide-react'
+import { Check, Loader2, Truck } from 'lucide-react'
 
 import { CORES } from '@/app/validacao-fiscal/_lib/cores'
 
+import { listarResponsaveis } from '@/app/validacao-fiscal/_lib/api'
+import type { Responsavel } from '@/app/validacao-fiscal/_lib/types'
+
+import { Participantes } from '../_components/Participantes'
 import { AvisoErro, Carregando, Painel, SemAcesso } from '../_components/Ui'
 import {
   atualizarPrazoModelo,
@@ -24,6 +28,7 @@ import type { Acesso, ModeloEtapa, Participante } from '../_lib/types'
 export default function PaginaProcesso() {
   const [modelo, setModelo] = useState<ModeloEtapa[]>([])
   const [pessoas, setPessoas] = useState<Participante[]>([])
+  const [responsaveis, setResponsaveis] = useState<Responsavel[]>([])
   const [acesso, setAcesso] = useState<Acesso>(null)
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
@@ -34,9 +39,14 @@ export default function PaginaProcesso() {
       setAcesso(tipo)
       if (!tipo) return
 
-      const [etapas, participantes] = await Promise.all([listarModelo(), listarParticipantes()])
+      const [etapas, participantes, pessoasDoPortal] = await Promise.all([
+        listarModelo(),
+        listarParticipantes(),
+        listarResponsaveis(),
+      ])
       setModelo(etapas)
       setPessoas(participantes)
+      setResponsaveis(pessoasDoPortal)
     } catch (falha) {
       setErro(descreverErro(falha))
     } finally {
@@ -137,52 +147,12 @@ export default function PaginaProcesso() {
         </div>
       </Painel>
 
-      <Painel
-        titulo="Quem participa"
-        descricao="Participante responde etapa e anexa documento; observador acompanha e não altera nada. Quem não está aqui não enxerga o módulo."
-      >
-        {pessoas.length === 0 ? (
-          <p className="text-sm text-ink-400">Ninguém cadastrado ainda.</p>
-        ) : (
-          <ul className="grid gap-2 sm:grid-cols-2">
-            {pessoas.map((p) => (
-              <li
-                key={p.id}
-                className={`flex items-center gap-3 rounded-md border border-line bg-white px-3 py-2.5 ${
-                  p.ativo ? '' : 'opacity-50'
-                }`}
-              >
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-navy-100 text-ink-400">
-                  <Users size={15} />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-semibold text-navy-700">{p.nome}</div>
-                  <div className="truncate text-xs text-ink-500">
-                    {p.papel || '—'}
-                    {p.email ? ` · ${p.email}` : ''}
-                  </div>
-                </div>
-                <span
-                  className="shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-semibold"
-                  style={
-                    p.tipo === 'participante'
-                      ? { borderColor: CORES.acao, color: CORES.acao }
-                      : { borderColor: '#cbd5e1', color: '#64748b' }
-                  }
-                >
-                  {p.tipo === 'participante' ? 'participante' : 'observador'}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-
-        <p className="mt-4 text-xs leading-relaxed text-ink-400">
-          Por enquanto o cadastro é feito no Supabase, na tabela{' '}
-          <code className="text-teal-600">imobilizado_participantes</code>. A tela de edição entra
-          em seguida — quis primeiro colocar o fluxo de pé.
-        </p>
-      </Painel>
+      <Participantes
+        pessoas={pessoas}
+        responsaveis={responsaveis}
+        ehAdmin={acesso === 'admin'}
+        aoMudar={carregar}
+      />
     </div>
   )
 }

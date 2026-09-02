@@ -1,6 +1,8 @@
 import { supabase } from '@/lib/supabase'
 import { hoje as dataDeHoje, somarDiasUteis } from '@/app/validacao-fiscal/_lib/prazo'
 
+import { avisarEtapaAberta, avisarItemNovo } from './avisos'
+
 import type {
   Acesso,
   Anexo,
@@ -377,6 +379,11 @@ export async function criarItem(entrada: NovoItem, usuario: string): Promise<Ite
 
   const item = await buscarItem(String(criado.id))
   if (!item) throw new Error('item criado mas não encontrado')
+
+  // Depois de o item existir por inteiro: o e-mail lista as etapas já abertas,
+  // e para isso elas precisam estar gravadas.
+  await avisarItemNovo(item, usuario)
+
   return item
 }
 
@@ -467,14 +474,15 @@ export async function concluirEtapa(params: {
       const modelo = await listarModelo()
       const dias = modelo.find((m) => m.chave === seguinte.chave)?.prazoDiasUteis ?? 1
 
+      const prazo = somarDiasUteis(hoje, dias)
+
       await supabase
         .from(TAB_ETAPAS)
-        .update({
-          status: 'aberta',
-          aberta_em: agora,
-          prazo: somarDiasUteis(hoje, dias),
-        })
+        .update({ status: 'aberta', aberta_em: agora, prazo })
         .eq('id', seguinte.id)
+
+      // A etapa seguinte só existe para quem sabe que ela abriu.
+      await avisarEtapaAberta(item, { ...seguinte, status: 'aberta', prazo }, usuario)
     } else {
       // Sem etapa sequencial pendente o item está pronto, mesmo que a paralela
       // siga aberta.
@@ -697,6 +705,51 @@ export async function listarParticipantes(): Promise<Participante[]> {
       ativo: Boolean(l.ativo),
     }
   })
+}
+
+/**
+ * Inclui alguém no processo.
+ *
+ * O vínculo é com `responsaveis`, o mesmo cadastro do resto do portal: quem
+ * entra aqui já existe como pessoa no sistema, e é o e-mail de lá que a RLS
+ * compara com o login.
+ */
+export async function incluirParticipante(entrada: {
+  responsavelId: string
+  papel: string
+  tipo: 'participante' | 'observador'
+}): Promise<void> {
+  const { error } = await supabase.from(TAB_PARTICIPANTES).upsert(
+    {
+      responsavel_id: entrada.responsavelId,
+      papel: entrada.papel,
+      tipo: entrada.tipo,
+      ativo: true,
+    },
+    { onConflict: 'responsavel_id' },
+  )
+
+  if (error) throw error
+}
+
+export async function atualizarParticipante(
+  id: number,
+  mudancas: Partial<{ papel: string; tipo: 'participante' | 'observador'; ativo: boolean }>,
+): Promise<void> {
+  const { error } = await supabase.from(TAB_PARTICIPANTES).update(mudancas).eq('id', id)
+  if (error) throw error
+}
+
+/**
+ * Tira a pessoa do processo.
+ *
+ * Apaga a linha em vez de só desativar quando ela nunca respondeu nada — mas
+ * quem já mexeu no fluxo continua no histórico dos itens de qualquer forma,
+ * porque lá o nome é gravado no momento da ação, não por referência.
+ */
+export async function removerParticipante(id: number): Promise<void> {
+  const { error } = await supabase.from(TAB_PARTICIPANTES).delete().eq('id', id)
+  if (error) throw error
 }
 
 export function descreverErro(erro: unknown): string {
