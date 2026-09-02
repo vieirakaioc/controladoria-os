@@ -112,10 +112,28 @@ export function SemAcesso() {
   )
 }
 
-/** Selo de prazo da etapa: ícone e texto, nunca só a cor. */
-export function ChipPrazo({ prazo, hoje, concluida }: { prazo: string | null; hoje: string; concluida: boolean }) {
+/**
+ * Selo de prazo da etapa: ícone e texto, nunca só a cor.
+ *
+ * Etapa bloqueada não tem prazo porque ainda não é a vez dela — dizer "sem
+ * prazo" faria parecer configuração faltando.
+ */
+export function ChipPrazo({
+  prazo,
+  hoje,
+  concluida,
+  bloqueada = false,
+}: {
+  prazo: string | null
+  hoje: string
+  concluida: boolean
+  bloqueada?: boolean
+}) {
   if (concluida) {
     return <span className="text-xs font-semibold text-ink-400">Concluída</span>
+  }
+  if (bloqueada) {
+    return <span className="text-xs text-ink-400">Aguardando a anterior</span>
   }
   if (!prazo) return <span className="text-xs text-ink-400">Sem prazo</span>
 

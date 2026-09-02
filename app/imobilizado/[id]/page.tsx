@@ -171,11 +171,15 @@ export default function PaginaFicha({ params }: { params: Promise<{ id: string }
             descricao="A etapa aberta é a única que aceita conclusão. Concluir libera a seguinte."
           >
             <div className="flex flex-col gap-3">
-              {sequenciais.map((etapa) => (
+              {/* A posição é contada no fluxo deste item, não na ordem do
+                  modelo: um item que não é frota não tem a etapa 2, e mostrar
+                  "01, 03, 04" faria parecer que uma etapa sumiu. */}
+              {sequenciais.map((etapa, posicao) => (
                 <CartaoEtapa
                   key={etapa.id}
                   item={item}
                   etapa={etapa}
+                  posicao={posicao + 1}
                   descricao={descricoes[etapa.chave] ?? ''}
                   anexos={anexos}
                   responsaveis={responsaveis}
@@ -199,6 +203,7 @@ export default function PaginaFicha({ params }: { params: Promise<{ id: string }
                     key={etapa.id}
                     item={item}
                     etapa={etapa}
+                    posicao={null}
                     descricao={descricoes[etapa.chave] ?? ''}
                     anexos={anexos}
                     responsaveis={responsaveis}
@@ -477,6 +482,7 @@ function Cabecalho({
 function CartaoEtapa({
   item,
   etapa,
+  posicao,
   descricao,
   anexos,
   responsaveis,
@@ -487,6 +493,8 @@ function CartaoEtapa({
 }: {
   item: Item
   etapa: Etapa
+  /** Posição no fluxo deste item. `null` na paralela, que não entra na ordem. */
+  posicao: number | null
   descricao: string
   anexos: Anexo[]
   responsaveis: Responsavel[]
@@ -565,7 +573,9 @@ function CartaoEtapa({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <span className="font-mono text-xs text-ink-400">{String(etapa.ordem).padStart(2, '0')}</span>
+            <span className="font-mono text-xs text-ink-400">
+              {posicao === null ? '· ·' : String(posicao).padStart(2, '0')}
+            </span>
             <h3 className="font-bold text-navy-700">{etapa.titulo}</h3>
             {concluida && <Check size={15} style={{ color: CORES.bom }} />}
           </div>
@@ -582,7 +592,12 @@ function CartaoEtapa({
           </p>
         </div>
 
-        <ChipPrazo prazo={etapa.prazo} hoje={hoje} concluida={concluida} />
+        <ChipPrazo
+          prazo={etapa.prazo}
+          hoje={hoje}
+          concluida={concluida}
+          bloqueada={etapa.status === 'bloqueada'}
+        />
       </div>
 
       {concluida && etapa.observacao && (
