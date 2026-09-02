@@ -527,12 +527,19 @@ export async function atribuirEtapa(
 /** Campos do item que a tela edita direto (flags e números das etapas). */
 export async function atualizarItem(
   item: Item,
-  mudancas: Partial<
-    Record<
-      'oc_numero' | 'placa' | 'centro_custo' | 'nf_numero' | 'fornecedor' | 'descricao' | 'filial',
-      string | null
-    >
-  >,
+  mudancas: Partial<{
+    oc_numero: string | null
+    placa: string | null
+    centro_custo: string | null
+    nf_numero: string | null
+    nf_chave: string | null
+    fornecedor: string | null
+    descricao: string | null
+    filial: string | null
+    filial_id: string | null
+    empresa: string | null
+    valor: number | null
+  }>,
   usuario: string,
 ): Promise<void> {
   const { error } = await supabase.from(TAB_ITENS).update(mudancas).eq('id', item.id)
@@ -609,6 +616,38 @@ export async function anexar(params: {
     enviadoPor: usuario || null,
     enviadoEm: new Date().toISOString(),
   }
+}
+
+/**
+ * Baixa a pasta inteira em um .zip.
+ *
+ * É o caminho da pasta para fora do sistema: os arquivos saem com o nome
+ * original prefixado pela etapa, para o dossiê continuar legível depois de
+ * levado para o controle de vocês.
+ */
+export async function baixarPasta(item: Item, anexos: Anexo[]): Promise<void> {
+  if (anexos.length === 0) throw new Error('A pasta está vazia.')
+
+  const { default: JSZip } = await import('jszip')
+  const zip = new JSZip()
+
+  // Sequencial de propósito: uma pasta com dezenas de anexos dispararia
+  // dezenas de downloads simultâneos do Storage.
+  for (const anexo of anexos) {
+    const { data, error } = await supabase.storage.from(BUCKET).download(anexo.caminho)
+    if (error || !data) continue
+
+    const etapa = anexo.etapaChave ? `${anexo.etapaChave}-` : ''
+    zip.file(`${etapa}${anexo.nome}`, data)
+  }
+
+  const conteudo = await zip.generateAsync({ type: 'blob' })
+  const url = URL.createObjectURL(conteudo)
+  const ancora = document.createElement('a')
+  ancora.href = url
+  ancora.download = `imobilizado-${String(item.numero).padStart(6, '0')}.zip`
+  ancora.click()
+  URL.revokeObjectURL(url)
 }
 
 export async function removerAnexo(item: Item, anexo: Anexo, usuario: string): Promise<void> {
