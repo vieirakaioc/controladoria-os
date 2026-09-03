@@ -50,14 +50,13 @@ export default function PaginaNovoItem() {
    *
    * Meio segundo de espera depois da última tecla: sem isso seria uma consulta
    * por caractere, e o aviso piscaria a cada letra de um chassi que ainda está
-   * pela metade. Abaixo de 8 caracteres nem consulta — o começo do chassi é
-   * igual em veículos do mesmo fabricante, e acusaria parentesco, não repetição.
+   * pela metade.
    */
   useEffect(() => {
     const alvo = chassi.trim()
 
     const relogio = setTimeout(() => {
-      if (!ehFrota || alvo.length < 8) {
+      if (!ehFrota || !alvo) {
         setRepetido(null)
         return
       }
@@ -251,9 +250,7 @@ export default function PaginaNovoItem() {
               id="chassi"
               value={chassi}
               onChange={(e) => setChassi(caixaAlta(e.target.value))}
-              maxLength={17}
-              placeholder="17 CARACTERES, COMO NO DOCUMENTO DO VEÍCULO"
-              className={`mt-1.5 font-mono uppercase tracking-wide ${CAMPO}`}
+              className={`mt-1.5 uppercase ${CAMPO}`}
             />
 
             {repetido && (
