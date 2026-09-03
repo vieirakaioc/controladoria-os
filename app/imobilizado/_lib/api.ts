@@ -88,6 +88,7 @@ function mapearItem(l: LinhaItem, etapas: Etapa[]): Item {
     ehFrota: Boolean(l.eh_frota),
     centroCusto: ouNulo(l.centro_custo),
     placa: ouNulo(l.placa),
+    chassi: ouNulo(l.chassi),
     ocNumero: ouNulo(l.oc_numero),
     pasta: texto(l.pasta),
     atpvEm: ouNulo(l.atpv_em),
@@ -306,6 +307,8 @@ export type NovoItem = {
   /** A filial escolhida no seletor. Nome e empresa são copiados junto. */
   filial: Filial | null
   ehFrota: boolean
+  /** Só faz sentido em frota; vem null no resto. */
+  chassi: string | null
 }
 
 /**
@@ -330,6 +333,9 @@ export async function criarItem(entrada: NovoItem, usuario: string): Promise<Ite
       empresa: entrada.filial?.empresa ?? '',
       filial: entrada.filial ? `${entrada.filial.codFilial} ${entrada.filial.filial}`.trim() : '',
       eh_frota: entrada.ehFrota,
+      // Chassi é de veículo: se o item deixou de ser frota, o campo não vai
+      // junto, senão ficaria um chassi pendurado num item que não é veículo.
+      chassi: entrada.ehFrota ? entrada.chassi : null,
       criado_por: usuario || null,
       // O número só existe depois do insert, e a pasta é nomeada por ele.
       // Gravamos um provisório e corrigimos na linha seguinte.
@@ -426,6 +432,43 @@ export async function excluirItem(item: Item, anexos: Anexo[]): Promise<void> {
  */
 export async function renumerarItens(): Promise<void> {
   await supabase.rpc('imob_renumerar_itens')
+}
+
+/**
+ * Procura outro item com o mesmo chassi.
+ *
+ * Serve ao aviso da tela de cadastro, e por isso devolve o item em vez de um
+ * booleano: dizer "já existe" sem dizer qual não ajuda ninguém a decidir.
+ *
+ * A comparação é em caixa alta dos dois lados — é como o índice foi criado, e
+ * é o que faz um chassi digitado em minúsculas encontrar o que está gravado.
+ * `ignorarId` existe para a edição não acusar o próprio item.
+ */
+export async function itemComChassi(
+  chassi: string,
+  ignorarId?: string,
+): Promise<{ id: string; numero: number; descricao: string; placa: string | null } | null> {
+  const alvo = chassi.trim().toUpperCase()
+  if (!alvo) return null
+
+  let consulta = supabase
+    .from(TAB_ITENS)
+    .select('id, numero, descricao, placa')
+    .ilike('chassi', alvo)
+    .limit(1)
+
+  if (ignorarId) consulta = consulta.neq('id', ignorarId)
+
+  const { data, error } = await consulta
+  if (error || !data || data.length === 0) return null
+
+  const l = data[0]
+  return {
+    id: String(l.id),
+    numero: Number(l.numero ?? 0),
+    descricao: texto(l.descricao),
+    placa: ouNulo(l.placa),
+  }
 }
 
 /** O que impede uma etapa de ser concluída. Vazio = pode concluir. */
@@ -612,6 +655,7 @@ export async function atualizarItem(
   mudancas: Partial<{
     oc_numero: string | null
     placa: string | null
+    chassi: string | null
     centro_custo: string | null
     nf_numero: string | null
     nf_chave: string | null

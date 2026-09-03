@@ -1,15 +1,16 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { AlertCircle, Loader2, Plus, Truck } from 'lucide-react'
+import { AlertCircle, AlertTriangle, Loader2, Plus, Truck } from 'lucide-react'
 
 import { useAuthGate } from '@/app/tarefas/_hooks/useAuthGate'
 import { CORES } from '@/app/validacao-fiscal/_lib/cores'
 
 import { Carregando, Painel, SemAcesso } from '../_components/Ui'
 import { useImobilizado } from '../_hooks/useImobilizado'
-import { criarItem, descreverErro, listarFiliais } from '../_lib/api'
+import { criarItem, descreverErro, itemComChassi, listarFiliais } from '../_lib/api'
 import { caixaAlta, moedaDoTexto, textoDaMoeda } from '../_lib/formato'
 import { podeAgir, rotuloFilial, type Filial } from '../_lib/types'
 
@@ -31,6 +32,10 @@ export default function PaginaNovoItem() {
   const [filiais, setFiliais] = useState<Filial[]>([])
   const [filialId, setFilialId] = useState('')
   const [ehFrota, setEhFrota] = useState(false)
+  const [chassi, setChassi] = useState('')
+  const [repetido, setRepetido] = useState<{ id: string; numero: number; descricao: string } | null>(
+    null,
+  )
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
 
@@ -39,6 +44,31 @@ export default function PaginaNovoItem() {
       .then(setFiliais)
       .catch(() => setFiliais([]))
   }, [])
+
+  /**
+   * Procura o chassi enquanto a pessoa digita.
+   *
+   * Meio segundo de espera depois da última tecla: sem isso seria uma consulta
+   * por caractere, e o aviso piscaria a cada letra de um chassi que ainda está
+   * pela metade. Abaixo de 8 caracteres nem consulta — o começo do chassi é
+   * igual em veículos do mesmo fabricante, e acusaria parentesco, não repetição.
+   */
+  useEffect(() => {
+    const alvo = chassi.trim()
+
+    const relogio = setTimeout(() => {
+      if (!ehFrota || alvo.length < 8) {
+        setRepetido(null)
+        return
+      }
+
+      itemComChassi(alvo)
+        .then(setRepetido)
+        .catch(() => setRepetido(null))
+    }, 500)
+
+    return () => clearTimeout(relogio)
+  }, [chassi, ehFrota])
 
   if (carregando) return <Carregando linhas={2} />
   if (!acesso) return <SemAcesso />
@@ -71,6 +101,7 @@ export default function PaginaNovoItem() {
           valor,
           filial: filiais.find((f) => f.id === filialId) ?? null,
           ehFrota,
+          chassi: chassi.trim() || null,
         },
         userName,
       )
@@ -208,6 +239,46 @@ export default function PaginaNovoItem() {
             </span>
           </span>
         </button>
+
+        {/* Só de frota, e por isso só aparece quando a marca está ligada: um
+            campo de chassi num item que não é veículo é campo para errar. */}
+        {ehFrota && (
+          <div className="mt-4">
+            <label htmlFor="chassi" className={ROTULO}>
+              Chassi
+            </label>
+            <input
+              id="chassi"
+              value={chassi}
+              onChange={(e) => setChassi(caixaAlta(e.target.value))}
+              maxLength={17}
+              placeholder="17 CARACTERES, COMO NO DOCUMENTO DO VEÍCULO"
+              className={`mt-1.5 font-mono uppercase tracking-wide ${CAMPO}`}
+            />
+
+            {repetido && (
+              <p
+                role="status"
+                className="mt-2 flex items-start gap-2 rounded-md border border-alerta-border bg-alerta-bg px-3 py-2 text-xs leading-relaxed text-ink-700"
+              >
+                <AlertTriangle size={14} className="mt-0.5 shrink-0 text-alerta" />
+                <span>
+                  Este chassi já está no item{' '}
+                  <Link
+                    href={`/imobilizado/${repetido.id}`}
+                    target="_blank"
+                    className="font-bold text-navy-700 underline underline-offset-2"
+                  >
+                    nº {repetido.numero}
+                    {repetido.descricao ? ` · ${repetido.descricao}` : ''}
+                  </Link>
+                  . Confira antes de cadastrar — se for o mesmo veículo, o certo é continuar no item
+                  que já existe.
+                </span>
+              </p>
+            )}
+          </div>
+        )}
 
         {erro && (
           <p role="alert" className="mt-4 flex items-start gap-2 text-sm" style={{ color: CORES.critico }}>

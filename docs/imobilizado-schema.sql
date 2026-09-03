@@ -162,6 +162,9 @@ create table if not exists public.imobilizado_itens (
   centro_custo   text,
   placa          text,
   oc_numero      text,
+  -- Só de frota: identifica o veículo antes de haver placa. Não é `unique` de
+  -- propósito — duplicidade aqui é aviso na tela, não erro do banco.
+  chassi         text,
   -- Prefixo da pasta no Storage. Gravado no cadastro: a pasta existe desde o
   -- início e cada etapa deposita o documento dela ali.
   pasta          text        not null,
@@ -177,6 +180,9 @@ create table if not exists public.imobilizado_itens (
   finalizado_em  timestamptz,
   atualizado_em  timestamptz not null default now()
 );
+
+create index if not exists imobilizado_itens_chassi_idx
+  on public.imobilizado_itens (upper(chassi));
 
 create sequence if not exists public.imobilizado_itens_numero_seq
   owned by public.imobilizado_itens.numero;

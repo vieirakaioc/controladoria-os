@@ -264,6 +264,7 @@ function Cabecalho({
     ocNumero: item.ocNumero ?? '',
     centroCusto: item.centroCusto ?? '',
     placa: item.placa ?? '',
+    chassi: item.chassi ?? '',
   })
 
   const [campos, setCampos] = useState(doItem)
@@ -297,6 +298,7 @@ function Cabecalho({
           oc_numero: campos.ocNumero || null,
           centro_custo: campos.centroCusto || null,
           placa: campos.placa || null,
+          chassi: campos.chassi || null,
         },
         usuario,
       )
@@ -310,13 +312,20 @@ function Cabecalho({
     }
   }
 
+  // Chassi só entra em item de frota — nos demais o campo não teria o que
+  // receber, e um campo vazio a mais é um campo a mais para preencher errado.
   const CAMPOS_TEXTO = [
     { chave: 'nfNumero' as const, rotulo: 'Nota fiscal' },
     { chave: 'fornecedor' as const, rotulo: 'Fornecedor' },
     { chave: 'descricao' as const, rotulo: 'Descrição do bem' },
     { chave: 'ocNumero' as const, rotulo: 'Nº da OC' },
     { chave: 'centroCusto' as const, rotulo: 'Centro de custo' },
-    { chave: 'placa' as const, rotulo: 'Placa' },
+    ...(item.ehFrota
+      ? [
+          { chave: 'chassi' as const, rotulo: 'Chassi' },
+          { chave: 'placa' as const, rotulo: 'Placa' },
+        ]
+      : []),
     { chave: 'nfChave' as const, rotulo: 'Chave de acesso' },
   ]
 
@@ -445,7 +454,12 @@ function Cabecalho({
                   { rotulo: 'Valor', valor: formatarMoeda(item.valor) },
                   { rotulo: 'Nº da OC', valor: item.ocNumero || '—' },
                   { rotulo: 'Centro de custo', valor: item.centroCusto || '—' },
-                  { rotulo: 'Placa', valor: item.placa || '—' },
+                  ...(item.ehFrota
+                    ? [
+                        { rotulo: 'Chassi', valor: item.chassi || '—' },
+                        { rotulo: 'Placa', valor: item.placa || '—' },
+                      ]
+                    : []),
                 ].map((campo) => (
                   <div key={campo.rotulo} className="min-w-0">
                     <dt className="text-xs text-ink-400">{campo.rotulo}</dt>

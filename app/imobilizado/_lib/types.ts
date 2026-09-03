@@ -91,6 +91,8 @@ export type Item = {
   ehFrota: boolean
   centroCusto: string | null
   placa: string | null
+  /** Só de frota: identifica o veículo antes de haver placa. */
+  chassi: string | null
   ocNumero: string | null
   /** Prefixo da pasta no Storage. */
   pasta: string
