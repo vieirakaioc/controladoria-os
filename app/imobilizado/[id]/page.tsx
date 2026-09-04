@@ -173,7 +173,15 @@ export default function PaginaFicha({ params }: { params: Promise<{ id: string }
       />
 
       {emEspera(item) && (
-        <FaixaEspera item={item} usuario={userName} editavel={editavel} aoMudar={carregar} />
+        <FaixaEspera
+          item={item}
+          aprovador={
+            item.esperaEtapa ? (modelo[item.esperaEtapa]?.aprovadorEmail ?? null) : null
+          }
+          usuario={userName}
+          editavel={editavel}
+          aoMudar={carregar}
+        />
       )}
 
       <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
@@ -1042,11 +1050,14 @@ function Historico({ movimentos }: { movimentos: Movimento[] }) {
  */
 function FaixaEspera({
   item,
+  aprovador,
   usuario,
   editavel,
   aoMudar,
 }: {
   item: Item
+  /** Para quem foi o aviso. Aparece para que se saiba a quem cobrar. */
+  aprovador: string | null
   usuario: string
   editavel: boolean
   aoMudar: () => Promise<void>
@@ -1076,9 +1087,20 @@ function FaixaEspera({
           {item.esperaMotivo ?? 'Item em espera'}
         </p>
         <p className="mt-0.5 text-xs leading-relaxed text-ink-500">
-          Parado desde {formatarData(item.esperaDesde)}. O prazo das etapas abertas está suspenso e
-          volta a correr de onde parou quando a aprovação for liberada.
+          Parado desde {formatarData(item.esperaDesde)}
+          {aprovador ? ` · aviso enviado para ${aprovador}` : ''}. O prazo das etapas abertas está
+          suspenso e volta a correr de onde parou quando a aprovação for liberada.
         </p>
+
+        {/* Dito na tela, e não só no código: quem aprova pode aprovar por fora
+            do sistema, e a liberação ficaria esperando um clique que ninguém
+            sabia que podia dar. Quem clicou fica no histórico. */}
+        {editavel && (
+          <p className="mt-1 text-xs leading-relaxed text-ink-400">
+            Qualquer pessoa do processo pode registrar a liberação — não precisa ser quem aprova.
+            Fica no histórico quem registrou.
+          </p>
+        )}
         {erro && (
           <p role="alert" className="mt-1 text-xs" style={{ color: CORES.critico }}>
             {erro}
