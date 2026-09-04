@@ -1,7 +1,12 @@
 import { supabase } from '@/lib/supabase'
 import { hoje as dataDeHoje, somarDiasUteis } from '@/app/validacao-fiscal/_lib/prazo'
 
-import { avisarEtapaAberta, avisarItemNovo } from './avisos'
+import {
+  avisarAprovacaoLiberada,
+  avisarAprovacaoPendente,
+  avisarEtapaAberta,
+  avisarItemNovo,
+} from './avisos'
 
 import type {
   Acesso,
@@ -89,6 +94,9 @@ function mapearItem(l: LinhaItem, etapas: Etapa[]): Item {
     centroCusto: ouNulo(l.centro_custo),
     placa: ouNulo(l.placa),
     chassi: ouNulo(l.chassi),
+    esperaDesde: ouNulo(l.espera_desde),
+    esperaMotivo: ouNulo(l.espera_motivo),
+    esperaEtapa: ouNulo(l.espera_etapa),
     ocNumero: ouNulo(l.oc_numero),
     pasta: texto(l.pasta),
     atpvEm: ouNulo(l.atpv_em),
@@ -126,6 +134,8 @@ export async function listarModelo(): Promise<ModeloEtapa[]> {
     prazoAPartirDe: ouNulo(l.prazo_a_partir_de),
     prazoDiasUteis: Number(l.prazo_dias_uteis ?? 1),
     responsavelId: l.responsavel_id === null ? null : String(l.responsavel_id),
+    enviaAprovacao: Boolean(l.envia_aprovacao),
+    aprovadorEmail: ouNulo(l.aprovador_email),
     ativo: Boolean(l.ativo),
   }))
 }
@@ -432,6 +442,115 @@ export async function excluirItem(item: Item, anexos: Anexo[]): Promise<void> {
  */
 export async function renumerarItens(): Promise<void> {
   await supabase.rpc('imob_renumerar_itens')
+}
+
+/* ─────────────────────── espera por aprovação ─────────────────────── */
+
+/**
+ * Conclui a etapa e deixa o item aguardando a aprovação de terceiro.
+ *
+ * Não existe etapa de aprovação, de propósito: ela obrigaria o aprovador a
+ * entrar no sistema para o processo destravar, e o fluxo passaria a depender
+ * de um clique que hoje não acontece. O que existe é um estado do item — e o
+ * aviso, que sai para quem aprova.
+ *
+ * A etapa é concluída junto porque o trabalho dela terminou: a OC foi criada e
+ * enviada. O que falta não é dela.
+ */
+export async function enviarParaAprovacao(params: {
+  item: Item
+  etapa: Etapa
+  modelo: ModeloEtapa | null
+  observacao: string | null
+  usuario: string
+}): Promise<void> {
+  const { item, etapa, modelo, observacao, usuario } = params
+
+  await concluirEtapa({ item, etapa, observacao, usuario })
+
+  const motivo = `${etapa.titulo} enviada para aprovação`
+
+  const { error } = await supabase
+    .from(TAB_ITENS)
+    .update({
+      espera_desde: dataDeHoje(),
+      espera_motivo: motivo,
+      espera_etapa: etapa.chave,
+    })
+    .eq('id', item.id)
+
+  if (error) throw error
+
+  await registrar(item.id, 'espera', `${motivo}. Prazos suspensos até a liberação.`, usuario, etapa.id)
+
+  await avisarAprovacaoPendente(item, etapa, modelo?.aprovadorEmail ?? null, usuario)
+}
+
+/**
+ * A aprovação saiu: o item volta a correr.
+ *
+ * Os prazos das etapas abertas são empurrados pelos dias úteis que a espera
+ * consumiu, em vez de recomeçarem do zero. Recomeçar daria prazo cheio a quem
+ * esperou uma hora; não empurrar cobraria de quem esperou uma semana. Empurrar
+ * devolve exatamente o que a espera tomou.
+ */
+export async function liberarAprovacao(item: Item, usuario: string): Promise<void> {
+  if (!item.esperaDesde) return
+
+  const hoje = dataDeHoje()
+  const parado = Math.max(diasUteisEntre(item.esperaDesde, hoje), 0)
+
+  const abertas = item.etapas.filter((e) => e.status === 'aberta' && e.prazo)
+
+  if (parado > 0) {
+    await Promise.all(
+      abertas.map((e) =>
+        supabase
+          .from(TAB_ETAPAS)
+          .update({ prazo: somarDiasUteis(e.prazo as string, parado) })
+          .eq('id', e.id),
+      ),
+    )
+  }
+
+  const { error } = await supabase
+    .from(TAB_ITENS)
+    .update({ espera_desde: null, espera_motivo: null, espera_etapa: null })
+    .eq('id', item.id)
+
+  if (error) throw error
+
+  await registrar(
+    item.id,
+    'espera',
+    `Aprovação liberada. ${parado} dia(s) útil(eis) de espera devolvido(s) ao prazo das etapas abertas.`,
+    usuario,
+  )
+
+  await avisarAprovacaoLiberada(item, abertas, usuario)
+}
+
+/**
+ * Dias úteis entre duas datas.
+ *
+ * `somarDiasUteis` só anda para frente; para saber quanto a espera tomou é
+ * preciso o caminho inverso, e contar o intervalo dia a dia é exato o
+ * bastante para uma espera que se mede em dias, não em anos.
+ */
+function diasUteisEntre(inicio: string, fim: string): number {
+  if (inicio >= fim) return 0
+
+  let dias = 0
+  const cursor = new Date(`${inicio}T12:00:00`)
+  const limite = new Date(`${fim}T12:00:00`)
+
+  while (cursor < limite) {
+    cursor.setDate(cursor.getDate() + 1)
+    const semana = cursor.getDay()
+    if (semana !== 0 && semana !== 6) dias += 1
+  }
+
+  return dias
 }
 
 /**

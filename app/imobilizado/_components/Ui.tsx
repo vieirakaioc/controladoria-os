@@ -1,6 +1,6 @@
 'use client'
 
-import { AlertTriangle, Database, Lock } from 'lucide-react'
+import { AlertTriangle, Database, Lock, PauseCircle } from 'lucide-react'
 
 /**
  * Peças visuais do módulo, na linguagem institucional do portal.
@@ -171,11 +171,14 @@ export function ChipPrazo({
   hoje,
   concluida,
   bloqueada = false,
+  emEspera = false,
 }: {
   prazo: string | null
   hoje: string
   concluida: boolean
   bloqueada?: boolean
+  /** Item parado esperando terceiro: o prazo não corre, e não pode acusar atraso. */
+  emEspera?: boolean
 }) {
   if (concluida) {
     return (
@@ -186,6 +189,16 @@ export function ChipPrazo({
   }
   if (bloqueada) {
     return <span className="text-[11px] text-ink-400">Aguardando a anterior</span>
+  }
+  // Antes do prazo, de propósito: com o item em espera o prazo existe mas não
+  // corre, e mostrá-lo como "atrasada" cobraria de quem não está devendo.
+  if (emEspera) {
+    return (
+      <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-navy-200 bg-navy-50 px-2.5 py-1 text-[11px] font-semibold text-navy-700">
+        <PauseCircle size={11} className="shrink-0" aria-hidden />
+        Em espera
+      </span>
+    )
   }
   if (!prazo) return <span className="text-[11px] text-ink-400">Sem prazo</span>
 

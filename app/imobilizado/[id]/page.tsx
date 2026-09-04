@@ -12,8 +12,10 @@ import {
   Loader2,
   Download,
   Paperclip,
+  PauseCircle,
   Pencil,
   RotateCcw,
+  Send,
   Trash2,
   Truck,
 } from 'lucide-react'
@@ -22,7 +24,7 @@ import { useAuthGate } from '@/app/tarefas/_hooks/useAuthGate'
 import { listarResponsaveis } from '@/app/validacao-fiscal/_lib/api'
 import { CORES } from '@/app/validacao-fiscal/_lib/cores'
 import { formatarMoeda } from '@/app/validacao-fiscal/_lib/formato'
-import { hoje as dataDeHoje } from '@/app/validacao-fiscal/_lib/prazo'
+import { formatarData, hoje as dataDeHoje } from '@/app/validacao-fiscal/_lib/prazo'
 import type { Responsavel } from '@/app/validacao-fiscal/_lib/types'
 
 import { AvisoErro, Carregando, ChipPrazo, Painel, SemAcesso } from '../_components/Ui'
@@ -36,8 +38,10 @@ import {
   buscarItem,
   concluirEtapa,
   descreverErro,
+  enviarParaAprovacao,
   excluirItem,
   impedimentos,
+  liberarAprovacao,
   listarAnexos,
   listarFiliais,
   listarModelo,
@@ -48,11 +52,13 @@ import {
   type Movimento,
 } from '../_lib/api'
 import {
+  emEspera,
   podeAgir,
   ROTULO_CAMPO,
   type Acesso,
   type Anexo,
   type Etapa,
+  type ModeloEtapa,
   rotuloFilial,
   type Filial,
   type Item,
@@ -69,9 +75,11 @@ export default function PaginaFicha({ params }: { params: Promise<{ id: string }
   const [anexos, setAnexos] = useState<Anexo[]>([])
   const [movimentos, setMovimentos] = useState<Movimento[]>([])
   const [responsaveis, setResponsaveis] = useState<Responsavel[]>([])
-  // A descrição vem do modelo, não da etapa gravada: é texto de orientação, e
-  // melhorar a explicação tem que valer para os itens que já estão correndo.
-  const [descricoes, setDescricoes] = useState<Record<string, string>>({})
+  // O modelo vem do banco, e não da etapa gravada: descrição é texto de
+  // orientação, e melhorar a explicação tem que valer para os itens que já
+  // estão correndo. É dele também que sai quem aprova e qual etapa oferece o
+  // envio para aprovação.
+  const [modelo, setModelo] = useState<Record<string, ModeloEtapa>>({})
   const [filiais, setFiliais] = useState<Filial[]>([])
   const [acesso, setAcesso] = useState<Acesso>(null)
   const [carregando, setCarregando] = useState(true)
@@ -84,7 +92,7 @@ export default function PaginaFicha({ params }: { params: Promise<{ id: string }
       setAcesso(tipo)
       if (!tipo) return
 
-      const [oItem, osAnexos, osMovs, pessoas, modelo, asFiliais] = await Promise.all([
+      const [oItem, osAnexos, osMovs, pessoas, oModelo, asFiliais] = await Promise.all([
         buscarItem(id),
         listarAnexos(id),
         listarMovimentos(id),
@@ -97,7 +105,7 @@ export default function PaginaFicha({ params }: { params: Promise<{ id: string }
       setAnexos(osAnexos)
       setMovimentos(osMovs)
       setResponsaveis(pessoas)
-      setDescricoes(Object.fromEntries(modelo.map((m) => [m.chave, m.descricao])))
+      setModelo(Object.fromEntries(oModelo.map((m) => [m.chave, m])))
       setFiliais(asFiliais)
     } catch (falha) {
       setErro(descreverErro(falha))
@@ -164,6 +172,10 @@ export default function PaginaFicha({ params }: { params: Promise<{ id: string }
         aoMudar={carregar}
       />
 
+      {emEspera(item) && (
+        <FaixaEspera item={item} usuario={userName} editavel={editavel} aoMudar={carregar} />
+      )}
+
       <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
         <div className="space-y-6">
           <Painel
@@ -180,7 +192,7 @@ export default function PaginaFicha({ params }: { params: Promise<{ id: string }
                   item={item}
                   etapa={etapa}
                   posicao={posicao + 1}
-                  descricao={descricoes[etapa.chave] ?? ''}
+                  modelo={modelo[etapa.chave] ?? null}
                   anexos={anexos}
                   responsaveis={responsaveis}
                   usuario={userName}
@@ -204,7 +216,7 @@ export default function PaginaFicha({ params }: { params: Promise<{ id: string }
                     item={item}
                     etapa={etapa}
                     posicao={null}
-                    descricao={descricoes[etapa.chave] ?? ''}
+                    modelo={modelo[etapa.chave] ?? null}
                     anexos={anexos}
                     responsaveis={responsaveis}
                     usuario={userName}
@@ -497,7 +509,7 @@ function CartaoEtapa({
   item,
   etapa,
   posicao,
-  descricao,
+  modelo,
   anexos,
   responsaveis,
   usuario,
@@ -509,7 +521,8 @@ function CartaoEtapa({
   etapa: Etapa
   /** Posição no fluxo deste item. `null` na paralela, que não entra na ordem. */
   posicao: number | null
-  descricao: string
+  /** O desenho desta etapa: descrição, quem aprova, se oferece aprovação. */
+  modelo: ModeloEtapa | null
   anexos: Anexo[]
   responsaveis: Responsavel[]
   usuario: string
@@ -526,6 +539,8 @@ function CartaoEtapa({
   const aberta = etapa.status === 'aberta'
   const doItem = anexos.filter((a) => a.etapaId === etapa.id)
   const faltas = impedimentos(item, etapa, anexos)
+  const descricao = modelo?.descricao ?? ''
+  const ofereceAprovacao = Boolean(modelo?.enviaAprovacao) && !emEspera(item)
 
   const concluir = async () => {
     setErro(null)
@@ -545,6 +560,43 @@ function CartaoEtapa({
       }
 
       await concluirEtapa({ item, etapa, observacao: observacao.trim() || null, usuario })
+      await aoMudar()
+    } catch (falha) {
+      setErro(descreverErro(falha))
+    } finally {
+      setSalvando(false)
+    }
+  }
+
+  /**
+   * Conclui e deixa o item esperando a aprovação de terceiro.
+   *
+   * Mesma checagem da conclusão normal — o campo obrigatório continua sendo
+   * obrigatório. Enviar para aprovação sem o número da OC seria mandar o
+   * aprovador procurar o que ele deveria estar recebendo.
+   */
+  const enviarAprovacao = async () => {
+    setErro(null)
+    setSalvando(true)
+    try {
+      if (etapa.exigeCampo && valorCampo.trim()) {
+        await atualizarItem(item, { [etapa.exigeCampo]: valorCampo.trim() }, usuario)
+        item = { ...item, [etapa.exigeCampo === 'oc_numero' ? 'ocNumero' : etapa.exigeCampo === 'placa' ? 'placa' : 'centroCusto']: valorCampo.trim() }
+      }
+
+      const pendencias = impedimentos(item, etapa, anexos)
+      if (pendencias.length > 0) {
+        setErro(pendencias[0])
+        return
+      }
+
+      await enviarParaAprovacao({
+        item,
+        etapa,
+        modelo,
+        observacao: observacao.trim() || null,
+        usuario,
+      })
       await aoMudar()
     } catch (falha) {
       setErro(descreverErro(falha))
@@ -611,6 +663,7 @@ function CartaoEtapa({
           hoje={hoje}
           concluida={concluida}
           bloqueada={etapa.status === 'bloqueada'}
+          emEspera={emEspera(item)}
         />
       </div>
 
@@ -654,6 +707,26 @@ function CartaoEtapa({
               {salvando ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />}
               Concluir etapa
             </button>
+
+            {/* Segundo caminho de conclusão, não uma etapa a mais: a OC foi
+                criada e enviada, o trabalho desta etapa acabou, e o que falta
+                é de outra pessoa — por isso o prazo para de correr. */}
+            {ofereceAprovacao && (
+              <button
+                type="button"
+                onClick={enviarAprovacao}
+                disabled={salvando}
+                title={
+                  modelo?.aprovadorEmail
+                    ? `Avisa ${modelo.aprovadorEmail} e suspende o prazo até a aprovação sair`
+                    : 'Suspende o prazo até a aprovação sair'
+                }
+                className="inline-flex items-center gap-2 rounded-md border border-navy-300 bg-white px-4 py-2 text-sm font-bold text-navy-700 transition-all hover:bg-navy-50 disabled:opacity-40"
+              >
+                {salvando ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
+                Concluir e enviar para aprovação
+              </button>
+            )}
 
             <select
               value={etapa.responsavelId ?? ''}
@@ -955,6 +1028,76 @@ function Historico({ movimentos }: { movimentos: Movimento[] }) {
         </ol>
       )}
     </Painel>
+  )
+}
+
+/* ────────────────────────── espera por aprovação ────────────────────────── */
+
+/**
+ * O item está parado esperando terceiro.
+ *
+ * Ocupa a largura toda, entre o cabeçalho e as etapas, porque é a informação
+ * que muda a leitura de tudo o que vem abaixo: sem ela, quem abre a ficha vê
+ * uma etapa sem prazo correndo e conclui que o sistema esqueceu de cobrar.
+ */
+function FaixaEspera({
+  item,
+  usuario,
+  editavel,
+  aoMudar,
+}: {
+  item: Item
+  usuario: string
+  editavel: boolean
+  aoMudar: () => Promise<void>
+}) {
+  const [liberando, setLiberando] = useState(false)
+  const [erro, setErro] = useState<string | null>(null)
+
+  const liberar = async () => {
+    setLiberando(true)
+    setErro(null)
+    try {
+      await liberarAprovacao(item, usuario)
+      await aoMudar()
+    } catch (falha) {
+      setErro(descreverErro(falha))
+    } finally {
+      setLiberando(false)
+    }
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-4 rounded-lg border border-navy-200 bg-navy-50 px-4 py-3">
+      <PauseCircle size={20} className="shrink-0 text-navy-500" />
+
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-bold text-navy-700">
+          {item.esperaMotivo ?? 'Item em espera'}
+        </p>
+        <p className="mt-0.5 text-xs leading-relaxed text-ink-500">
+          Parado desde {formatarData(item.esperaDesde)}. O prazo das etapas abertas está suspenso e
+          volta a correr de onde parou quando a aprovação for liberada.
+        </p>
+        {erro && (
+          <p role="alert" className="mt-1 text-xs" style={{ color: CORES.critico }}>
+            {erro}
+          </p>
+        )}
+      </div>
+
+      {editavel && (
+        <button
+          type="button"
+          onClick={liberar}
+          disabled={liberando}
+          className="inline-flex items-center gap-2 rounded-md bg-teal-600 px-4 py-2 text-sm font-bold text-white transition-all hover:brightness-110 disabled:opacity-40"
+        >
+          {liberando ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />}
+          Aprovação liberada
+        </button>
+      )}
+    </div>
   )
 }
 

@@ -11,7 +11,7 @@ import { AvisoErro, Carregando, ChipPrazo, Kpi, Painel, SemAcesso } from './_com
 import { useImobilizado } from './_hooks/useImobilizado'
 import { agingPlaca, agingProcesso, textoAging } from './_lib/aging'
 import { descreverErro, excluirItem, listarAnexos } from './_lib/api'
-import { podeAgir } from './_lib/types'
+import { emEspera, itemAtrasado, podeAgir } from './_lib/types'
 import type { Etapa, Item } from './_lib/types'
 
 type Filtro = 'andamento' | 'atrasados' | 'frota' | 'finalizados' | 'todos'
@@ -38,7 +38,7 @@ function paralelaAberta(item: Item): Etapa | null {
 }
 
 function temAtraso(item: Item, hoje: string): boolean {
-  return item.etapas.some((e) => e.status === 'aberta' && e.prazo !== null && e.prazo < hoje)
+  return itemAtrasado(item, hoje)
 }
 
 /**
@@ -391,10 +391,20 @@ export default function PaginaFila() {
                     </td>
 
                     <td className="whitespace-nowrap px-4 py-3 align-top">
-                      <ChipPrazo prazo={atual?.prazo ?? null} hoje={hoje} concluida={finalizado} />
-                      {atual?.prazo && !finalizado && (
+                      <ChipPrazo
+                        prazo={atual?.prazo ?? null}
+                        hoje={hoje}
+                        concluida={finalizado}
+                        emEspera={emEspera(item)}
+                      />
+                      {atual?.prazo && !finalizado && !emEspera(item) && (
                         <div className="mt-1 text-[11px] tabular-nums text-ink-400">
                           {formatarData(atual.prazo)}
+                        </div>
+                      )}
+                      {emEspera(item) && !finalizado && (
+                        <div className="mt-1 line-clamp-2 w-36 text-[11px] leading-snug text-ink-400">
+                          {item.esperaMotivo}
                         </div>
                       )}
                     </td>

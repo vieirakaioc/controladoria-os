@@ -78,6 +78,79 @@ function identificacao(item: Item): string {
   return `${item.descricao || item.fornecedor || `Nota ${item.nfNumero}`} (nº ${item.numero})`
 }
 
+/**
+ * Avisa quem aprova que há uma ordem esperando por ele.
+ *
+ * É o único e-mail do módulo que sai para fora da equipe do processo, e por
+ * isso o endereço vem do cadastro da etapa: quem aprova muda, e trocar isso
+ * não pode exigir deploy. Sem endereço cadastrado, o aviso vai para a equipe —
+ * alguém lá dentro sabe a quem cobrar, e o silêncio seria pior.
+ */
+export async function avisarAprovacaoPendente(
+  item: Item,
+  etapa: Etapa,
+  aprovador: string | null,
+  quem: string,
+): Promise<void> {
+  const destino =
+    aprovador && aprovador.includes('@') ? aprovador : (await equipeDoProcesso()).join(', ')
+  if (!destino) return
+
+  await enviar(
+    {
+      to: destino,
+      subject: `[Imobilizado] Aprovação pendente · item nº ${item.numero}`,
+      taskName: identificacao(item),
+      action: 'aguardando a sua aprovação',
+      userName: quem,
+      observacoes:
+        `A etapa <strong>${etapa.titulo}</strong> do item ` +
+        `<strong>${identificacao(item)}</strong> foi concluída e enviada para aprovação` +
+        (item.ocNumero ? ` (OC <strong>${item.ocNumero}</strong>)` : '') +
+        '.<br/><br/>O processo está parado esperando esta aprovação: o prazo das ' +
+        'etapas seguintes fica suspenso até ela sair, e volta a correr de onde parou.',
+    },
+    item,
+  )
+}
+
+/** Avisa quem está com as etapas paradas que a aprovação saiu. */
+export async function avisarAprovacaoLiberada(
+  item: Item,
+  abertas: Etapa[],
+  quem: string,
+): Promise<void> {
+  const destinos = new Set<string>()
+
+  for (const etapa of abertas) {
+    const email = await emailDoResponsavel(etapa.responsavelId)
+    if (email) destinos.add(email)
+  }
+
+  const destino =
+    destinos.size > 0 ? [...destinos].join(', ') : (await equipeDoProcesso()).join(', ')
+  if (!destino) return
+
+  const linhas = abertas
+    .map((e) => `<li><strong>${e.titulo}</strong>${e.prazo ? `, até ${formatarData(e.prazo)}` : ''}</li>`)
+    .join('')
+
+  await enviar(
+    {
+      to: destino,
+      subject: `[Imobilizado] Aprovação liberada · item nº ${item.numero}`,
+      taskName: identificacao(item),
+      action: 'liberado para seguir',
+      userName: quem,
+      observacoes:
+        `A aprovação do item <strong>${identificacao(item)}</strong> saiu e o processo ` +
+        'voltou a correr. Os dias de espera foram devolvidos ao prazo.' +
+        (linhas ? `<br/><br/>Em aberto agora:<ul>${linhas}</ul>` : ''),
+    },
+    item,
+  )
+}
+
 /** Avisa a equipe inteira de que entrou item novo no fluxo. */
 export async function avisarItemNovo(item: Item, quem: string): Promise<void> {
   const equipe = await equipeDoProcesso()

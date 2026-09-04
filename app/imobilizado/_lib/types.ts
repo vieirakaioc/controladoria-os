@@ -37,6 +37,10 @@ export type ModeloEtapa = {
   prazoAPartirDe: string | null
   prazoDiasUteis: number
   responsavelId: string | null
+  /** Oferece o botão de enviar para aprovação — hoje, só a ordem de compra. */
+  enviaAprovacao: boolean
+  /** Para quem vai o aviso de aprovação pendente. */
+  aprovadorEmail: string | null
   ativo: boolean
 }
 
@@ -94,6 +98,16 @@ export type Item = {
   /** Só de frota: identifica o veículo antes de haver placa. */
   chassi: string | null
   ocNumero: string | null
+  /**
+   * Desde quando o item está parado esperando terceiro (YYYY-MM-DD).
+   *
+   * Enquanto tem data aqui, prazo de etapa aberta não conta atraso: a espera
+   * não é de quem está com a etapa.
+   */
+  esperaDesde: string | null
+  esperaMotivo: string | null
+  /** Chave da etapa que originou a espera. */
+  esperaEtapa: string | null
   /** Prefixo da pasta no Storage. */
   pasta: string
   /** YYYY-MM-DD — extremos dos dois agings. */
@@ -162,4 +176,27 @@ export const ROTULO_CAMPO: Record<string, string> = {
 
 export function podeAgir(acesso: Acesso): boolean {
   return acesso === 'admin' || acesso === 'participante'
+}
+
+/** Item parado esperando terceiro: o prazo das etapas abertas fica suspenso. */
+export function emEspera(item: Item): boolean {
+  return Boolean(item.esperaDesde)
+}
+
+/**
+ * A etapa passou do prazo?
+ *
+ * Uma função só, usada por fila, quadro, matriz e ficha. Espalhar
+ * `prazo < hoje` por quatro telas é o jeito garantido de a espera valer numa e
+ * não valer na outra — e aí a pessoa vê a mesma etapa vermelha aqui e cinza
+ * ali, sem entender qual das duas mente.
+ */
+export function etapaAtrasada(item: Item, etapa: Etapa, hoje: string): boolean {
+  if (emEspera(item)) return false
+  return etapa.status === 'aberta' && etapa.prazo !== null && etapa.prazo < hoje
+}
+
+/** Alguma etapa aberta passou do prazo. */
+export function itemAtrasado(item: Item, hoje: string): boolean {
+  return item.etapas.some((e) => etapaAtrasada(item, e, hoje))
 }

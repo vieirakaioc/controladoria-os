@@ -123,6 +123,12 @@ create table if not exists public.imobilizado_modelo_etapas (
   -- Paralela não bloqueia a etapa seguinte nem impede finalizar o item.
   paralela          boolean     not null default false,
   exige_anexo       boolean     not null default false,
+  -- Oferece o botão "enviar para aprovação": conclui a etapa e suspende o
+  -- prazo do item até a aprovação sair. Não cria etapa de aprovação nenhuma.
+  envia_aprovacao   boolean not null default false,
+  -- Para quem vai o aviso de aprovação pendente. No banco, e não no código:
+  -- quem aprova muda, e trocar isso não pode exigir deploy.
+  aprovador_email   text,
   -- Campo do item que precisa estar preenchido para concluir (ex.: oc_numero).
   exige_campo       text,
   prazo_dias_uteis  integer     not null default 1,
@@ -165,6 +171,11 @@ create table if not exists public.imobilizado_itens (
   -- Só de frota: identifica o veículo antes de haver placa. Não é `unique` de
   -- propósito — duplicidade aqui é aviso na tela, não erro do banco.
   chassi         text,
+  -- Parado esperando terceiro (aprovação da OC, por exemplo). Enquanto tem
+  -- data aqui, prazo de etapa aberta não conta atraso em lugar nenhum.
+  espera_desde   date,
+  espera_motivo  text,
+  espera_etapa   text,
   -- Prefixo da pasta no Storage. Gravado no cadastro: a pasta existe desde o
   -- início e cada etapa deposita o documento dela ali.
   pasta          text        not null,
@@ -330,6 +341,8 @@ values
   ('ordem_compra', 3, 'Ordem de compra',
    'Se já existe OC, informa o número. Se não existe, cria a OC e informa o número gerado.',
    'Patrimônio', false, false, false, 'oc_numero', 1, null),
+  -- A OC vai para aprovação de terceiro; ver a migração de aprovação para o
+  -- que isso liga (envia_aprovacao e aprovador_email).
 
   ('lancar_nf', 4, 'Lançar NF',
    'Patrimônio lança a nota no Sênior.',

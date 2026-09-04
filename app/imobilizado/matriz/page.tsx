@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
-import { AlertTriangle, Check, Circle, Clock, Minus, Search, Truck } from 'lucide-react'
+import { AlertTriangle, Check, Circle, Clock, Minus, PauseCircle, Search, Truck } from 'lucide-react'
 
 import { formatarInteiro } from '@/app/validacao-fiscal/_lib/formato'
 import { hoje as dataDeHoje } from '@/app/validacao-fiscal/_lib/prazo'
@@ -10,6 +10,7 @@ import { hoje as dataDeHoje } from '@/app/validacao-fiscal/_lib/prazo'
 import { AvisoErro, Carregando, Painel, SemAcesso } from '../_components/Ui'
 import { useImobilizado } from '../_hooks/useImobilizado'
 import { agingProcesso } from '../_lib/aging'
+import { emEspera } from '../_lib/types'
 import type { Etapa, Item } from '../_lib/types'
 
 /**
@@ -22,7 +23,7 @@ import type { Etapa, Item } from '../_lib/types'
  */
 
 /** Como está a célula — a etapa daquele item. */
-type Sinal = 'concluida' | 'atrasada' | 'hoje' | 'aberta' | 'bloqueada' | 'ausente'
+type Sinal = 'concluida' | 'atrasada' | 'hoje' | 'aberta' | 'espera' | 'bloqueada' | 'ausente'
 
 /*
  * "Em aberto" é azul, e não teal.
@@ -37,14 +38,18 @@ const ESTILO: Record<Sinal, { classe: string; rotulo: string }> = {
   atrasada: { classe: 'bg-negativo text-white', rotulo: 'Atrasada' },
   hoje: { classe: 'bg-alerta text-white', rotulo: 'Vence hoje' },
   aberta: { classe: 'bg-navy-500 text-white', rotulo: 'Em aberto' },
+  espera: { classe: 'bg-navy-200 text-navy-700', rotulo: 'Em espera (aprovação)' },
   bloqueada: { classe: 'bg-navy-100 text-navy-400', rotulo: 'Aguardando a anterior' },
   ausente: { classe: 'bg-transparent text-ink-400', rotulo: 'Não se aplica a este item' },
 }
 
-function sinalDaEtapa(etapa: Etapa | undefined, hoje: string): Sinal {
+function sinalDaEtapa(item: Item, etapa: Etapa | undefined, hoje: string): Sinal {
   if (!etapa) return 'ausente'
   if (etapa.status === 'concluida') return 'concluida'
   if (etapa.status === 'bloqueada') return 'bloqueada'
+  // A espera vem antes do prazo: o relógio do item está parado, e uma célula
+  // vermelha aqui acusaria de atraso quem está esperando terceiro.
+  if (emEspera(item)) return 'espera'
   if (etapa.prazo && etapa.prazo < hoje) return 'atrasada'
   if (etapa.prazo === hoje) return 'hoje'
   return 'aberta'
@@ -55,6 +60,7 @@ function Icone({ sinal }: { sinal: Sinal }) {
   if (sinal === 'atrasada') return <AlertTriangle size={11} />
   if (sinal === 'hoje') return <Clock size={11} />
   if (sinal === 'aberta') return <Circle size={9} fill="currentColor" />
+  if (sinal === 'espera') return <PauseCircle size={11} />
   if (sinal === 'bloqueada') return <Circle size={7} />
   return <Minus size={11} />
 }
@@ -68,6 +74,8 @@ function Icone({ sinal }: { sinal: Sinal }) {
  */
 function sinalDoItem(item: Item, hoje: string): Sinal {
   if (item.status === 'finalizado') return 'concluida'
+
+  if (emEspera(item)) return 'espera'
 
   const abertas = item.etapas.filter((e) => e.status === 'aberta')
   if (abertas.some((e) => e.prazo && e.prazo < hoje)) return 'atrasada'
@@ -169,7 +177,7 @@ export default function PaginaMatriz() {
 
           {/* Legenda: a cor sozinha não diz nada para quem chega agora. */}
           <div className="ml-auto flex flex-wrap items-center gap-x-4 gap-y-1">
-            {(['concluida', 'aberta', 'hoje', 'atrasada', 'bloqueada'] as const).map((s) => (
+            {(['concluida', 'aberta', 'hoje', 'atrasada', 'espera', 'bloqueada'] as const).map((s) => (
               <span key={s} className="flex items-center gap-1.5 text-[11px] text-ink-500">
                 <span
                   className={`flex h-4 w-4 items-center justify-center rounded ${ESTILO[s].classe}`}
@@ -274,7 +282,7 @@ export default function PaginaMatriz() {
 
                     {colunas.map((coluna) => {
                       const etapa = item.etapas.find((e) => e.chave === coluna.chave)
-                      const s = sinalDaEtapa(etapa, hoje)
+                      const s = sinalDaEtapa(item, etapa, hoje)
 
                       return (
                         <td

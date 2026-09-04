@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
-import { AlertTriangle, Search, Truck } from 'lucide-react'
+import { AlertTriangle, PauseCircle, Search, Truck } from 'lucide-react'
 
 import { formatarInteiro, formatarMoeda } from '@/app/validacao-fiscal/_lib/formato'
 import { diasEntre, formatarData, hoje as dataDeHoje } from '@/app/validacao-fiscal/_lib/prazo'
@@ -10,6 +10,7 @@ import { diasEntre, formatarData, hoje as dataDeHoje } from '@/app/validacao-fis
 import { AvisoErro, Carregando, Painel, SemAcesso } from '../_components/Ui'
 import { useImobilizado } from '../_hooks/useImobilizado'
 import { agingPlaca, agingProcesso } from '../_lib/aging'
+import { emEspera, etapaAtrasada } from '../_lib/types'
 import type { Etapa, Item } from '../_lib/types'
 
 /**
@@ -172,7 +173,7 @@ function ColunaQuadro({ coluna, hoje }: { coluna: Coluna; hoje: string }) {
   const final = coluna.chave === COLUNA_FINAL
   const atrasados = coluna.itens.filter((item) => {
     const aberta = etapaAberta(item)
-    return aberta?.prazo != null && aberta.prazo < hoje
+    return aberta ? etapaAtrasada(item, aberta, hoje) : false
   }).length
 
   return (
@@ -235,8 +236,9 @@ function Carta({ item, hoje, final }: { item: Item; hoje: string; final: boolean
   // etapa atual, e é o segundo número que diz onde cobrar.
   const naEtapa = aberta?.abertaEm ? diasEntre(aberta.abertaEm.slice(0, 10), hoje) : null
 
-  const atrasada = aberta?.prazo != null && aberta.prazo < hoje
-  const venceHoje = aberta?.prazo === hoje
+  const esperando = emEspera(item)
+  const atrasada = aberta ? etapaAtrasada(item, aberta, hoje) : false
+  const venceHoje = !esperando && aberta?.prazo === hoje
 
   const paralelaAberta = item.etapas.find((e) => e.paralela && e.status === 'aberta')
 
@@ -293,13 +295,22 @@ function Carta({ item, hoje, final }: { item: Item; hoje: string; final: boolean
           <span className="num text-ink-400">{processo.dias}d no total</span>
         )}
 
-        {!final && aberta?.prazo && (
+        {!final && aberta?.prazo && !esperando && (
           <span className={`num ml-auto ${atrasada ? 'text-negativo' : 'text-ink-400'}`}>
             {atrasada ? 'venceu ' : 'vence '}
             {formatarData(aberta.prazo)}
           </span>
         )}
       </div>
+
+      {/* A espera vale mais que o prazo na carta: quem olha o quadro precisa
+          saber por que aquele item parou antes de cobrar quem está com ele. */}
+      {esperando && !final && (
+        <p className="mt-2 flex items-center gap-1 rounded bg-navy-50 px-2 py-1 text-[10px] font-semibold text-navy-700">
+          <PauseCircle size={10} />
+          {item.esperaMotivo ?? 'Em espera'}
+        </p>
+      )}
 
       {paralelaAberta && (
         <p className="mt-2 flex items-center gap-1 rounded bg-alerta-bg px-2 py-1 text-[10px] font-semibold text-alerta">
