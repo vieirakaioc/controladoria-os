@@ -733,6 +733,25 @@ export async function reabrirEtapa(item: Item, etapa: Etapa, usuario: string): P
 
   if (error) throw error
 
+  // A seguinte volta a esperar: reabrir a etapa 3 e deixar a 4 aberta faria o
+  // fluxo mostrar duas etapas correndo ao mesmo tempo, e a ficha diria que a
+  // pessoa da 4 pode trabalhar num item que voltou uma casa.
+  //
+  // Só a que ainda não começou. Uma etapa seguinte já concluída fica onde
+  // está: bloqueá-la apagaria trabalho feito para arrumar a aparência da fila.
+  if (!etapa.paralela) {
+    const seguinte = item.etapas
+      .filter((e) => !e.paralela && e.ordem > etapa.ordem && e.status === 'aberta')
+      .sort((a, b) => a.ordem - b.ordem)[0]
+
+    if (seguinte) {
+      await supabase
+        .from(TAB_ETAPAS)
+        .update({ status: 'bloqueada', prazo: null })
+        .eq('id', seguinte.id)
+    }
+  }
+
   if (item.status === 'finalizado') {
     await supabase
       .from(TAB_ITENS)

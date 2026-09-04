@@ -770,15 +770,18 @@ function CartaoEtapa({
         </div>
       )}
 
+      {/* Botão de verdade, e não link apagado no rodapé: corrigir o que já foi
+          concluído é rotina — o número da OC saiu errado, a nota era outra — e
+          quem precisa disso não devia ter que caçar onde clicar. */}
       {concluida && editavel && (
         <button
           type="button"
           onClick={reabrir}
           disabled={salvando}
-          className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-ink-400 transition-colors hover:text-navy-700 disabled:opacity-40"
+          className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-line-strong bg-white px-3 py-1.5 text-xs font-semibold text-ink-700 transition-colors hover:border-navy-300 hover:text-navy-700 disabled:opacity-40"
         >
-          <RotateCcw size={13} />
-          Reabrir
+          {salvando ? <Loader2 size={13} className="animate-spin" /> : <RotateCcw size={13} />}
+          Reabrir para editar
         </button>
       )}
 
