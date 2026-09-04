@@ -683,11 +683,27 @@ export async function concluirEtapa(params: {
   }
 
   if (!etapa.paralela) {
+    // A PRÓXIMA PENDENTE, não a próxima bloqueada.
+    //
+    // Filtrar por `bloqueada` fazia o fluxo pular: com a etapa seguinte já
+    // aberta (depois de um reabrir, por exemplo), ela não entrava no filtro e
+    // a busca seguia até a etapa DEPOIS dela, que abria sem a sua vez. O
+    // resultado era duas etapas correndo juntas e uma delas fora de ordem.
+    //
+    // Dispensada conta como vencida e é pulada; concluída também.
     const seguinte = item.etapas
-      .filter((e) => !e.paralela && e.status === 'bloqueada' && e.ordem > etapa.ordem)
+      .filter(
+        (e) =>
+          !e.paralela &&
+          e.status !== 'concluida' &&
+          e.status !== 'dispensada' &&
+          e.ordem > etapa.ordem,
+      )
       .sort((a, b) => a.ordem - b.ordem)[0]
 
-    if (seguinte) {
+    // Já aberta: não há o que fazer, e passar adiante seria justamente o
+    // pulo que este bloco existe para impedir.
+    if (seguinte && seguinte.status === 'bloqueada') {
       const modelo = await listarModelo()
       const dias = modelo.find((m) => m.chave === seguinte.chave)?.prazoDiasUteis ?? 1
 
@@ -703,7 +719,7 @@ export async function concluirEtapa(params: {
 
       // A etapa seguinte só existe para quem sabe que ela abriu.
       await avisarEtapaAberta(item, { ...seguinte, status: 'aberta', prazo }, usuario)
-    } else {
+    } else if (!seguinte) {
       // Sem etapa sequencial pendente o item está pronto, mesmo que a paralela
       // siga aberta.
       await supabase
