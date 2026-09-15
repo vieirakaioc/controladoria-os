@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'react-hot-toast'
 import { supabase } from '@/lib/supabase'
 import { getResponsaveis } from '@/lib/responsaveis'
+import { podeVerAtividade, soDoProjeto, type Perfil } from '@/lib/acessoProjeto'
 import { iso } from '../_lib/helpers'
 import type { Lookup, PlannerRow, Row, StatusRow } from '../_lib/types'
 
@@ -13,6 +14,8 @@ type Args = {
   anoAlvo: number
   userEmail: string
   userRole: string
+  /** Escopo, cargo, nome e e-mail juntos: é o que decide o que a pessoa vê. */
+  perfil: Perfil
   authLoaded: boolean
 }
 
@@ -25,7 +28,7 @@ type Args = {
  *
  * Filtra automaticamente por responsável quando o usuário não é admin.
  */
-export function useTarefas({ plannerSel, mesAlvo, anoAlvo, userEmail, userRole, authLoaded }: Args) {
+export function useTarefas({ plannerSel, mesAlvo, anoAlvo, userEmail, userRole, perfil, authLoaded }: Args) {
   const [rows, setRows] = useState<Row[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -125,7 +128,14 @@ export function useTarefas({ plannerSel, mesAlvo, anoAlvo, userEmail, userRole, 
       }
 
       let baseData = acc
-      if (userRole !== 'admin') {
+
+      if (soDoProjeto(perfil)) {
+        // Quem é só do projeto tem regra própria: nada de rotina da
+        // controladoria, e o admin do projeto vê as atividades de todo mundo
+        // em vez de só as dele. A regra mora em lib/acessoProjeto para o
+        // dashboard somar exatamente o que esta lista mostra.
+        baseData = baseData.filter((r) => podeVerAtividade(perfil, r?.atividades))
+      } else if (userRole !== 'admin') {
         const meu = userEmail.trim().toLowerCase()
         baseData = baseData.filter((r: any) => {
           const resps = getResponsaveis(r?.atividades)
@@ -142,7 +152,7 @@ export function useTarefas({ plannerSel, mesAlvo, anoAlvo, userEmail, userRole, 
     } finally {
       setLoading(false)
     }
-  }, [plannerSel, mesAlvo, anoAlvo, userEmail, userRole, authLoaded])
+  }, [plannerSel, mesAlvo, anoAlvo, userEmail, userRole, perfil, authLoaded])
 
   // Sempre que algo relevante mudar, recarrega workflow + rows
   useEffect(() => {

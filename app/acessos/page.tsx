@@ -6,11 +6,15 @@ import { supabase } from '@/lib/supabase'
 import { Toaster, toast } from 'react-hot-toast'
 import { Check, Loader2, Pencil, ShieldAlert, ShieldCheck, Users, X } from 'lucide-react'
 
+import { normalizarEscopo, ROTULO_ESCOPO, type Escopo } from '@/lib/acessoProjeto'
+
 type Profile = {
   id: string
   full_name: string | null
   avatar_url: string | null
   role: string
+  /** Controladoria, projeto (Sankhya) ou os dois. Decide quais telas a pessoa vê. */
+  escopo: Escopo
 }
 
 export default function AcessosPage() {
@@ -85,6 +89,33 @@ export default function AcessosPage() {
     }
   }
 
+  /**
+   * Troca o escopo da pessoa.
+   *
+   * Separado do nível de acesso de propósito: são perguntas diferentes — uma é
+   * "o que ela administra", a outra é "de qual operação ela é". Alguém pode ser
+   * membro comum do projeto, ou admin da controladoria sem tocar no Sankhya.
+   */
+  const alterarEscopo = async (userId: string, novo: string) => {
+    setUpdating(userId)
+    const toastId = toast.loading('A atualizar o escopo...')
+
+    try {
+      const { error } = await supabase.from('profiles').update({ escopo: novo }).eq('id', userId)
+      if (error) throw error
+
+      setProfiles(prev =>
+        prev.map(p => (p.id === userId ? { ...p, escopo: normalizarEscopo(novo) } : p)),
+      )
+      toast.success('Escopo atualizado!', { id: toastId })
+    } catch (err) {
+      console.error(err)
+      toast.error('Erro ao atualizar o escopo.', { id: toastId })
+    } finally {
+      setUpdating(null)
+    }
+  }
+
   const abrirEdicao = (p: Profile) => {
     setRascunho({ full_name: p.full_name ?? '', avatar_url: p.avatar_url ?? '' })
     setEditando(p.id)
@@ -149,7 +180,7 @@ export default function AcessosPage() {
         </div>
         <div>
           <h1 className="text-2xl font-bold text-navy-700 dark:text-white tracking-tight">Gestão de Acessos</h1>
-          <p className="text-ink-500 dark:text-slate-400 text-sm mt-1">Controle quem tem acesso de Administração ao Portal da Controladoria.</p>
+          <p className="text-ink-500 dark:text-slate-400 text-sm mt-1">Nível de acesso e escopo de cada pessoa. Quem é de <strong>projeto</strong> vê só o Dashboard e o Controle de Tarefas, e apenas as atividades de projeto em que responde; o <strong>admin do projeto</strong> vê as de todo mundo.</p>
         </div>
       </header>
 
@@ -167,6 +198,7 @@ export default function AcessosPage() {
                 <th className="p-4 font-semibold">Colaborador</th>
                 <th className="p-4 font-semibold">ID do Sistema</th>
                 <th className="p-4 font-semibold">Nível Atual</th>
+                <th className="p-4 font-semibold">Escopo</th>
                 <th className="p-4 font-semibold text-right">Ação / Alterar</th>
               </tr>
             </thead>
@@ -228,6 +260,25 @@ export default function AcessosPage() {
                     </span>
                   </td>
 
+                  {/* ESCOPO — de qual operação a pessoa é. Seletor direto na
+                      linha, como o nível: é uma marca por pessoa, e abrir um
+                      formulário para trocar um campo só atrasaria o óbvio. */}
+                  <td className="p-4">
+                    <select
+                      value={normalizarEscopo(p.escopo)}
+                      onChange={(e) => alterarEscopo(p.id, e.target.value)}
+                      disabled={updating === p.id}
+                      aria-label={`Escopo de ${p.full_name || 'colaborador'}`}
+                      className="bg-white dark:bg-slate-900 border border-line-strong dark:border-slate-700 text-ink-700 dark:text-slate-200 text-xs font-semibold rounded-md px-3 py-2 outline-none focus:border-teal-500 dark:focus:border-[#38bdf8] focus:ring-1 focus:ring-[#0f88a8] transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      {(['controladoria', 'projeto', 'ambos'] as const).map((valor) => (
+                        <option key={valor} value={valor}>
+                          {ROTULO_ESCOPO[valor]}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+
                   {/* AÇÕES DE MUDANÇA */}
                   <td className="p-4">
                     <div className="flex flex-wrap items-center justify-end gap-2">
@@ -270,7 +321,8 @@ export default function AcessosPage() {
                       className="bg-white dark:bg-slate-900 border border-line-strong dark:border-slate-700 text-ink-700 dark:text-slate-200 text-xs font-semibold rounded-md px-3 py-2 outline-none focus:border-teal-500 dark:focus:border-[#38bdf8] focus:ring-1 focus:ring-[#0f88a8] transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                     >
                       <option value="membro">Membro (Padrão)</option>
-                      <option value="admin">Administrador</option>
+                      <option value="admin_projeto">Admin do projeto (Sankhya)</option>
+                      <option value="admin">Administrador do portal</option>
                     </select>
                     </div>
                   </td>

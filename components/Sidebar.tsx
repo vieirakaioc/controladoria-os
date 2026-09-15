@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { normalizarEscopo, podeVerTela, type Escopo, type Perfil } from '@/lib/acessoProjeto'
 import { checarRetornoAmanha } from '@/lib/adminReminders'
 import { enviarResumoDiario as enviarResumoImobilizado } from '@/app/imobilizado/_lib/resumoDiario'
 import { enviarResumoDiario } from '@/app/validacao-fiscal/_lib/resumoDiario'
@@ -48,6 +49,7 @@ const allNavItems = [
 export default function Sidebar() {
   const [isExpanded, setIsExpanded] = useState(true)
   const [userRole, setUserRole] = useState<string>('membro')
+  const [escopo, setEscopo] = useState<Escopo>('controladoria')
   const [userName, setUserName] = useState<string>('')
   const [userEmail, setUserEmail] = useState<string>('')
   const [avatarUrl, setAvatarUrl] = useState<string>('')
@@ -94,7 +96,7 @@ export default function Sidebar() {
       fetchNotificacoes(email)
       
       try {
-        const { data } = await supabase.from('profiles').select('role, full_name, avatar_url, email').eq('id', userId).single()
+        const { data } = await supabase.from('profiles').select('role, full_name, avatar_url, email, escopo').eq('id', userId).single()
         if (data) {
           // O e-mail vive em auth.users, que o navegador não lê. Guardamos uma
           // cópia no perfil na primeira visita de cada pessoa: é de lá que os
@@ -105,6 +107,7 @@ export default function Sidebar() {
           }
 
           setUserRole(data.role || 'membro')
+          setEscopo(normalizarEscopo(data.escopo))
           setUserName(data.full_name || email.split('@')[0] || 'Usuário')
           setAvatarUrl(data.avatar_url || '')
 
@@ -224,7 +227,13 @@ export default function Sidebar() {
 
   if (pathname === '/login') return null
 
-  const navItems = allNavItems.filter(item => !item.adminOnly || userRole === 'admin')
+  // Duas perguntas diferentes, e as duas precisam passar: `adminOnly` é sobre
+  // cargo, `podeVerTela` é sobre escopo. Quem é só do projeto Sankhya não tem
+  // o que fazer na rotina fiscal, mesmo que a tela não seja de admin.
+  const perfil: Perfil = { escopo, role: userRole, email: userEmail, nome: userName }
+  const navItems = allNavItems.filter(
+    item => (!item.adminOnly || userRole === 'admin') && podeVerTela(perfil, item.href)
+  )
 
   return (
     <aside className={`relative bg-navy-700 text-white transition-all duration-300 ease-in-out flex flex-col shadow-xl z-50 ${isExpanded ? 'w-64' : 'w-20'}`}>

@@ -38,10 +38,10 @@ export default function TarefasPage() {
   const [plannerSel, setPlannerSel] = useState<string>('Todos')
   const [view, setView] = useState<ViewMode>('timeboard')
 
-  const { userId, userName, userEmail, userRole, authLoaded } = useAuthGate()
+  const { userId, userName, userEmail, userRole, perfil, authLoaded } = useAuthGate()
 
   const tarefas = useTarefas({
-    plannerSel, mesAlvo, anoAlvo, userEmail, userRole, authLoaded,
+    plannerSel, mesAlvo, anoAlvo, userEmail, userRole, perfil, authLoaded,
   })
 
   const filters = useTarefaFilters({

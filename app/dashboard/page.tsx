@@ -3,6 +3,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import {
+  normalizarEscopo,
+  podeVerAtividade,
+  ROLE_ADMIN_PROJETO,
+  soDoProjeto,
+  type Escopo,
+  type Perfil,
+} from '@/lib/acessoProjeto'
 import { toPng } from 'html-to-image'
 import jsPDF from 'jspdf'
 import { Toaster, toast } from 'react-hot-toast'
@@ -550,6 +558,8 @@ export default function DashboardPage() {
   
   const [userRole, setUserRole] = useState<string>('membro')
   const [userEmail, setUserEmail] = useState<string>('')
+  const [userNome, setUserNome] = useState<string>('')
+  const [escopo, setEscopo] = useState<Escopo>('controladoria')
   const [authLoaded, setAuthLoaded] = useState(false)
 
   const [planners, setPlanners] = useState<string[]>([])
@@ -594,8 +604,14 @@ export default function DashboardPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         setUserEmail(user.email || '')
-        const { data: prof } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+        const { data: prof } = await supabase
+          .from('profiles')
+          .select('role, full_name, escopo')
+          .eq('id', user.id)
+          .single()
         setUserRole(prof?.role || 'membro')
+        setUserNome(prof?.full_name || user.email || '')
+        setEscopo(normalizarEscopo(prof?.escopo))
       } else {
         router.push('/login')
       }
@@ -658,7 +674,14 @@ export default function DashboardPage() {
       }
 
       let baseData = allRows
-      if (userRole !== 'admin') {
+      const perfil: Perfil = { escopo, role: userRole, email: userEmail, nome: userNome }
+
+      if (soDoProjeto(perfil)) {
+        // Mesma regra da lista de tarefas, da mesma função: sem isso o
+        // dashboard somaria atividade que a lista não mostra, e a pessoa
+        // passaria a discutir com o número em vez de com a tarefa.
+        baseData = baseData.filter((r) => podeVerAtividade(perfil, r?.atividades))
+      } else if (userRole !== 'admin') {
         const emailSeguroLogado = userEmail.trim().toLowerCase()
         baseData = baseData.filter((r: any) => {
           const respsTask = getResponsaveis(r?.atividades)
@@ -688,7 +711,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     carregar()
-  }, [plannerSel, start, end, prevStart, authLoaded, userRole, userEmail])
+  }, [plannerSel, start, end, prevStart, authLoaded, userRole, userEmail, userNome, escopo])
 
   const exportarPDF = async () => {
     setGerandoPdf(true)
@@ -977,7 +1000,16 @@ export default function DashboardPage() {
           <h1 className="text-3xl font-extrabold text-slate-950 dark:text-white tracking-tighter flex items-center gap-3">
             Dashboard de Resultados
             <span className="text-[10px] uppercase font-bold tracking-widest bg-navy-100 text-ink-700 dark:bg-slate-800 dark:text-slate-300 px-3 py-1.5 rounded-md mt-1">
-              {userRole === 'admin' ? 'Visão Global' : 'Meu Desempenho'}
+              {/* O admin do projeto vê as atividades de todo mundo dentro da
+                  implantação: chamar isso de "Meu Desempenho" faria o número
+                  parecer dele. */}
+              {userRole === 'admin'
+                ? 'Visão Global'
+                : soDoProjeto({ escopo, role: userRole, email: userEmail, nome: userNome })
+                  ? userRole === ROLE_ADMIN_PROJETO
+                    ? 'Visão do Projeto'
+                    : 'Minhas Atividades do Projeto'
+                  : 'Meu Desempenho'}
             </span>
           </h1>
           <p className="text-ink-500 dark:text-slate-400 text-sm mt-1.5 font-medium">Visão estatística {tituloPeriodo}</p>
