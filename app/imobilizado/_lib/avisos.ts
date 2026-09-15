@@ -47,8 +47,14 @@ async function enviar(corpo: Envio, item: Item): Promise<void> {
   }
 }
 
-/** E-mails de quem participa do processo e está ativo. */
-async function equipeDoProcesso(): Promise<string[]> {
+/**
+ * E-mails de quem participa do processo e está ativo.
+ *
+ * Exportado porque é também a lista do resumo diário e o padrão da tela de
+ * exportar: quem está cadastrado no processo é quem recebe. Manter uma segunda
+ * lista em outro lugar garantiria que uma das duas ficaria velha.
+ */
+export async function equipeDoProcesso(): Promise<string[]> {
   const { data, error } = await supabase
     .from('imobilizado_participantes')
     .select('ativo, profiles (email)')

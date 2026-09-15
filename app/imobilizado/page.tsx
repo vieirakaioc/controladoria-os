@@ -7,6 +7,7 @@ import { ArrowUpRight, Loader2, Search, Trash2, Truck } from 'lucide-react'
 import { formatarInteiro, formatarMoeda } from '@/app/validacao-fiscal/_lib/formato'
 import { formatarData, hoje as dataDeHoje } from '@/app/validacao-fiscal/_lib/prazo'
 
+import { ExportarPainel } from './_components/ExportarPainel'
 import { AvisoErro, Carregando, ChipPrazo, Kpi, Painel, SemAcesso } from './_components/Ui'
 import { useImobilizado } from './_hooks/useImobilizado'
 import { agingPlaca, agingProcesso, textoAging } from './_lib/aging'
@@ -429,6 +430,13 @@ export default function PaginaFila() {
           </table>
         </div>
       </div>
+
+      {/* No fim da fila, e não no topo: exportar é o que se faz depois de
+          olhar o painel, não antes.
+
+          Vale para observador também: mandar o painel não muda nada no
+          processo, e quem só acompanha é justamente quem repassa o status. */}
+      <ExportarPainel itens={itens} hoje={hoje} />
     </div>
   )
 }

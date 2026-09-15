@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { checarRetornoAmanha } from '@/lib/adminReminders'
+import { enviarResumoDiario as enviarResumoImobilizado } from '@/app/imobilizado/_lib/resumoDiario'
 import { enviarResumoDiario } from '@/app/validacao-fiscal/_lib/resumoDiario'
 import { notificarDesktop, pedirPermissaoNotificacoes, permissaoNotificacoes } from '@/lib/desktopNotify'
 import {
@@ -112,10 +113,13 @@ export default function Sidebar() {
             checarRetornoAmanha(userId, email, data.full_name || email)
           }
 
-          // Resumo diário da Validação Fiscal. Roda para qualquer pessoa
-          // logada porque quem abre o app primeiro dispara — a trava é no
-          // banco, então sai um e-mail por dia, não um por navegador.
+          // Resumos diários. Rodam para qualquer pessoa logada porque quem
+          // abre o app primeiro dispara — a trava é no banco, então sai um
+          // e-mail por dia, não um por navegador. O do imobilizado sai para
+          // quem está cadastrado naquele processo, e desiste sozinho se
+          // quem abriu não participa dele.
           enviarResumoDiario(data.full_name || email)
+          enviarResumoImobilizado(data.full_name || email)
         }
       } catch(e) {}
     }
