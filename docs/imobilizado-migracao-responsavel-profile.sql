@@ -24,9 +24,26 @@
 --   serve para o histórico não se reescrever quando alguém troca de nome.
 --
 -- IDEMPOTENTE: a conversão só roda enquanto a coluna ainda é bigint.
+--
+-- SOBRE O DEADLOCK:
+--   A primeira versão deste script tomava os locks na ordem em que precisava
+--   deles: lia `profiles` e `responsaveis` no UPDATE e só depois pedia o lock
+--   exclusivo para trocar a coluna. Com o portal aberto em outra aba, dava
+--   impasse — o script segurava a leitura das pessoas e esperava as etapas; o
+--   app segurava as etapas e esperava as pessoas.
+--
+--   Agora os locks exclusivos são tomados no começo, antes de qualquer
+--   leitura. Assim não existe ciclo: o app espera o script terminar, e nada
+--   mais espera o app. Com `lock_timeout`, se o app estiver no meio de uma
+--   leitura o script desiste em 10s com erro limpo, em vez de travar — nesse
+--   caso basta rodar de novo.
 -- =============================================================================
 
 set local lock_timeout = '10s';
+
+-- Os locks primeiro, e na mesma ordem sempre: é isso que impede o impasse.
+lock table public.imobilizado_etapas in access exclusive mode;
+lock table public.imobilizado_modelo_etapas in access exclusive mode;
 
 -- ─── 1. Etapas dos itens ────────────────────────────────────────────────────
 do $$
