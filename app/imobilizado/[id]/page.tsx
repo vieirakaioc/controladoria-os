@@ -21,11 +21,9 @@ import {
 } from 'lucide-react'
 
 import { useAuthGate } from '@/app/tarefas/_hooks/useAuthGate'
-import { listarResponsaveis } from '@/app/validacao-fiscal/_lib/api'
 import { CORES } from '@/app/validacao-fiscal/_lib/cores'
 import { formatarMoeda } from '@/app/validacao-fiscal/_lib/formato'
 import { formatarData, hoje as dataDeHoje } from '@/app/validacao-fiscal/_lib/prazo'
-import type { Responsavel } from '@/app/validacao-fiscal/_lib/types'
 
 import { AvisoErro, Carregando, ChipPrazo, Painel, SemAcesso } from '../_components/Ui'
 import { agingPlaca, agingProcesso, textoAging } from '../_lib/aging'
@@ -46,6 +44,7 @@ import {
   listarFiliais,
   listarModelo,
   listarMovimentos,
+  listarPessoasDoPortal,
   meuAcesso,
   reabrirEtapa,
   removerAnexo,
@@ -59,6 +58,7 @@ import {
   type Anexo,
   type Etapa,
   type ModeloEtapa,
+  type Pessoa,
   rotuloFilial,
   type Filial,
   type Item,
@@ -74,7 +74,7 @@ export default function PaginaFicha({ params }: { params: Promise<{ id: string }
   const [item, setItem] = useState<Item | null>(null)
   const [anexos, setAnexos] = useState<Anexo[]>([])
   const [movimentos, setMovimentos] = useState<Movimento[]>([])
-  const [responsaveis, setResponsaveis] = useState<Responsavel[]>([])
+  const [responsaveis, setResponsaveis] = useState<Pessoa[]>([])
   // O modelo vem do banco, e não da etapa gravada: descrição é texto de
   // orientação, e melhorar a explicação tem que valer para os itens que já
   // estão correndo. É dele também que sai quem aprova e qual etapa oferece o
@@ -96,7 +96,7 @@ export default function PaginaFicha({ params }: { params: Promise<{ id: string }
         buscarItem(id),
         listarAnexos(id),
         listarMovimentos(id),
-        listarResponsaveis(),
+        listarPessoasDoPortal(),
         listarModelo(),
         listarFiliais(),
       ])
@@ -532,7 +532,8 @@ function CartaoEtapa({
   /** O desenho desta etapa: descrição, quem aprova, se oferece aprovação. */
   modelo: ModeloEtapa | null
   anexos: Anexo[]
-  responsaveis: Responsavel[]
+  /** Todo mundo com login no portal — é de lá que sai o responsável da etapa. */
+  responsaveis: Pessoa[]
   usuario: string
   editavel: boolean
   hoje: string
@@ -746,6 +747,7 @@ function CartaoEtapa({
               {responsaveis.map((r) => (
                 <option key={r.id} value={r.id}>
                   {r.nome}
+                  {r.email ? ` · ${r.email}` : ''}
                 </option>
               ))}
             </select>

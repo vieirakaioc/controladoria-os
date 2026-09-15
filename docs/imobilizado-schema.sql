@@ -137,7 +137,10 @@ create table if not exists public.imobilizado_modelo_etapas (
   -- etapa — o ATPV é cobrado a partir do centro de custo, não de quando chega
   -- a vez dele na fila, e a placa a partir do ATPV.
   prazo_a_partir_de text,
-  responsavel_id    bigint      references public.responsaveis (id) on delete set null,
+  -- Login de quem responde, e não o cadastro da planilha: a lista de pessoas
+  -- do módulo é `profiles`, senão quem entrou depois da última sincronização
+  -- não apareceria no seletor.
+  responsavel_id    uuid        references public.profiles (id) on delete set null,
   ativo             boolean     not null default true
 );
 
@@ -227,7 +230,9 @@ create table if not exists public.imobilizado_etapas (
   -- bloqueada = a anterior ainda não terminou. Só a aberta aceita conclusão.
   status           text        not null default 'bloqueada'
                      check (status in ('bloqueada', 'aberta', 'concluida', 'dispensada')),
-  responsavel_id   bigint      references public.responsaveis (id) on delete set null,
+  responsavel_id   uuid        references public.profiles (id) on delete set null,
+  -- Cópia do nome no momento da atribuição: o histórico não se reescreve
+  -- quando alguém troca de nome no perfil.
   responsavel_nome text,
   prazo            date,
   aberta_em        timestamptz,

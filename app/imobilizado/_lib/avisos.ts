@@ -67,11 +67,17 @@ export async function equipeDoProcesso(): Promise<string[]> {
     .filter((email) => email.includes('@'))
 }
 
+/**
+ * E-mail de quem responde pela etapa.
+ *
+ * Vem de `profiles`, a mesma fonte do seletor: ler de `responsaveis` daria
+ * endereço de gente que o seletor nem oferece mais.
+ */
 async function emailDoResponsavel(responsavelId: string | null): Promise<string | null> {
   if (!responsavelId) return null
 
   const { data } = await supabase
-    .from('responsaveis')
+    .from('profiles')
     .select('email')
     .eq('id', responsavelId)
     .maybeSingle()

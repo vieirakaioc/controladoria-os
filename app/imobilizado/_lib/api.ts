@@ -64,8 +64,8 @@ function mapearEtapa(l: LinhaEtapa): Etapa {
     exigeCampo: ouNulo(l.exige_campo),
     prazoAPartirDe: ouNulo(l.prazo_a_partir_de),
     status: (l.status as StatusEtapa) ?? 'bloqueada',
-    // responsaveis.id é bigint: o PostgREST devolve número, e o <select> da
-    // tela compara com texto.
+    // O responsável é o perfil de login (uuid). Normalizado para texto porque
+    // é com texto que o <select> da tela compara o valor selecionado.
     responsavelId: l.responsavel_id === null || l.responsavel_id === undefined
       ? null
       : String(l.responsavel_id),

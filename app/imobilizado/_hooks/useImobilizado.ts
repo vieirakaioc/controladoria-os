@@ -2,11 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
-import { listarResponsaveis } from '@/app/validacao-fiscal/_lib/api'
-import type { Responsavel } from '@/app/validacao-fiscal/_lib/types'
-
-import { descreverErro, listarItens, meuAcesso } from '../_lib/api'
-import type { Acesso, Item } from '../_lib/types'
+import { descreverErro, listarItens, listarPessoasDoPortal, meuAcesso } from '../_lib/api'
+import type { Acesso, Item, Pessoa } from '../_lib/types'
 
 /**
  * Estado do módulo: os itens, quem sou eu aqui dentro e a lista de pessoas.
@@ -16,7 +13,7 @@ import type { Acesso, Item } from '../_lib/types'
  */
 export function useImobilizado() {
   const [itens, setItens] = useState<Item[]>([])
-  const [responsaveis, setResponsaveis] = useState<Responsavel[]>([])
+  const [responsaveis, setResponsaveis] = useState<Pessoa[]>([])
   const [acesso, setAcesso] = useState<Acesso>(null)
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
@@ -39,7 +36,7 @@ export function useImobilizado() {
         return
       }
 
-      const [lista, pessoas] = await Promise.all([listarItens(), listarResponsaveis()])
+      const [lista, pessoas] = await Promise.all([listarItens(), listarPessoasDoPortal()])
       setItens(lista)
       setResponsaveis(pessoas)
     } catch (falha) {
