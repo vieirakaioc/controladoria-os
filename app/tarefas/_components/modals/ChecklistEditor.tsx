@@ -60,10 +60,13 @@ export function ChecklistEditor({ items, onChange, pessoas }: Props) {
   }
   const feitas = subtarefas.filter((c) => c.concluido).length
 
+  // Como texto dos dois lados: `responsaveis.id` é bigint e chega como número,
+  // enquanto o <select> devolve texto. Com ===, número nunca é igual a texto,
+  // e o dono era gravado vazio em silêncio.
   const dono = (idPessoa: string) => {
-    const p = pessoas.find((x) => x.id === idPessoa)
+    const p = pessoas.find((x) => String(x.id) === idPessoa)
     return {
-      responsavelId: p?.id ?? null,
+      responsavelId: p ? String(p.id) : null,
       responsavelNome: p?.nome ?? null,
       responsavelEmail: p?.email ?? null,
     }
