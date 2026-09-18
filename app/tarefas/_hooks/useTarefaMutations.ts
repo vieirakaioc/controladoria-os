@@ -12,6 +12,8 @@ type Args = {
   setRows: React.Dispatch<React.SetStateAction<Row[]>>
   statuses: string[]
   userName: string
+  /** Para não mandar e-mail de atribuição a quem atribuiu a si mesmo. */
+  userEmail: string
   refresh: () => Promise<void>
   refreshPlanners: () => Promise<void>
   sendEmailNotification: (taskId: string, action: string, extraObs?: string) => Promise<void>
@@ -26,7 +28,7 @@ type Args = {
  * Mantém os dados otimistas em rows via setRows, e recarrega quando necessário.
  */
 export function useTarefaMutations({
-  rows, setRows, statuses, userName, refresh, refreshPlanners, sendEmailNotification,
+  rows, setRows, statuses, userName, userEmail, refresh, refreshPlanners, sendEmailNotification,
 }: Args) {
   // ─── DRAWER ────────────────────────────────────────────────────────────
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -128,6 +130,70 @@ export function useTarefaMutations({
     }
   }
 
+  /**
+   * Avisa por e-mail quem ganhou subtarefa neste salvamento.
+   *
+   * Compara o checklist gravado antes com o que acabou de ser salvo: só conta
+   * a subtarefa cujo dono mudou para alguém. Reabrir a tarefa e salvar de novo
+   * não reenvia nada, porque aí o dono já era o mesmo.
+   *
+   * Um e-mail por pessoa, com todas as subtarefas dela — montar um checklist de
+   * dez itens para a mesma pessoa não pode virar dez e-mails.
+   */
+  const avisarSubtarefasAtribuidas = (
+    tarefa: Row,
+    novas: ChecklistItem[],
+    nomeTarefa: string,
+  ) => {
+    const chave = (email?: string | null) => (email || '').trim().toLowerCase()
+    const donoAntes = new Map(
+      apenasSubtarefas(tarefa.checklists).map((c) => [c.id, chave(c.responsavelEmail)]),
+    )
+    const eu = chave(userEmail)
+
+    const porPessoa = new Map<string, { nome: string; itens: string[] }>()
+    for (const c of apenasSubtarefas(novas)) {
+      const email = chave(c.responsavelEmail)
+      if (!email || email === donoAntes.get(c.id) || email === eu) continue
+      const grupo = porPessoa.get(email) ?? { nome: c.responsavelNome || email, itens: [] }
+      grupo.itens.push(c.texto)
+      porPessoa.set(email, grupo)
+    }
+
+    const escapar = (s: string) =>
+      s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    const link = `${window.location.origin}/tarefas?taskId=${tarefa.id}`
+
+    for (const [email, { itens }] of porPessoa) {
+      fetch('/api/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: email,
+          subject:
+            itens.length === 1
+              ? `[Portal da Controladoria] Subtarefa atribuída a você: ${itens[0]}`
+              : `[Portal da Controladoria] ${itens.length} subtarefas atribuídas a você`,
+          taskName: nomeTarefa,
+          // O modelo do e-mail monta "A tarefa X foi {action} por {quem}".
+          action:
+            itens.length === 1
+              ? 'atualizada com uma subtarefa para você'
+              : `atualizada com ${itens.length} subtarefas para você`,
+          userName,
+          observacoes:
+            `Na tarefa <strong>${escapar(nomeTarefa)}</strong>, ` +
+            (itens.length === 1 ? 'esta subtarefa ficou com você:' : 'estas subtarefas ficaram com você:') +
+            `<ul>${itens.map((i) => `<li>${escapar(i)}</li>`).join('')}</ul>`,
+          link,
+          linkLabel: 'Abrir a tarefa',
+        }),
+      }).catch(() => {
+        // Silencioso: o checklist já foi salvo, e é ele o registro.
+      })
+    }
+  }
+
   const salvarDrawer = async () => {
     if (!selected) return
     if (!drawerNome.trim()) {
@@ -193,6 +259,10 @@ export function useTarefaMutations({
       } : prev)
 
       toast.success('Detalhes guardados!', { id: toastId })
+
+      // Depois do "guardado", e sem esperar: o aviso é consequência do que foi
+      // salvo, e uma falha de e-mail não pode parecer falha ao salvar.
+      avisarSubtarefasAtribuidas(selected, drawerChecklists, drawerNome)
 
       let emailObs = drawerObs || ''
       if (drawerAnexo) emailObs += `<br/><br/>📎 <strong>Anexo adicionado:</strong> <a href="${drawerAnexo}">Ver Ficheiro</a>`

@@ -69,6 +69,7 @@ export default function TarefasPage() {
     setRows: tarefas.setRows,
     statuses: tarefas.statuses,
     userName,
+    userEmail,
     refresh: tarefas.refresh,
     refreshPlanners: tarefas.refreshPlanners,
     sendEmailNotification,
