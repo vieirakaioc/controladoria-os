@@ -5,7 +5,7 @@ import { toast } from 'react-hot-toast'
 import { supabase } from '@/lib/supabase'
 import { getResponsaveis, type ResponsavelLite } from '@/lib/responsaveis'
 import { trackEvent } from '@/lib/activityTracker'
-import type { ChecklistItem, Row } from '../_lib/types'
+import { apenasSubtarefas, type ChecklistItem, type Row } from '../_lib/types'
 
 type Args = {
   rows: Row[]
@@ -229,7 +229,9 @@ export function useTarefaMutations({
 
   const concluirNoDrawer = async () => {
     if (!selected) return
-    if (drawerChecklists.length > 0 && drawerChecklists.some(c => !c.concluido)) {
+    // Só subtarefas: bloco não tem como ser concluído, e contá-lo aqui faria o
+    // aviso de "subtarefas pendentes" aparecer para sempre.
+    if (apenasSubtarefas(drawerChecklists).some(c => !c.concluido)) {
       if (!window.confirm('Existem itens não concluídos no checklist! Tem a certeza que deseja concluir a tarefa matriz assim mesmo?')) return
     }
     await setStatus(selected.id, statuses[statuses.length - 1] || 'Concluído')

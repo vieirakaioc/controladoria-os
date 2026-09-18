@@ -4,7 +4,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'react-hot-toast'
 import { supabase } from '@/lib/supabase'
 import { getResponsaveis } from '@/lib/responsaveis'
-import { podeVerAtividade, soDoProjeto, type Perfil } from '@/lib/acessoProjeto'
+import { ehDoProjeto, podeVerAtividade, soDoProjeto, type Perfil } from '@/lib/acessoProjeto'
+import { apenasSubtarefas } from '../_lib/types'
 import { iso } from '../_lib/helpers'
 import type { Lookup, PlannerRow, Row, StatusRow } from '../_lib/types'
 
@@ -129,17 +130,31 @@ export function useTarefas({ plannerSel, mesAlvo, anoAlvo, userEmail, userRole, 
 
       let baseData = acc
 
+      // Dono de subtarefa enxerga a tarefa, mesmo não sendo dono dela: sem
+      // isso a subtarefa seria atribuída a alguém que nunca a encontra.
+      const meuEmail = userEmail.trim().toLowerCase()
+      const donoDeSubtarefa = (r: { checklists?: unknown }) =>
+        apenasSubtarefas(r?.checklists as never).some(
+          (c) => (c.responsavelEmail || '').trim().toLowerCase() === meuEmail,
+        )
+
       if (soDoProjeto(perfil)) {
         // Quem é só do projeto tem regra própria: nada de rotina da
         // controladoria, e o admin do projeto vê as atividades de todo mundo
         // em vez de só as dele. A regra mora em lib/acessoProjeto para o
         // dashboard somar exatamente o que esta lista mostra.
-        baseData = baseData.filter((r) => podeVerAtividade(perfil, r?.atividades))
+        baseData = baseData.filter(
+          (r) =>
+            podeVerAtividade(perfil, r?.atividades) ||
+            (ehDoProjeto(r?.atividades) && donoDeSubtarefa(r)),
+        )
       } else if (userRole !== 'admin') {
-        const meu = userEmail.trim().toLowerCase()
         baseData = baseData.filter((r: any) => {
           const resps = getResponsaveis(r?.atividades)
-          return resps.some(res => (res.email || '').trim().toLowerCase() === meu)
+          return (
+            resps.some(res => (res.email || '').trim().toLowerCase() === meuEmail) ||
+            donoDeSubtarefa(r)
+          )
         })
       }
 

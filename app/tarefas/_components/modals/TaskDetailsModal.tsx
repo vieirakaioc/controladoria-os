@@ -138,7 +138,7 @@ export function TaskDetailsModal(props: Props) {
               </div>
             </div>
 
-            <ChecklistEditor items={drawerChecklists} onChange={setDrawerChecklists} />
+            <ChecklistEditor items={drawerChecklists} onChange={setDrawerChecklists} pessoas={respsDb} />
             <AnexoUploader value={drawerAnexo} onChange={setDrawerAnexo} />
 
             <div>

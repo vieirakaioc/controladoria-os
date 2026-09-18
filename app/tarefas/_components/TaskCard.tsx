@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { badge, getBucket } from '../_lib/helpers'
-import type { ChecklistItem, Row } from '../_lib/types'
+import { apenasSubtarefas, type ChecklistItem, type Row } from '../_lib/types'
 import { getResponsaveis } from '@/lib/responsaveis'
 
 type Props = {
@@ -23,7 +23,8 @@ export const TaskCard = React.memo(function TaskCard({
   const bucket = getBucket(r.data_vencimento)
   const isDone = st.toLowerCase().includes('concl')
 
-  const chk = r.checklists || []
+  // Bloco é título, não se conclui: contá-lo faria "3 de 5" nunca chegar a 5.
+  const chk = apenasSubtarefas(r.checklists)
   const chkTotal = chk.length
   const chkDone = chk.filter((c: ChecklistItem) => c.concluido).length
 
