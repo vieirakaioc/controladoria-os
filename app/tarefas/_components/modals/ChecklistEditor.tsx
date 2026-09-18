@@ -53,6 +53,11 @@ export function ChecklistEditor({ items, onChange, pessoas }: Props) {
 
   const grupos = agrupar(items)
   const subtarefas = apenasSubtarefas(items)
+  const blocos = items.filter(ehBloco)
+  const blocoDe = new Map<string, string>()
+  for (const g of grupos) {
+    if (g.bloco) for (const c of g.itens) blocoDe.set(c.id, g.bloco.id)
+  }
   const feitas = subtarefas.filter((c) => c.concluido).length
 
   const dono = (idPessoa: string) => {
@@ -152,6 +157,27 @@ export function ChecklistEditor({ items, onChange, pessoas }: Props) {
     if (j < 0 || j >= lista.length) return
     ;[lista[i], lista[j]] = [lista[j], lista[i]]
     onChange(lista)
+  }
+
+  /**
+   * Leva a subtarefa para o fim de um bloco (ou para as soltas, com '').
+   *
+   * É o caminho para organizar um checklist que já existia: arrastar item a
+   * item até um bloco lá embaixo, numa lista longa, é trabalho demais para o
+   * que é uma escolha só.
+   */
+  const moverParaBloco = (id: string, idBloco: string) => {
+    const gs = agrupar(items)
+    const origem = gs.find((g) => g.itens.some((x) => x.id === id))
+    const movido = origem?.itens.find((x) => x.id === id)
+    if (!origem || !movido) return
+
+    const destino = idBloco ? gs.find((g) => g.bloco?.id === idBloco) : gs[0]
+    if (!destino || destino === origem) return
+
+    origem.itens = origem.itens.filter((x) => x.id !== id)
+    destino.itens.push(movido)
+    onChange(achatar(gs))
   }
 
   /**
@@ -308,23 +334,43 @@ export function ChecklistEditor({ items, onChange, pessoas }: Props) {
           c,
           `block text-sm leading-snug ${c.concluido ? 'text-ink-400 line-through dark:text-slate-500' : 'text-ink-700 dark:text-slate-200'}`,
         )}
-        {/* O dono fica na própria linha, sempre à vista: a subtarefa é de
-            alguém mesmo quando a tarefa é de outra pessoa. */}
-        <select
-          value={c.responsavelId ?? ''}
-          onChange={(e) => alterar(c.id, dono(e.target.value))}
-          aria-label={`Dono de "${c.texto}"`}
-          className={`mt-1 max-w-full rounded border-0 bg-transparent p-0 text-[11px] outline-none focus:ring-0 ${
-            c.responsavelId ? 'font-semibold text-teal-600 dark:text-[#38bdf8]' : 'text-ink-400'
-          }`}
-        >
-          <option value="">Sem dono</option>
-          {pessoas.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.nome}
-            </option>
-          ))}
-        </select>
+        <div className="mt-1 flex flex-wrap items-center gap-x-3">
+          {/* O dono fica na própria linha, sempre à vista: a subtarefa é de
+              alguém mesmo quando a tarefa é de outra pessoa. */}
+          <select
+            value={c.responsavelId ?? ''}
+            onChange={(e) => alterar(c.id, dono(e.target.value))}
+            aria-label={`Dono de "${c.texto}"`}
+            className={`max-w-full rounded border-0 bg-transparent p-0 text-[11px] outline-none focus:ring-0 ${
+              c.responsavelId ? 'font-semibold text-teal-600 dark:text-[#38bdf8]' : 'text-ink-400'
+            }`}
+          >
+            <option value="">Sem dono</option>
+            {pessoas.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.nome}
+              </option>
+            ))}
+          </select>
+
+          {blocos.length > 0 && (
+            <select
+              value={blocoDe.get(c.id) ?? ''}
+              onChange={(e) => moverParaBloco(c.id, e.target.value)}
+              aria-label={`Bloco de "${c.texto}"`}
+              className={`max-w-full rounded border-0 bg-transparent p-0 text-[11px] outline-none focus:ring-0 ${
+                blocoDe.get(c.id) ? 'font-semibold text-navy-700 dark:text-white' : 'text-ink-400'
+              }`}
+            >
+              <option value="">Sem bloco</option>
+              {blocos.map((b, i) => (
+                <option key={b.id} value={b.id}>
+                  {i + 1} · {b.texto}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
       </div>
       {botoesOrdem(c)}
       {acoes(c)}
@@ -456,8 +502,9 @@ export function ChecklistEditor({ items, onChange, pessoas }: Props) {
         </div>
 
         <p className="text-[11px] leading-relaxed text-ink-400">
-          Arraste pela alça para reordenar, ou use as setas. Clique duas vezes num texto para
-          editar. Subtarefa nova entra no último bloco.
+          Para levar uma subtarefa a um bloco, escolha o bloco na própria linha — ou arraste
+          pela alça. Setas reordenam; clique duplo edita o texto. Subtarefa nova entra no
+          último bloco.
         </p>
       </div>
     </div>
