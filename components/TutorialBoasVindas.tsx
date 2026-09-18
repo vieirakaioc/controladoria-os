@@ -117,7 +117,10 @@ export function TutorialBoasVindas() {
   useEffect(() => {
     let cancelled = false
     ;(async () => {
-      const { data: { user } } = await supabase.auth.getUser()
+      // Sessão local: decidir se mostra o tutorial não justifica uma ida ao
+      // servidor de autenticação segurando a trava da sessão.
+      const { data: { session } } = await supabase.auth.getSession()
+      const user = session?.user
       if (cancelled || !user) return
       setUserId(user.id)
 

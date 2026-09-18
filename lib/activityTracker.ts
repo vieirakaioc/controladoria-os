@@ -36,7 +36,13 @@ export async function trackEvent(
   eventData?: Record<string, unknown>,
 ): Promise<void> {
   try {
-    const { data: { user } } = await supabase.auth.getUser()
+    // getSession, e não getUser: aqui só se precisa saber de quem é o evento,
+    // e o id já está na sessão local. getUser vai até o servidor de
+    // autenticação segurando a trava da sessão — e enquanto isso toda outra
+    // consulta ao banco espera na fila. Rodando a cada troca de tela, era
+    // lentidão no app inteiro por causa de uma estatística.
+    const { data: { session } } = await supabase.auth.getSession()
+    const user = session?.user
     if (!user) return
 
     await supabase.from('user_activity').insert({
@@ -58,7 +64,9 @@ export async function trackEvent(
 export async function trackSession(): Promise<void> {
   if (typeof window === 'undefined') return
   try {
-    const { data: { user } } = await supabase.auth.getUser()
+    // Mesmo motivo do trackEvent: sessão local, sem ida ao servidor.
+    const { data: { session } } = await supabase.auth.getSession()
+    const user = session?.user
     if (!user) return
 
     const hoje = new Date().toISOString().slice(0, 10)
