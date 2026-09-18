@@ -17,6 +17,8 @@ type Args = {
   userRole: string
   /** Escopo, cargo, nome e e-mail juntos: é o que decide o que a pessoa vê. */
   perfil: Perfil
+  /** Ignora mês e ano e traz tudo — inclusive tarefa sem data de vencimento. */
+  todoPeriodo: boolean
   authLoaded: boolean
 }
 
@@ -29,7 +31,7 @@ type Args = {
  *
  * Filtra automaticamente por responsável quando o usuário não é admin.
  */
-export function useTarefas({ plannerSel, mesAlvo, anoAlvo, userEmail, userRole, perfil, authLoaded }: Args) {
+export function useTarefas({ plannerSel, mesAlvo, anoAlvo, userEmail, userRole, perfil, todoPeriodo, authLoaded }: Args) {
   const [rows, setRows] = useState<Row[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -107,7 +109,7 @@ export function useTarefas({ plannerSel, mesAlvo, anoAlvo, userEmail, userRole, 
 
       // Paginação manual: Supabase devolve no máximo 1000 por request
       while (true) {
-        const { data, error } = await supabase
+        let consulta = supabase
           .from('tarefas_diarias')
           .select(`
             id, data_vencimento, status, data_conclusao, observacoes, anexo_url, checklists,
@@ -116,9 +118,16 @@ export function useTarefas({ plannerSel, mesAlvo, anoAlvo, userEmail, userRole, 
               setores!atividades_setor_id_fkey (nome), responsaveis!atividades_responsavel_id_fkey (nome, email)
             )
           `)
-          .gte('data_vencimento', iso(inicio))
-          .lt('data_vencimento', iso(fim))
-          .order('data_vencimento', { ascending: true })
+
+        // "Todo o período" não aplica filtro de data nenhum, em vez de uma
+        // janela enorme: comparação com nulo é sempre falsa, e a janela ainda
+        // descartaria a tarefa sem vencimento — justamente a que se perde de vista.
+        if (!todoPeriodo) {
+          consulta = consulta.gte('data_vencimento', iso(inicio)).lt('data_vencimento', iso(fim))
+        }
+
+        const { data, error } = await consulta
+          .order('data_vencimento', { ascending: true, nullsFirst: false })
           .order('id', { ascending: true })
           .range(from, from + pageSize - 1)
         if (error) throw error
@@ -167,7 +176,7 @@ export function useTarefas({ plannerSel, mesAlvo, anoAlvo, userEmail, userRole, 
     } finally {
       setLoading(false)
     }
-  }, [plannerSel, mesAlvo, anoAlvo, userEmail, userRole, perfil, authLoaded])
+  }, [plannerSel, mesAlvo, anoAlvo, userEmail, userRole, perfil, todoPeriodo, authLoaded])
 
   // Sempre que algo relevante mudar, recarrega workflow + rows
   useEffect(() => {
@@ -176,7 +185,7 @@ export function useTarefas({ plannerSel, mesAlvo, anoAlvo, userEmail, userRole, 
       await carregarWorkflow(plannerSel)
       await carregar()
     })()
-  }, [plannerSel, mesAlvo, anoAlvo, authLoaded, userRole, userEmail, carregar, carregarWorkflow])
+  }, [plannerSel, mesAlvo, anoAlvo, todoPeriodo, authLoaded, userRole, userEmail, carregar, carregarWorkflow])
 
   return {
     rows, setRows,

@@ -31,23 +31,31 @@ export default function TarefasPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const taskIdUrl = searchParams?.get('taskId')
+  // Vindo de um projeto (?projeto=ID), a tela já abre filtrada nele e sem
+  // janela de mês: as tarefas de um projeto atravessam meses, e abrir só o mês
+  // corrente esconderia a maior parte delas sem dizer por quê.
+  const projetoUrl = searchParams?.get('projeto') || null
 
   const hoje = new Date()
   const [mesAlvo, setMesAlvo] = useState<number>(hoje.getMonth())
   const [anoAlvo, setAnoAlvo] = useState<number>(hoje.getFullYear())
+  const [todoPeriodo, setTodoPeriodo] = useState<boolean>(
+    Boolean(projetoUrl) || searchParams?.get('periodo') === 'tudo',
+  )
   const [plannerSel, setPlannerSel] = useState<string>('Todos')
   const [view, setView] = useState<ViewMode>('timeboard')
 
   const { userId, userName, userEmail, userRole, perfil, authLoaded } = useAuthGate()
 
   const tarefas = useTarefas({
-    plannerSel, mesAlvo, anoAlvo, userEmail, userRole, perfil, authLoaded,
+    plannerSel, mesAlvo, anoAlvo, userEmail, userRole, perfil, todoPeriodo, authLoaded,
   })
 
   const filters = useTarefaFilters({
     rows: tarefas.rows,
     statuses: tarefas.statuses,
     mesAlvo, anoAlvo,
+    projetoInicial: projetoUrl,
   })
 
   const { sendEmailNotification } = useTaskNotifier({
@@ -100,7 +108,8 @@ export default function TarefasPage() {
       }
     })
     const mesNome = MESES.find(m => m.v === mesAlvo)?.n || ''
-    downloadIcs(tasks, `Tarefas_${mesNome}_${anoAlvo}.ics`, `Portal · ${mesNome}/${anoAlvo}`)
+    if (todoPeriodo) downloadIcs(tasks, 'Tarefas_todo_periodo.ics', 'Portal · Todo o período')
+    else downloadIcs(tasks, `Tarefas_${mesNome}_${anoAlvo}.ics`, `Portal · ${mesNome}/${anoAlvo}`)
     toast.success(`${tasks.length} tarefa(s) exportada(s)!`)
   }
 
@@ -165,6 +174,8 @@ export default function TarefasPage() {
         userRole={userRole}
         mesAlvo={mesAlvo}
         anoAlvo={anoAlvo}
+        todoPeriodo={todoPeriodo}
+        setTodoPeriodo={setTodoPeriodo}
         view={view}
         plannerSel={plannerSel}
         planners={tarefas.planners}

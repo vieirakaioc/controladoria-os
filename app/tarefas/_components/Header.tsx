@@ -7,6 +7,8 @@ type Props = {
   userRole: string
   mesAlvo: number
   anoAlvo: number
+  todoPeriodo: boolean
+  setTodoPeriodo: (v: boolean) => void
   view: ViewMode
   plannerSel: string
   planners: string[]
@@ -27,7 +29,7 @@ const views: { id: ViewMode; label: string }[] = [
 ]
 
 export function Header({
-  userRole, mesAlvo, anoAlvo, view, plannerSel, planners,
+  userRole, mesAlvo, anoAlvo, todoPeriodo, setTodoPeriodo, view, plannerSel, planners,
   setMesAlvo, setAnoAlvo, setView, setPlannerSel, onNovaAdHoc, onRefresh, onExportIcs,
 }: Props) {
   return (
@@ -40,7 +42,9 @@ export function Header({
           </span>
         </h1>
         <p className="text-ink-500 dark:text-slate-400 text-sm mt-1">
-          Mês: {MESES.find(m => m.v === mesAlvo)?.n}/{anoAlvo}
+          {todoPeriodo
+            ? 'Todo o período — sem filtro de mês'
+            : `Mês: ${MESES.find(m => m.v === mesAlvo)?.n}/${anoAlvo}`}
         </p>
       </div>
 
@@ -73,8 +77,24 @@ export function Header({
           {planners.map((p) => <option key={p} value={p}>{p}</option>)}
         </select>
 
+        {/* Liga e desliga a janela de mês. Mês e ano ficam à vista, só
+            apagados: voltar ao mês é um clique, e não se perde a escolha. */}
+        <button
+          type="button"
+          onClick={() => setTodoPeriodo(!todoPeriodo)}
+          aria-pressed={todoPeriodo}
+          className={`rounded-md border px-3 py-2 text-sm font-semibold transition-colors ${
+            todoPeriodo
+              ? 'border-teal-500 bg-teal-50 text-teal-700 dark:bg-[#38bdf8]/10 dark:text-[#38bdf8]'
+              : 'border-line bg-white text-ink-500 hover:text-navy-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400'
+          }`}
+        >
+          Todo o período
+        </button>
+
         <select
-          className="bg-navy-50 dark:bg-slate-950 border border-line dark:border-slate-800 rounded-md px-3 py-2 text-sm font-medium text-ink-700 dark:text-slate-200 outline-none focus:border-teal-500 transition-colors"
+          disabled={todoPeriodo}
+          className="bg-navy-50 dark:bg-slate-950 border border-line dark:border-slate-800 rounded-md px-3 py-2 text-sm font-medium text-ink-700 dark:text-slate-200 outline-none focus:border-teal-500 transition-colors disabled:opacity-40"
           value={mesAlvo}
           onChange={(e) => setMesAlvo(Number(e.target.value))}
         >
@@ -82,7 +102,8 @@ export function Header({
         </select>
 
         <input
-          className="bg-navy-50 dark:bg-slate-950 border border-line dark:border-slate-800 rounded-md px-3 py-2 text-sm font-medium text-ink-700 dark:text-slate-200 w-24 outline-none focus:border-teal-500 transition-colors"
+          disabled={todoPeriodo}
+          className="bg-navy-50 dark:bg-slate-950 border border-line dark:border-slate-800 rounded-md px-3 py-2 text-sm font-medium text-ink-700 dark:text-slate-200 w-24 outline-none focus:border-teal-500 transition-colors disabled:opacity-40"
           type="number"
           value={anoAlvo}
           onChange={(e) => setAnoAlvo(Number(e.target.value))}

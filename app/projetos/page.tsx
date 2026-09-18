@@ -317,7 +317,7 @@ export default function ProjetosPage() {
                       </div>
                       
                       <div className="mt-4 text-center">
-                         <button onClick={() => router.push('/tarefas')} className="text-xs font-bold text-[#C7A77B] hover:text-[#A68A63] transition-colors underline underline-offset-2">
+                         <button onClick={() => router.push(`/tarefas?projeto=${encodeURIComponent(String(proj.id))}`)} className="text-xs font-bold text-[#C7A77B] hover:text-[#A68A63] transition-colors underline underline-offset-2">
                            Ir para o Kanban Gerir Tarefas
                          </button>
                       </div>

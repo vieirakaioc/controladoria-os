@@ -10,19 +10,21 @@ type Args = {
   statuses: string[]
   mesAlvo: number
   anoAlvo: number
+  /** Projeto já selecionado ao abrir — vem do link na tela de projetos. */
+  projetoInicial?: string | null
 }
 
 /**
  * Estado dos filtros + derivações (filtradas, dashboard, board por status,
  * timeboard por data, calendarData). Tudo memoizado.
  */
-export function useTarefaFilters({ rows, statuses, mesAlvo, anoAlvo }: Args) {
+export function useTarefaFilters({ rows, statuses, mesAlvo, anoAlvo, projetoInicial }: Args) {
   const [filtroTexto, setFiltroTexto] = useState('')
   const [filtroStatus, setFiltroStatus] = useState<string>('Todos')
   const [filtroSetor, setFiltroSetor] = useState<string>('Todos')
   const [filtroResp, setFiltroResp] = useState<string>('Todos')
   const [filtroClassificacao, setFiltroClassificacao] = useState<string>('Todos')
-  const [filtroProjeto, setFiltroProjeto] = useState<string>('Todos')
+  const [filtroProjeto, setFiltroProjeto] = useState<string>(projetoInicial || 'Todos')
 
   // Se o status filtrado deixar de existir após trocar workflow, reseta.
   useEffect(() => {
@@ -60,7 +62,9 @@ export function useTarefaFilters({ rows, statuses, mesAlvo, anoAlvo }: Args) {
       const okSetor = filtroSetor === 'Todos' || atv.setores?.nome === filtroSetor
       const okResp = filtroResp === 'Todos' || resps.some(res => res.nome === filtroResp)
       const okClass = filtroClassificacao === 'Todos' || atv.classificacao === filtroClassificacao
-      const okProj = filtroProjeto === 'Todos' || atv.projeto_id === filtroProjeto
+      // Como texto dos dois lados: o id chega do banco e da URL em tipos que
+      // não precisam coincidir, e === entre número e texto nunca bate.
+      const okProj = filtroProjeto === 'Todos' || String(atv.projeto_id ?? '') === String(filtroProjeto)
       return okTexto && okStatus && okSetor && okResp && okClass && okProj
     })
   }, [rows, filtroTexto, filtroStatus, filtroSetor, filtroResp, filtroClassificacao, filtroProjeto, statuses])
