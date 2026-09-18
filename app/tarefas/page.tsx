@@ -239,6 +239,7 @@ export default function TarefasPage() {
           selected={m.selected}
           statuses={tarefas.statuses}
           respsDb={tarefas.respsDb}
+          donosDb={tarefas.donosDb}
           classificacoesDb={tarefas.classificacoesDb}
           projetosDb={tarefas.projetosDb}
           userId={userId}

@@ -22,6 +22,8 @@ type Props = DrawerFields & {
   selected: Row
   statuses: string[]
   respsDb: Lookup[]
+  /** Donos possíveis de subtarefa: login + planilha, sem repetir. */
+  donosDb: Lookup[]
   classificacoesDb: Lookup[]
   projetosDb: { id: string; nome: string }[]
   userId: string
@@ -38,7 +40,7 @@ type Props = DrawerFields & {
 
 export function TaskDetailsModal(props: Props) {
   const {
-    selected, statuses, respsDb, classificacoesDb, projetosDb,
+    selected, statuses, respsDb, donosDb, classificacoesDb, projetosDb,
     drawerNome, setDrawerNome,
     drawerStatus, setDrawerStatus,
     drawerObs, setDrawerObs,
@@ -138,7 +140,7 @@ export function TaskDetailsModal(props: Props) {
               </div>
             </div>
 
-            <ChecklistEditor items={drawerChecklists} onChange={setDrawerChecklists} pessoas={respsDb} />
+            <ChecklistEditor items={drawerChecklists} onChange={setDrawerChecklists} pessoas={donosDb} />
             <AnexoUploader value={drawerAnexo} onChange={setDrawerAnexo} />
 
             <div>

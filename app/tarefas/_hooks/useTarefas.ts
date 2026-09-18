@@ -42,22 +42,48 @@ export function useTarefas({ plannerSel, mesAlvo, anoAlvo, userEmail, userRole, 
   const [setoresDb, setSetoresDb] = useState<Lookup[]>([])
   const [respsDb, setRespsDb] = useState<Lookup[]>([])
   const [classificacoesDb, setClassificacoesDb] = useState<Lookup[]>([])
+  // Quem pode ser dono de subtarefa. Ver a montagem mais abaixo.
+  const [donosDb, setDonosDb] = useState<Lookup[]>([])
   const [projetosDb, setProjetosDb] = useState<{ id: string; nome: string }[]>([])
 
   // Lookups + planners: carrega uma vez na montagem
   useEffect(() => {
     let cancelled = false
     ;(async () => {
-      const [{ data: s }, { data: r }, { data: c }, { data: p }, { data: pl }] = await Promise.all([
+      const [{ data: s }, { data: r }, { data: c }, { data: p }, { data: pl }, { data: perfis }] = await Promise.all([
         supabase.from('setores').select('id,nome').order('nome', { ascending: true }),
         supabase.from('responsaveis').select('id,nome,email').order('nome', { ascending: true }),
         supabase.from('classificacoes').select('id,nome').order('nome', { ascending: true }),
         supabase.from('projetos').select('id,nome').eq('status', 'Em Andamento').order('nome', { ascending: true }),
         supabase.from('atividades').select('planner_name'),
+        supabase.from('profiles').select('id, full_name, email').order('full_name', { ascending: true }),
       ])
       if (cancelled) return
       setSetoresDb((s || []) as Lookup[])
       setRespsDb((r || []) as Lookup[])
+
+      // Donos de subtarefa: quem tem login primeiro, depois quem só está na
+      // planilha — sem repetir, pelo e-mail. Só `responsaveis` deixava de fora
+      // todo usuário criado depois da última sincronização da planilha; só
+      // `profiles` sumiria com quem nunca teve login. O e-mail é a chave
+      // porque é por ele que o Controle de Tarefas decide quem enxerga a
+      // subtarefa.
+      const vistos = new Set<string>()
+      const donos: Lookup[] = []
+      for (const perfil of (perfis || []) as { id: string; full_name: string | null; email: string | null }[]) {
+        const email = (perfil.email || '').trim().toLowerCase()
+        if (!email || vistos.has(email)) continue
+        vistos.add(email)
+        donos.push({ id: email, nome: perfil.full_name?.trim() || email, email })
+      }
+      for (const resp of (r || []) as Lookup[]) {
+        const email = (resp.email || '').trim().toLowerCase()
+        if (email && vistos.has(email)) continue
+        if (email) vistos.add(email)
+        donos.push({ id: email || `r:${resp.id}`, nome: resp.nome, email: email || undefined })
+      }
+      donos.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+      setDonosDb(donos)
       setClassificacoesDb((c || []) as Lookup[])
       setProjetosDb((p || []) as { id: string; nome: string }[])
       const uniq = Array.from(
@@ -193,6 +219,6 @@ export function useTarefas({ plannerSel, mesAlvo, anoAlvo, userEmail, userRole, 
     refresh: carregar,
     planners, refreshPlanners: carregarPlanners,
     statuses, statusOrderMap,
-    setoresDb, respsDb, classificacoesDb, projetosDb,
+    setoresDb, respsDb, classificacoesDb, projetosDb, donosDb,
   }
 }

@@ -72,6 +72,24 @@ export function ChecklistEditor({ items, onChange, pessoas }: Props) {
     }
   }
 
+  /**
+   * Qual opção do seletor corresponde ao dono já gravado.
+   *
+   * A lista de donos usa o e-mail como chave, mas subtarefa gravada antes
+   * disso guarda o id numérico da planilha. Procura pelo e-mail primeiro — é o
+   * que decide quem enxerga a subtarefa — e cai no id antigo só como reserva.
+   * Sem isso, todo dono escolhido antes apareceria como "Sem dono".
+   */
+  const valorDoDono = (c: ChecklistItem): string => {
+    const existe = (chave: string) => pessoas.some((p) => String(p.id) === chave)
+    const email = (c.responsavelEmail || '').trim().toLowerCase()
+    if (email && existe(email)) return email
+    const id = c.responsavelId ? String(c.responsavelId) : ''
+    if (id && existe(id)) return id
+    if (id && existe(`r:${id}`)) return `r:${id}`
+    return ''
+  }
+
   const novaSubtarefa = (texto: string, idDono = ''): ChecklistItem => ({
     id: crypto.randomUUID(),
     texto: texto.trim(),
@@ -341,7 +359,7 @@ export function ChecklistEditor({ items, onChange, pessoas }: Props) {
           {/* O dono fica na própria linha, sempre à vista: a subtarefa é de
               alguém mesmo quando a tarefa é de outra pessoa. */}
           <select
-            value={c.responsavelId ?? ''}
+            value={valorDoDono(c)}
             onChange={(e) => alterar(c.id, dono(e.target.value))}
             aria-label={`Dono de "${c.texto}"`}
             className={`max-w-full rounded border-0 bg-transparent p-0 text-[11px] outline-none focus:ring-0 ${
