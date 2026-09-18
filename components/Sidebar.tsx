@@ -46,6 +46,17 @@ const allNavItems = [
   { name: 'Meu Perfil', href: '/profile', icon: User, adminOnly: false },
 ]
 
+/**
+ * As rotinas de fundo rodam uma vez por carregamento do app, não por tela.
+ *
+ * O efeito que carrega o usuário roda a cada troca de rota (depende de
+ * `pathname`, para o menu refletir mudanças de perfil). Com os resumos diários
+ * lá dentro, cada clique no menu disparava de novo as checagens — e, se o envio
+ * do dia falhasse, a montagem inteira do relatório a cada clique. Nível de
+ * módulo porque sobrevive à navegação do cliente e zera num recarregamento.
+ */
+let rotinasDisparadas = false
+
 export default function Sidebar() {
   const [isExpanded, setIsExpanded] = useState(true)
   const [userRole, setUserRole] = useState<string>('membro')
@@ -111,26 +122,29 @@ export default function Sidebar() {
           setUserName(data.full_name || email.split('@')[0] || 'Usuário')
           setAvatarUrl(data.avatar_url || '')
 
-          // Avisos automáticos pra admin (1x/dia via localStorage)
-          if (data.role === 'admin' && email) {
-            checarRetornoAmanha(userId, email, data.full_name || email)
-          }
+          if (!rotinasDisparadas) {
+            rotinasDisparadas = true
 
-          // Resumos diários. Rodam para qualquer pessoa logada porque quem
-          // abre o app primeiro dispara — a trava é no banco, então sai um
-          // e-mail por dia, não um por navegador. O do imobilizado sai para
-          // quem está cadastrado naquele processo, e desiste sozinho se
-          // quem abriu não participa dele.
-          enviarResumoDiario(data.full_name || email)
-          enviarResumoImobilizado(data.full_name || email)
+            // Avisos automáticos pra admin (1x/dia via localStorage)
+            if (data.role === 'admin' && email) {
+              checarRetornoAmanha(userId, email, data.full_name || email)
+            }
+
+            // Resumos diários. Rodam para qualquer pessoa logada porque quem
+            // abre o app primeiro dispara — a trava é no banco, então sai um
+            // e-mail por dia, não um por navegador. O do imobilizado sai para
+            // quem está cadastrado naquele processo, e desiste sozinho se
+            // quem abriu não participa dele.
+            enviarResumoDiario(data.full_name || email)
+            enviarResumoImobilizado(data.full_name || email)
+          }
         }
       } catch(e) {}
     }
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) fetchUserData(session.user.id, session.user.email || '')
-    })
-
+    // Sem getSession() aqui: ao se inscrever, o onAuthStateChange já dispara
+    // INITIAL_SESSION com a sessão atual (supabase-js 2.x). Chamar os dois
+    // carregava o usuário duas vezes a cada troca de tela.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         fetchUserData(session.user.id, session.user.email || '')
