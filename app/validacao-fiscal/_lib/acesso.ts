@@ -25,6 +25,7 @@ export const EMAILS_RESUMO: Record<Fluxo, string[]> = {
     'kaio.vieira@comber.com.br',
     'fransley.batista@comber.com.br',
     'gabriely.alves@comber.com.br',
+    'vithoria.gabrielly@comber.com.br',
     'geraldo.modesto@comber.com.br',
     'fabiana.santos@comber.com.br',
     'marcus.nunes@comber.com.br',
@@ -34,6 +35,7 @@ export const EMAILS_RESUMO: Record<Fluxo, string[]> = {
     'kaio.vieira@comber.com.br',
     'fransley.batista@comber.com.br',
     'gabriely.alves@comber.com.br',
+    'vithoria.gabrielly@comber.com.br',
     'erica.araujo@comber.com.br',
   ],
 }
