@@ -344,8 +344,70 @@ export default function Home() {
   // ─── Cascade delete reutilizável ──────────────────────────────────────
   // Recebe uma lista de task_ids (atividades) e apaga em ordem:
   //   tarefa_comentarios → tarefas_diarias → atividades
+  /**
+   * Baixa, antes de apagar, tudo o que vai sumir.
+   *
+   * O projeto não tem backup no banco, e esta função apaga em cascata as
+   * atividades, todas as tarefas diárias delas e os comentários. Sem este
+   * arquivo, um clique a mais não tem volta por nenhum caminho.
+   *
+   * JSON, e não planilha: o que importa aqui é poder reinserir exatamente o
+   * que saiu, com os mesmos identificadores — e isso uma planilha formatada
+   * perderia pelo caminho.
+   */
+  const baixarAntesDeApagar = async (taskIds: string[]) => {
+    try {
+      const chunkSize = 150
+      const atividades: Record<string, unknown>[] = []
+      const tarefas: Record<string, unknown>[] = []
+
+      for (let i = 0; i < taskIds.length; i += chunkSize) {
+        const chunk = taskIds.slice(i, i + chunkSize)
+        const [{ data: atv }, { data: td }] = await Promise.all([
+          supabase.from('atividades').select('*').in('task_id', chunk),
+          supabase.from('tarefas_diarias').select('*').in('atividade_id', chunk),
+        ])
+        if (atv) atividades.push(...atv)
+        if (td) tarefas.push(...td)
+      }
+
+      const carimbo = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')
+      const blob = new Blob(
+        [JSON.stringify({ gerado_em: new Date().toISOString(), atividades, tarefas }, null, 2)],
+        { type: 'application/json' },
+      )
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `backup-antes-de-apagar-${carimbo}.json`
+      a.click()
+      URL.revokeObjectURL(url)
+
+      return { atividades: atividades.length, tarefas: tarefas.length }
+    } catch {
+      return null
+    }
+  }
+
   const deletarCascataPorTaskIds = async (taskIds: string[]) => {
     if (taskIds.length === 0) return
+
+    // Primeiro o arquivo, depois o estrago. Se o download falhar, não apaga:
+    // apagar sem a cópia é justamente o que não pode acontecer de novo.
+    const copia = await baixarAntesDeApagar(taskIds)
+    if (!copia) {
+      toast.error('Não consegui gerar a cópia de segurança. Nada foi apagado.')
+      throw new Error('backup falhou')
+    }
+    if (!window.confirm(
+      `Cópia salva: ${copia.atividades} atividade(s) e ${copia.tarefas} tarefa(s) ` +
+      `no arquivo que acabou de ser baixado.
+
+Confirma apagar agora?`,
+    )) {
+      throw new Error('cancelado pelo usuario')
+    }
+
     const chunkSize = 150
     let dailyIds: string[] = []
 
