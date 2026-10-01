@@ -810,7 +810,21 @@ Confirma apagar agora?`,
         if (!nomeAbaAtividades) throw new Error('Aba Lista não encontrada.')
 
         const abaAtividades = workbook.Sheets[nomeAbaAtividades]
-        const rowsAtv: any[] = XLSX.utils.sheet_to_json(abaAtividades, { defval: null, raw: false, dateNF: 'yyyy-mm-dd' })
+        const rowsAtvBrutas: any[] = XLSX.utils.sheet_to_json(abaAtividades, { defval: null, raw: false, dateNF: 'yyyy-mm-dd' })
+
+        // Linha sem o nome da atividade é descartada.
+        //
+        // O Excel guarda a linha mesmo depois de apagarem o conteúdo, e o
+        // leitor a entrega como um registro de campos vazios. Antes isso virava
+        // uma atividade chamada "Sem Nome", sem planner e sem frequência: não
+        // gerava tarefa, mas entrava no cadastro e aparecia nas contagens para
+        // sempre. Uma linha a mais no arquivo virava lixo permanente no banco.
+        const rowsAtv = rowsAtvBrutas.filter((linha) => {
+          const nome = linha['Atividade']
+          return nome !== null && nome !== undefined && `${nome}`.trim() !== ''
+        })
+
+        const linhasIgnoradas = rowsAtvBrutas.length - rowsAtv.length
 
         // ─── Smart dedup: busca atividades existentes pra reaproveitar task_ids ───
         // Pra linhas SEM Task_ID, em vez de gerar UUID novo direto (que criaria
@@ -955,7 +969,7 @@ Confirma apagar agora?`,
         // Ad Hocs ficam intactas sempre.
         const taskIdsArquivoSet = new Set(atividadesParaSalvar.map(a => a.task_id))
         const { data: todasBase } = await supabase
-          .from('atividades').select('task_id, nome_atividade, planner_name, status, responsaveis (nome)')
+          .from('atividades').select('task_id, nome_atividade, planner_name, status, responsavel_id, responsaveis (nome)')
           .or('planner_name.neq."Ad Hoc",planner_name.is.null')
 
         // Só os planners que vieram NESTE arquivo.
@@ -969,16 +983,48 @@ Confirma apagar agora?`,
             .filter(Boolean),
         )
 
+        /*
+         * E também só os RESPONSÁVEIS que vieram no arquivo.
+         *
+         * Aqui as planilhas são uma por pessoa, e todas usam o mesmo planner
+         * ("Check List_Controladoria"). Recortar só por planner faria o arquivo
+         * de uma pessoa propor inativar as atividades de todas as outras — que
+         * é o erro que já custou caro uma vez.
+         *
+         * Se nenhuma linha casou com um responsável do cadastro, o recorte por
+         * pessoa não existe e o de planner continua valendo sozinho; o alerta
+         * de "responsáveis não encontrados" já apareceu antes disso.
+         */
+        const responsaveisArquivo = new Set(
+          atividadesParaSalvar
+            .map(a => (a.responsavel_id === null || a.responsavel_id === undefined ? '' : String(a.responsavel_id)))
+            .filter(Boolean),
+        )
+
         // Considera órfã APENAS quem está atualmente Ativo (não pede pra inativar
         // o que já está inativo)
         const orfasAtivas = (todasBase || []).filter((a: any) =>
           !taskIdsArquivoSet.has(a.task_id) &&
           plannersArquivo.has((a.planner_name || '').trim().toLowerCase()) &&
+          (responsaveisArquivo.size === 0 ||
+            responsaveisArquivo.has(a.responsavel_id === null || a.responsavel_id === undefined ? '' : String(a.responsavel_id))) &&
           (a.status || 'Ativo').toLowerCase() === 'ativo'
         )
 
+        // Quem o arquivo trata, em nome, para a pergunta dizer de quem se fala.
+        type LinhaBase = { responsavel_id?: unknown; responsaveis?: { nome?: string } | null }
+        const nomesDoArquivo = [...new Set(
+          ((todasBase || []) as LinhaBase[])
+            .filter((a) => responsaveisArquivo.has(String(a.responsavel_id ?? '')))
+            .map((a) => a.responsaveis?.nome)
+            .filter(Boolean),
+        )]
+
         const totalNovos = novasAtividades.length
         const totalAtualizadas = atividadesParaSalvar.length - totalNovos
+        if (linhasIgnoradas > 0) {
+          toast(`${linhasIgnoradas} linha(s) sem nome de atividade foram ignoradas.`, { icon: 'ℹ️' })
+        }
         const msg = totalNovos > 0
           ? `Planilha sincronizada! ${totalNovos} nova(s), ${totalAtualizadas} atualizada(s).`
           : `Planilha sincronizada! ${totalAtualizadas} atividade(s) atualizada(s).`
@@ -1008,9 +1054,9 @@ Confirma apagar agora?`,
           const confirmar = window.confirm(
             `ATIVIDADES QUE NAO VIERAM NESTA PLANILHA\n\n` +
             `Balanco deste arquivo: ${totalNovos} nova(s), ${totalAtualizadas} atualizada(s).\n` +
-            `Planner(s) tratado(s) aqui: ${[...plannersArquivo].join(', ')}.\n\n` +
-            `Existem ${orfasAtivas.length} atividade(s) DESSE(S) PLANNER(S) que nao vieram ` +
-            `neste arquivo (os outros planners e as Ad Hoc ficam de fora desta conta):\n\n` +
+            `Planner(s): ${[...plannersArquivo].join(', ')}${nomesDoArquivo.length > 0 ? ' | Pessoa(s): ' + nomesDoArquivo.join(', ') : ''}.\n\n` +
+            `Existem ${orfasAtivas.length} atividade(s) DESSA(S) PESSOA(S) nesse(s) planner(s) ` +
+            `que nao vieram neste arquivo (ninguem mais entra nesta conta):\n\n` +
             `${exemplos}${sufixo}\n\n` +
             `O que fazer com elas?\n\n` +
             `[OK] = INATIVAR — param de gerar novos cartões mas histórico fica preservado. Pra reativar, ` +
