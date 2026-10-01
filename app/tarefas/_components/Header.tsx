@@ -26,6 +26,7 @@ const views: { id: ViewMode; label: string }[] = [
   { id: 'board', label: 'Status' },
   { id: 'timeboard', label: 'Dias' },
   { id: 'calendar', label: 'Mês' },
+  { id: 'eisenhower', label: 'Prioridade' },
 ]
 
 export function Header({

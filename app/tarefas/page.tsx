@@ -8,6 +8,7 @@ import { useAuthGate } from './_hooks/useAuthGate'
 import { useTarefas } from './_hooks/useTarefas'
 import { useTarefaFilters } from './_hooks/useTarefaFilters'
 import { useTaskNotifier } from './_hooks/useTaskNotifier'
+import { usePrioridades } from './_hooks/usePrioridades'
 import { useTarefaMutations } from './_hooks/useTarefaMutations'
 
 import { Header } from './_components/Header'
@@ -17,6 +18,7 @@ import { SkeletonBoard, SkeletonCalendar, SkeletonList } from './_components/Ske
 
 import { ListView } from './_components/views/ListView'
 import { BoardView } from './_components/views/BoardView'
+import { EisenhowerView } from './_components/views/EisenhowerView'
 import { TimeboardView } from './_components/views/TimeboardView'
 import { CalendarView } from './_components/views/CalendarView'
 
@@ -57,6 +59,9 @@ export default function TarefasPage() {
     mesAlvo, anoAlvo,
     projetoInicial: projetoUrl,
   })
+
+  // A prioridade da matriz é por pessoa, então nasce do usuário logado.
+  const prioridades = usePrioridades(userId)
 
   const { sendEmailNotification } = useTaskNotifier({
     rows: tarefas.rows,
@@ -125,6 +130,20 @@ export default function TarefasPage() {
       return (
         <ListView
           rows={filters.filtradas}
+          excluirTarefa={m.excluirTarefa}
+          abrirDrawer={m.abrirDrawer}
+        />
+      )
+    }
+    if (view === 'eisenhower') {
+      return (
+        <EisenhowerView
+          rows={filters.filtradas}
+          mapa={prioridades.mapa}
+          definir={prioridades.definir}
+          statuses={tarefas.statuses}
+          statusOrderMap={tarefas.statusOrderMap}
+          setStatus={m.setStatus}
           excluirTarefa={m.excluirTarefa}
           abrirDrawer={m.abrirDrawer}
         />
