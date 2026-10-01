@@ -606,7 +606,9 @@ export default function DashboardPage() {
         setUserEmail(user.email || '')
         const { data: prof } = await supabase
           .from('profiles')
-          .select('role, full_name, escopo')
+          // `*`: ver o comentário em useAuthGate — coluna ausente não pode
+          // zerar o perfil e rebaixar um admin a membro.
+          .select('*')
           .eq('id', user.id)
           .single()
         setUserRole(prof?.role || 'membro')

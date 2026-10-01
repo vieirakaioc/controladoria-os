@@ -35,7 +35,11 @@ export function useAuthGate() {
       setUserEmail(u.email || '')
       const { data: prof } = await supabase
         .from('profiles')
-        .select('full_name, role, escopo')
+        // `*`, e não a lista de colunas: pedir uma coluna que ainda não existe
+        // no banco faz a consulta inteira falhar, e aí o perfil volta vazio —
+        // a pessoa vira "membro" e passa a ver só as próprias tarefas. Um campo
+        // novo não pode derrubar o reconhecimento de quem é admin.
+        .select('*')
         .eq('id', u.id)
         .maybeSingle()
       if (cancelled) return

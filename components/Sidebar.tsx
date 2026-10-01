@@ -107,7 +107,9 @@ export default function Sidebar() {
       fetchNotificacoes(email)
       
       try {
-        const { data } = await supabase.from('profiles').select('role, full_name, avatar_url, email, escopo').eq('id', userId).single()
+        // `*` de propósito: uma coluna nova ausente no banco derrubaria a
+        // consulta inteira, e o menu perderia os itens de admin junto.
+        const { data } = await supabase.from('profiles').select('*').eq('id', userId).single()
         if (data) {
           // O e-mail vive em auth.users, que o navegador não lê. Guardamos uma
           // cópia no perfil na primeira visita de cada pessoa: é de lá que os
