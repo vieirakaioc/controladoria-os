@@ -31,8 +31,15 @@ export default function Home() {
   const [fazendoUpload, setFazendoUpload] = useState(false)
 
   const hoje = new Date()
-  const [mesAlvo, setMesAlvo] = useState<number>(hoje.getMonth() === 11 ? 0 : hoje.getMonth() + 1)
-  const [anoAlvo, setAnoAlvo] = useState<number>(hoje.getMonth() === 11 ? hoje.getFullYear() + 1 : hoje.getFullYear())
+  // Mês corrente, e não o seguinte.
+  //
+  // O padrão antigo abria em "mês + 1": quem entrava no dia 1º para gerar o
+  // ciclo do mês que começava gerava o mês seguinte sem perceber, e o mês
+  // corrente ficava vazio — foi o que aconteceu com outubro. Gerar o mês que
+  // vem continua a um clique no seletor; o caso comum é que deixa de exigir
+  // atenção.
+  const [mesAlvo, setMesAlvo] = useState<number>(hoje.getMonth())
+  const [anoAlvo, setAnoAlvo] = useState<number>(hoje.getFullYear())
 
   const [isAdmin, setIsAdmin] = useState(false)
   const [loadingAcesso, setLoadingAcesso] = useState(true)
