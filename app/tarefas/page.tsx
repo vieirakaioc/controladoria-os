@@ -25,6 +25,9 @@ import { CalendarView } from './_components/views/CalendarView'
 import { AdHocModal } from './_components/modals/AdHocModal'
 import { TaskDetailsModal } from './_components/modals/TaskDetailsModal'
 
+import Link from 'next/link'
+import { AlertTriangle } from 'lucide-react'
+
 import { MESES, type ViewMode } from './_lib/types'
 import { downloadIcs, type IcsTask } from '@/lib/ics'
 import { getResponsaveis } from '@/lib/responsaveis'
@@ -207,6 +210,36 @@ export default function TarefasPage() {
         onRefresh={tarefas.refresh}
         onExportIcs={handleExportIcs}
       />
+
+      {/* Antes dos indicadores: sem este aviso, o mês recém-virado parece um
+          mês em que as tarefas sumiram, e o número zerado em cima reforça a
+          impressão errada. */}
+      {tarefas.mesNaoGerado && !tarefas.loading && (
+        <div className="mb-6 flex flex-wrap items-center gap-3 rounded-lg border border-alerta-border bg-alerta-bg px-4 py-3">
+          <AlertTriangle size={18} className="shrink-0 text-alerta" />
+          <p className="min-w-[240px] flex-1 text-sm leading-relaxed text-ink-700">
+            <strong>
+              {MESES.find(mm => mm.v === tarefas.mesNaoGerado!.mes)?.n}/{tarefas.mesNaoGerado!.ano} ainda
+              não foi gerado.
+            </strong>{' '}
+            Há {filters.filtradas.length} tarefa(s) aqui e {tarefas.mesNaoGerado!.anterior} no mês anterior.
+            As tarefas do mês nascem da sincronização na tela Início.
+          </p>
+          <button
+            type="button"
+            onClick={() => setTodoPeriodo(true)}
+            className="rounded-md border border-line-strong bg-white px-3 py-2 text-xs font-semibold text-ink-700 transition-colors hover:border-teal-500 hover:text-teal-600"
+          >
+            Ver todo o período
+          </button>
+          <Link
+            href="/"
+            className="rounded-md bg-teal-600 px-4 py-2 text-xs font-bold text-white transition-all hover:brightness-110"
+          >
+            Ir para Início e sincronizar
+          </Link>
+        </div>
+      )}
 
       <KpiCards stats={filters.dashboard} loading={tarefas.loading} />
 

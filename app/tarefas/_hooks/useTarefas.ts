@@ -44,6 +44,8 @@ export function useTarefas({ plannerSel, mesAlvo, anoAlvo, userEmail, userRole, 
   const [classificacoesDb, setClassificacoesDb] = useState<Lookup[]>([])
   // Quem pode ser dono de subtarefa. Ver a montagem mais abaixo.
   const [donosDb, setDonosDb] = useState<Lookup[]>([])
+  /** Quantas tarefas o mês anterior tem, quando o escolhido está quase vazio. */
+  const [mesNaoGerado, setMesNaoGerado] = useState<{ mes: number; ano: number; anterior: number } | null>(null)
   const [projetosDb, setProjetosDb] = useState<{ id: string; nome: string }[]>([])
 
   // Lookups + planners: carrega uma vez na montagem
@@ -163,6 +165,35 @@ export function useTarefas({ plannerSel, mesAlvo, anoAlvo, userEmail, userRole, 
         from += pageSize
       }
 
+      /*
+       * O mês existe no calendário, mas pode não existir no banco.
+       *
+       * As tarefas do mês nascem da sincronização da tela Início. Até ela
+       * rodar, o mês novo vem quase vazio — e a tela mostrava isso como se as
+       * tarefas tivessem sumido, sem dizer por quê. Todo dia 1º a mesma dúvida.
+       *
+       * `acc` já é a contagem do mês inteiro, antes de filtrar por pessoa, e a
+       * do mês anterior sai de um count sem corpo. A consulta extra só acontece
+       * quando o mês está pobre o bastante para levantar a suspeita.
+       */
+      if (!todoPeriodo && acc.length < 50) {
+        const anterior = new Date(anoAlvo, mesAlvo - 1, 1)
+        const { count } = await supabase
+          .from('tarefas_diarias')
+          .select('id', { count: 'exact', head: true })
+          .gte('data_vencimento', iso(anterior))
+          .lt('data_vencimento', iso(inicio))
+
+        const anteriores = count ?? 0
+        setMesNaoGerado(
+          anteriores >= 50 && acc.length < anteriores * 0.25
+            ? { mes: mesAlvo, ano: anoAlvo, anterior: anteriores }
+            : null,
+        )
+      } else {
+        setMesNaoGerado(null)
+      }
+
       let baseData = acc
 
       // Dono de subtarefa enxerga a tarefa, mesmo não sendo dono dela: sem
@@ -220,5 +251,6 @@ export function useTarefas({ plannerSel, mesAlvo, anoAlvo, userEmail, userRole, 
     planners, refreshPlanners: carregarPlanners,
     statuses, statusOrderMap,
     setoresDb, respsDb, classificacoesDb, projetosDb, donosDb,
+    mesNaoGerado,
   }
 }
