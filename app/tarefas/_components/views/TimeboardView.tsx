@@ -15,17 +15,29 @@ type Props = {
 
 export function TimeboardView({ timeOrder, timeboard, statuses, statusOrderMap, setStatus, excluirTarefa, abrirDrawer }: Props) {
   return (
-    <div className="flex gap-4 overflow-x-auto pb-4">
+    <div className="flex gap-3 overflow-x-auto pb-3">
       {timeOrder.map((b) => (
         <div
           key={b}
-          className={`rounded-lg border flex-1 min-w-[320px] flex flex-col max-h-[75vh] transition-colors ${b === 'Atrasadas' ? 'bg-[#b43a3d]/10 dark:bg-[#b43a3d]/20 border-[#b43a3d]/20 dark:border-[#b43a3d]/30' : 'bg-navy-100/50 dark:bg-slate-900/50 border-line dark:border-slate-800'}`}
+          className={`flex max-h-[75vh] min-w-[288px] flex-1 flex-col rounded-lg border transition-colors ${
+            b === 'Atrasadas'
+              ? 'border-[#b43a3d]/25 bg-[#b43a3d]/10 dark:border-[#b43a3d]/30 dark:bg-[#b43a3d]/20'
+              : 'border-line bg-navy-100/70 dark:border-slate-800 dark:bg-slate-900/60'
+          }`}
         >
-          <div className={`p-4 border-b flex justify-between items-center rounded-t-2xl transition-colors ${b === 'Atrasadas' ? 'border-[#b43a3d]/30 dark:border-[#b43a3d]/40 text-[#b43a3d] dark:text-[#f87171]' : 'bg-navy-100 dark:bg-slate-800 border-line dark:border-slate-700 text-ink-700 dark:text-slate-200'}`}>
-            <span className="font-medium">{b}</span>
-            <span className="bg-white dark:bg-slate-700 text-xs font-medium px-2 py-0.5 rounded-full shadow-sm">{timeboard[b]?.length || 0}</span>
+          {/* Faixa de cor no topo da coluna atrasada: identifica de longe sem
+              tingir os cartões que estão dentro dela. */}
+          {b === 'Atrasadas' && <div className="h-[3px] rounded-t-lg bg-[#b43a3d]" />}
+
+          <div className="flex items-center gap-2 px-3 pb-2 pt-2.5">
+            <span className={`text-[13px] font-bold ${b === 'Atrasadas' ? 'text-[#b43a3d] dark:text-[#f87171]' : 'text-navy-700 dark:text-slate-200'}`}>
+              {b}
+            </span>
+            <span className="num ml-auto rounded-full border border-line bg-white px-2 py-0.5 text-[11px] font-semibold text-ink-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+              {timeboard[b]?.length || 0}
+            </span>
           </div>
-          <div className="p-3 space-y-3 overflow-y-auto flex-1 custom-scrollbar">
+          <div className="custom-scrollbar flex-1 space-y-2 overflow-y-auto px-2 pb-2">
             {(timeboard[b] || []).map((r) => (
               <TaskCard
                 key={r.id}
