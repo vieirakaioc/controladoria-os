@@ -243,50 +243,58 @@ export default function Home() {
     return true
   }
 
+  /**
+   * Monta os cartões de um mês a partir de uma lista de regras.
+   *
+   * Separado de `gerarCicloDoMes` porque agora há dois caminhos: o botão da
+   * tela, que usa todas as atividades ativas do banco, e a geração logo depois
+   * do upload, que usa APENAS as atividades daquela planilha. Os dois precisam
+   * calcular a data do mesmo jeito — manter duas contas seria garantir que uma
+   * delas ficasse para trás.
+   *
+   * Não cria data passada: tarefa que já nasceria atrasada não ajuda ninguém.
+   */
+  const montarCartoesDoMes = (regras: any[], mes: number, ano: number) => {
+    const hojeISO = formataDataLocal(new Date())
+    const cards: { atividade_id: string; data_vencimento: string; status: string }[] = []
+
+    regras.forEach((regra) => {
+      if ((regra.status || '').toLowerCase().trim() === 'inativo') return
+      if (!deveRodarNoMes(regra.frequencia, mes)) return
+
+      const freq = (regra.frequencia || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
+
+      if (freq === 'diaria') {
+        for (let d = 1; d <= 31; d++) {
+          const dt = new Date(ano, mes, d)
+          if (dt.getMonth() !== mes) break
+          const fds = dt.getDay() === 0 || dt.getDay() === 6
+          const fmt = formataDataLocal(dt)
+          if (fmt >= hojeISO && !fds && !feriados.includes(fmt)) {
+            cards.push({ atividade_id: regra.task_id, data_vencimento: fmt, status: 'Pendente' })
+          }
+        }
+        return
+      }
+
+      calcularDatasVencimento(regra, mes, ano).forEach((dataVenc) => {
+        if (dataVenc >= hojeISO) {
+          cards.push({ atividade_id: regra.task_id, data_vencimento: dataVenc, status: 'Pendente' })
+        }
+      })
+    })
+
+    return cards
+  }
+
   const gerarCicloDoMes = async () => {
     if (!window.confirm(`Tem a certeza que deseja gerar o lote de tarefas para ${MESES.find(m => m.v === mesAlvo)?.n} de ${anoAlvo}?\n\nℹ️ NOTA: Tarefas com datas de vencimento anteriores ao dia de HOJE não serão criadas para evitar a geração de tarefas em atraso.`)) return
     
     setGerandoCiclo(true)
     const toastId = toast.loading(`A gerar tarefas ativas do ciclo...`)
 
-    // 💡 A LINHA QUE TRAVA O PASSADO
-    const hojeISO = formataDataLocal(new Date())
-
     try {
-      const cardsParaUpsert: any[] = []
-
-      atividades.forEach((regra) => {
-        // Pula APENAS atividades EXPLICITAMENTE inativas.
-        const st = (regra.status || '').toLowerCase().trim()
-        if (st === 'inativo') return
-
-        if (!deveRodarNoMes(regra.frequencia, mesAlvo)) return
-        // Normaliza acento: "Diária" / "diaria" / "DIARIA" → "diaria"
-        const freq = (regra.frequencia || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
-
-        if (freq === 'diaria') {
-          for (let d = 1; d <= 31; d++) {
-            const dt = new Date(anoAlvo, mesAlvo, d)
-            if (dt.getMonth() !== mesAlvo) break
-
-            const fds = dt.getDay() === 0 || dt.getDay() === 6
-            const fmt = formataDataLocal(dt)
-            
-            // 💡 Só empurra para o Kanban se a data for HOJE ou FUTURO
-            if (fmt >= hojeISO && !fds && !feriados.includes(fmt)) {
-              cardsParaUpsert.push({ atividade_id: regra.task_id, data_vencimento: fmt, status: 'Pendente' })
-            }
-          }
-        } else {
-          const datasVencimento = calcularDatasVencimento(regra, mesAlvo, anoAlvo)
-          datasVencimento.forEach(dataVenc => {
-            // 💡 Só empurra para o Kanban se a data for HOJE ou FUTURO
-            if (dataVenc >= hojeISO) {
-              cardsParaUpsert.push({ atividade_id: regra.task_id, data_vencimento: dataVenc, status: 'Pendente' })
-            }
-          })
-        }
-      })
+      const cardsParaUpsert = montarCartoesDoMes(atividades, mesAlvo, anoAlvo)
 
       if (cardsParaUpsert.length === 0) {
         toast.error('Nenhuma tarefa pendente atende aos critérios para os dias restantes deste mês.', { id: toastId })
@@ -1024,6 +1032,40 @@ Confirma apagar agora?`,
             } catch {
               toast.error('Erro ao inativar (parcialmente concluído).', { id: tid })
             }
+          }
+        }
+
+        /*
+         * Gera o mês A PARTIR DESTA PLANILHA.
+         *
+         * O botão de sincronização mensal percorre todas as atividades ativas
+         * do banco — inclusive as que sobraram de importações antigas, que é
+         * de onde vinham as tarefas "nada a ver". Aqui é o contrário: só o que
+         * veio no arquivo entra. É isto que faz a planilha mandar no mês.
+         *
+         * A gravação é por atividade + data, então repetir o upload não
+         * duplica nem apaga o que já foi respondido.
+         */
+        const rotuloMes = `${MESES.find(m => m.v === mesAlvo)?.n}/${anoAlvo}`
+        const cardsDaPlanilha = montarCartoesDoMes(atividadesParaSalvar, mesAlvo, anoAlvo)
+
+        if (cardsDaPlanilha.length > 0) {
+          const gerar = window.confirm(
+            `GERAR AS TAREFAS DE ${rotuloMes}` + '\n\n' +
+            `${cardsDaPlanilha.length} tarefa(s), a partir das ${atividadesParaSalvar.length} atividades desta planilha.` + '\n\n' +
+            'Somente as atividades deste arquivo entram. Nada de importacoes anteriores e incluido.' + '\n\n' +
+            'Tarefa com data anterior a hoje nao e criada.' + '\n\n' +
+            '[OK] = gerar agora   [Cancelar] = so cadastrar as atividades',
+          )
+
+          if (gerar) {
+            const tid = toast.loading(`A gerar ${cardsDaPlanilha.length} tarefa(s) de ${rotuloMes}...`)
+            const { error: errCiclo } = await supabase
+              .from('tarefas_diarias')
+              .upsert(cardsDaPlanilha, { onConflict: 'atividade_id,data_vencimento' })
+
+            if (errCiclo) toast.error('Erro ao gerar o ciclo: ' + errCiclo.message, { id: tid })
+            else toast.success(`${cardsDaPlanilha.length} tarefa(s) de ${rotuloMes} geradas.`, { id: tid })
           }
         }
 
