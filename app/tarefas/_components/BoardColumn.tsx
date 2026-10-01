@@ -34,18 +34,28 @@ export function BoardColumn({ status, tasks, statuses, statusOrderMap, setStatus
     if (taskId && sourceStatus !== status) setStatus(taskId, status)
   }
 
+  // A coluna tem fundo próprio e os cartões são brancos sobre ele. Antes era
+  // branco sobre branco, e a pilha de cartões não se lia como uma coluna.
   return (
     <div
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className={`rounded-lg border flex-1 min-w-[320px] flex flex-col max-h-[75vh] transition-colors ${isOver ? 'bg-teal-600/10 dark:bg-[#0f88a8]/20 border-teal-500/50 border-dashed' : 'bg-navy-100/50 dark:bg-slate-900/50 border-line dark:border-slate-800'}`}
+      className={`flex max-h-[75vh] min-w-[288px] flex-1 flex-col rounded-lg border transition-colors ${
+        isOver
+          ? 'border-dashed border-teal-500/60 bg-teal-600/10 dark:bg-[#0f88a8]/20'
+          : 'border-line bg-navy-100/70 dark:border-slate-800 dark:bg-slate-900/60'
+      }`}
     >
-      <div className="p-4 border-b border-line dark:border-slate-800 flex justify-between items-center bg-navy-100/80 dark:bg-slate-800/80 rounded-t-2xl">
-        <span className={`font-medium ${isOver ? 'text-teal-600 dark:text-[#7dd3fc]' : 'text-ink-700 dark:text-slate-200'}`}>{status}</span>
-        <span className="bg-white dark:bg-slate-700 text-ink-500 dark:text-slate-300 text-xs font-medium px-2 py-0.5 rounded-full border border-line dark:border-slate-600 shadow-card">{tasks.length}</span>
+      <div className="flex items-center gap-2 px-3 pb-2 pt-2.5">
+        <span className={`text-[13px] font-bold ${isOver ? 'text-teal-600 dark:text-[#7dd3fc]' : 'text-navy-700 dark:text-slate-200'}`}>
+          {status}
+        </span>
+        <span className="num ml-auto rounded-full border border-line bg-white px-2 py-0.5 text-[11px] font-semibold text-ink-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+          {tasks.length}
+        </span>
       </div>
-      <div className="p-3 space-y-3 overflow-y-auto flex-1 custom-scrollbar">
+      <div className="custom-scrollbar flex-1 space-y-2 overflow-y-auto px-2 pb-2">
         {tasks.map((r) => (
           <TaskCard
             key={r.id}

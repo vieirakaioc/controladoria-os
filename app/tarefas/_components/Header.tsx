@@ -34,15 +34,15 @@ export function Header({
   setMesAlvo, setAnoAlvo, setView, setPlannerSel, onNovaAdHoc, onRefresh, onExportIcs,
 }: Props) {
   return (
-    <header className="flex flex-col xl:flex-row xl:justify-between xl:items-center gap-4 mb-6 bg-white dark:bg-slate-900 p-5 rounded-lg shadow-card border border-line dark:border-slate-800 transition-colors">
+    <header className="mb-4 flex flex-col gap-3 rounded-lg border border-line bg-white p-3.5 shadow-card transition-colors dark:border-slate-800 dark:bg-slate-900 xl:flex-row xl:items-center xl:justify-between">
       <div>
-        <h1 className="text-2xl font-semibold text-ink-900 dark:text-white tracking-tight flex items-center gap-2">
+        <h1 className="flex items-center gap-2 text-[17px] font-semibold tracking-tight text-ink-900 dark:text-white">
           Painel de Execução
           <span className="text-[10px] uppercase font-bold tracking-widest bg-teal-600/10 text-teal-600 dark:bg-[#38bdf8]/10 dark:text-[#38bdf8] px-2 py-1 rounded-md mt-1">
             {userRole === 'admin' ? 'Visão Admin' : 'Minhas Tarefas'}
           </span>
         </h1>
-        <p className="text-ink-500 dark:text-slate-400 text-sm mt-1">
+        <p className="mt-0.5 text-[12.5px] text-ink-500 dark:text-slate-400">
           {todoPeriodo
             ? 'Todo o período — sem filtro de mês'
             : `Mês: ${MESES.find(m => m.v === mesAlvo)?.n}/${anoAlvo}`}
