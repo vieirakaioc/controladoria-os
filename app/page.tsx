@@ -754,6 +754,29 @@ export default function Home() {
           )
         }
 
+        // ─── Rede de segurança do casamento ──────────────────────────────
+        // A chave acima exige nome + responsável + planner + frequência iguais.
+        // Corrigir uma palavra no nome, trocar o responsável ou escrever o nome
+        // dele diferente do cadastro faz a linha não casar — e aí nasce uma
+        // atividade nova ao lado da antiga, que passa a aparecer como órfã.
+        // Era daqui que vinha a "atividade nada a ver".
+        //
+        // Esta segunda chave é só nome + planner. Ela só vale quando houver UMA
+        // única atividade com esse par: duas pessoas podem ter a mesma rotina,
+        // e colapsar as duas numa só seria pior do que duplicar.
+        const AMBIGUO = '__ambiguo__'
+        const chaveLarga = (nome: string, planner: string) =>
+          `${(nome || '').trim().toLowerCase()}|${(planner || '').trim().toLowerCase()}`
+        const indexLargo = new Map<string, string>()
+        for (const a of (atividadesExistentes || [])) {
+          const k = chaveLarga(a.nome_atividade, a.planner_name)
+          indexLargo.set(k, indexLargo.has(k) ? AMBIGUO : a.task_id)
+        }
+
+        // Nomes de responsável que a planilha traz e o cadastro não tem. Sem
+        // isso a atividade entra sem dono, e ninguém fica sabendo.
+        const responsaveisNaoEncontrados = new Set<string>()
+
         const atividadesParaSalvar = rowsAtv.map((linha) => {
           const s = dbSetores?.find((x: any) => x.nome && x.nome.trim() === (linha['Setor'] ? `${linha['Setor']}`.trim() : null))
           const r = dbResponsaveis?.find((x: any) => x.nome && x.nome.trim() === (linha['Responsável'] ? `${linha['Responsável']}`.trim() : null))
@@ -765,10 +788,14 @@ export default function Home() {
           // 1º Task_ID informado na planilha (preferência)
           // 2º Match por nome+resp+planner+freq (smart dedup)
           // 3º UUID novo (atividade realmente nova)
+          const nomeRespPlanilha = linha['Responsável'] ? `${linha['Responsável']}`.trim() : ''
+          if (nomeRespPlanilha && !r) responsaveisNaoEncontrados.add(nomeRespPlanilha)
+
           let taskId = linha['Task_ID'] ? `${linha['Task_ID']}`.trim() : ''
           if (!taskId) {
             const match = indexExistente.get(chave(nome, r?.id, planner || '', freq || ''))
-            taskId = match || crypto.randomUUID()
+            const largo = indexLargo.get(chaveLarga(nome, planner || ''))
+            taskId = match || (largo && largo !== AMBIGUO ? largo : '') || crypto.randomUUID()
           }
 
           return {
@@ -853,18 +880,46 @@ export default function Home() {
         const { data: todasBase } = await supabase
           .from('atividades').select('task_id, nome_atividade, planner_name, status, responsaveis (nome)')
           .or('planner_name.neq."Ad Hoc",planner_name.is.null')
+
+        // Só os planners que vieram NESTE arquivo.
+        //
+        // Antes a conta pegava a base inteira: subir a planilha de um planner
+        // propunha inativar todos os outros, que nem estavam sendo tratados.
+        // Planilha parcial é o caso comum, não a exceção.
+        const plannersArquivo = new Set(
+          atividadesParaSalvar
+            .map(a => (a.planner_name || '').trim().toLowerCase())
+            .filter(Boolean),
+        )
+
         // Considera órfã APENAS quem está atualmente Ativo (não pede pra inativar
         // o que já está inativo)
         const orfasAtivas = (todasBase || []).filter((a: any) =>
           !taskIdsArquivoSet.has(a.task_id) &&
+          plannersArquivo.has((a.planner_name || '').trim().toLowerCase()) &&
           (a.status || 'Ativo').toLowerCase() === 'ativo'
         )
 
         const totalNovos = novasAtividades.length
+        const totalAtualizadas = atividadesParaSalvar.length - totalNovos
         const msg = totalNovos > 0
-          ? `Planilha sincronizada! ${totalNovos} nova(s) atividade(s).`
-          : 'Planilha sincronizada com sucesso!'
+          ? `Planilha sincronizada! ${totalNovos} nova(s), ${totalAtualizadas} atualizada(s).`
+          : `Planilha sincronizada! ${totalAtualizadas} atividade(s) atualizada(s).`
         toast.success(msg, { id: toastId })
+
+        // Responsavel citado na planilha que nao existe no cadastro: a atividade
+        // entra sem dono e, por nao casar com a que ja existia, costuma entrar
+        // duplicada. Quase sempre e diferenca de grafia, e era silencioso.
+        if (responsaveisNaoEncontrados.size > 0) {
+          window.alert(
+            'RESPONSAVEIS NAO ENCONTRADOS NO CADASTRO\n\n' +
+            'Estes nomes vieram na planilha e nao batem com nenhum cadastro:\n\n' +
+            [...responsaveisNaoEncontrados].map(n => '  - ' + n).join('\n') +
+            '\n\nAs atividades deles entraram SEM responsavel. Confira a grafia na ' +
+            'aba de parametros e suba a planilha de novo: o sistema reaproveita a ' +
+            'atividade existente em vez de duplicar.',
+          )
+        }
 
         // Pergunta sobre inativação (não destrutivo — preserva histórico)
         if (orfasAtivas.length > 0) {
@@ -874,9 +929,11 @@ export default function Home() {
           const sufixo = orfasAtivas.length > 5 ? `\n  ...e mais ${orfasAtivas.length - 5}` : ''
 
           const confirmar = window.confirm(
-            `📋 ATIVIDADES DE IMPORTS ANTERIORES\n\n` +
-            `Existem ${orfasAtivas.length} atividade(s) cadastrada(s) no banco que NÃO vieram nesta planilha ` +
-            `(provavelmente foram importadas anteriormente):\n\n` +
+            `ATIVIDADES QUE NAO VIERAM NESTA PLANILHA\n\n` +
+            `Balanco deste arquivo: ${totalNovos} nova(s), ${totalAtualizadas} atualizada(s).\n` +
+            `Planner(s) tratado(s) aqui: ${[...plannersArquivo].join(', ')}.\n\n` +
+            `Existem ${orfasAtivas.length} atividade(s) DESSE(S) PLANNER(S) que nao vieram ` +
+            `neste arquivo (os outros planners e as Ad Hoc ficam de fora desta conta):\n\n` +
             `${exemplos}${sufixo}\n\n` +
             `O que fazer com elas?\n\n` +
             `[OK] = INATIVAR — param de gerar novos cartões mas histórico fica preservado. Pra reativar, ` +
