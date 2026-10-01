@@ -142,11 +142,23 @@ export const TaskCard = React.memo(function TaskCard({
           </span>
         )}
 
-        <span
-          title={nomesResponsaveis}
-          className={`ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white ${corDaPessoa(nomesResponsaveis)}`}
-        >
-          {iniciais(nomesResponsaveis)}
+        {/* O círculo guarda o nome inteiro, e o balão aparece na hora. O title
+            do navegador leva quase um segundo e some sozinho — pouco para
+            conferir de quem é a tarefa, que é a consulta mais frequente aqui.
+            Ancorado à direita para não ser cortado pela rolagem da coluna. */}
+        <span className="group/quem relative ml-auto shrink-0">
+          <span
+            tabIndex={0}
+            className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold text-white ${corDaPessoa(nomesResponsaveis)}`}
+          >
+            {iniciais(nomesResponsaveis)}
+          </span>
+          <span
+            role="tooltip"
+            className="pointer-events-none absolute bottom-full right-0 z-20 mb-1 hidden whitespace-nowrap rounded-md bg-navy-900 px-2 py-1 text-[11px] font-semibold text-white shadow-pop group-hover/quem:block group-focus-within/quem:block dark:bg-slate-700"
+          >
+            {nomesResponsaveis}
+          </span>
         </span>
       </div>
 
