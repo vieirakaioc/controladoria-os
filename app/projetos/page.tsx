@@ -188,10 +188,10 @@ export default function ProjetosPage() {
   }
 
   return (
-    <div className="min-h-screen bg-navy-50 dark:bg-slate-950 p-8 font-sans">
+    <div className="min-h-screen bg-navy-50 p-5 font-sans dark:bg-slate-950">
       <Toaster position="bottom-right" toastOptions={{ style: { background: '#031D2D', color: '#fff' } }} />
 
-      <header className="flex justify-between items-center mb-8 bg-white dark:bg-slate-900 p-6 rounded-lg shadow-card border border-line/50 dark:border-slate-800/50">
+      <header className="mb-5 flex items-center justify-between rounded-lg border border-line/50 bg-white p-4 shadow-card dark:border-slate-800/50 dark:bg-slate-900">
         <div>
           <h1 className="text-3xl font-extrabold text-slate-950 dark:text-white tracking-tighter flex items-center gap-3">
             <Briefcase className="text-[#C7A77B]" size={28} /> Gestão de Projetos
@@ -209,12 +209,12 @@ export default function ProjetosPage() {
       {loading ? (
         <div className="text-center py-20 text-[#031D2D] font-medium animate-pulse">A carregar portfólio...</div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
           {projetos.map(proj => {
             const isExpanded = expandedProjId === proj.id
             
             return (
-              <div key={proj.id} className="bg-white dark:bg-slate-900 border border-line/80 dark:border-slate-800 rounded-lg p-6 shadow-card hover:shadow-lg transition-all duration-300 flex flex-col relative overflow-hidden group">
+              <div key={proj.id} className="group relative flex flex-col overflow-hidden rounded-lg border border-line/80 bg-white p-4 shadow-card transition-all duration-300 hover:shadow-card-hover dark:border-slate-800 dark:bg-slate-900">
                 <div className={`absolute top-0 left-0 w-full h-1.5 ${proj.status === 'Concluído' ? 'bg-[#5A755C]' : 'bg-[#C7A77B]'}`}></div>
                 
                 <div className="flex justify-between items-start mb-4 pt-2 gap-3">

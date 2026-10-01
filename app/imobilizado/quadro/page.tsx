@@ -178,7 +178,7 @@ function ColunaQuadro({ coluna, hoje }: { coluna: Coluna; hoje: string }) {
 
   return (
     <section
-      className={`panel surge flex w-[300px] shrink-0 flex-col overflow-hidden ${
+      className={`surge flex w-[288px] shrink-0 flex-col overflow-hidden rounded-lg border border-line bg-navy-100/70 ${
         coluna.itens.length === 0 ? 'opacity-70' : ''
       }`}
     >
@@ -190,14 +190,14 @@ function ColunaQuadro({ coluna, hoje }: { coluna: Coluna; hoje: string }) {
         }`}
       />
 
-      <header className="flex items-start justify-between gap-2 border-b border-line bg-navy-50/70 px-4 py-3">
+      <header className="flex items-start justify-between gap-2 px-3 pb-2 pt-2">
         <div className="min-w-0">
-          <h2 className="truncate text-[15px] font-semibold text-navy-700" title={coluna.titulo}>
+          <h2 className="truncate text-[13px] font-bold text-navy-700" title={coluna.titulo}>
             {coluna.titulo}
           </h2>
           {/* A área é o segundo nível de leitura da coluna: sobe junto com o
               título, senão vira legenda ilegível ao lado de um nome grande. */}
-          <p className="mt-0.5 truncate text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-400">
+          <p className="mt-0.5 truncate text-[10px] font-semibold uppercase tracking-[0.1em] text-ink-400">
             {final ? 'encerrados' : coluna.area || '—'}
           </p>
         </div>
@@ -209,13 +209,13 @@ function ColunaQuadro({ coluna, hoje }: { coluna: Coluna; hoje: string }) {
               {atrasados}
             </span>
           )}
-          <span className="num rounded-full bg-navy-700 px-2.5 py-0.5 text-[12px] font-bold text-white">
+          <span className="num rounded-full border border-line bg-white px-2 py-0.5 text-[11px] font-semibold text-ink-500">
             {coluna.itens.length}
           </span>
         </div>
       </header>
 
-      <div className="flex flex-1 flex-col gap-2.5 bg-navy-50/30 p-3">
+      <div className="flex flex-1 flex-col gap-2 px-2 pb-2">
         {coluna.itens.length === 0 ? (
           <p className="px-1 py-6 text-center text-xs text-ink-400">Nada aqui.</p>
         ) : (
@@ -245,7 +245,7 @@ function Carta({ item, hoje, final }: { item: Item; hoje: string; final: boolean
   return (
     <Link
       href={`/imobilizado/${item.id}`}
-      className={`group relative block overflow-hidden rounded-md border bg-white p-3 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover ${
+      className={`group relative block overflow-hidden rounded-lg border bg-white p-[9px] shadow-card transition-all hover:-translate-y-px hover:shadow-card-hover ${
         atrasada
           ? "border-negativo-border before:absolute before:inset-y-0 before:left-0 before:w-[3px] before:bg-negativo before:content-['']"
           : venceHoje
@@ -266,7 +266,7 @@ function Carta({ item, hoje, final }: { item: Item; hoje: string; final: boolean
         )}
       </div>
 
-      <p className="mt-1 line-clamp-2 text-sm font-semibold leading-snug text-navy-700">
+      <p className="mt-1 line-clamp-2 text-[13.5px] font-medium leading-snug text-ink-900">
         {item.descricao || item.fornecedor || `Nota ${item.nfNumero}`}
       </p>
 
@@ -280,7 +280,7 @@ function Carta({ item, hoje, final }: { item: Item; hoje: string; final: boolean
 
       {/* Os dois tempos, lado a lado: o da etapa cobra a pessoa que está com
           ela; o do processo cobra o fluxo inteiro. */}
-      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-line pt-2 text-[11px]">
+      <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px]">
         {!final && naEtapa !== null && (
           <span
             className={`num font-bold ${

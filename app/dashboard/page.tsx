@@ -994,10 +994,10 @@ export default function DashboardPage() {
     : `de ${MESES.find(m => m.v === mesInicio)?.n} a ${MESES.find(m => m.v === mesFim)?.n}/${anoAlvo}`
 
   return (
-    <div className="min-h-screen bg-navy-50 dark:bg-slate-950 p-8 font-sans transition-colors duration-300">
+    <div className="min-h-screen bg-navy-50 p-5 font-sans transition-colors duration-300 dark:bg-slate-950">
       <Toaster position="bottom-right" toastOptions={{ style: { background: isDark ? '#1e293b' : '#031D2D', color: '#fff', borderRadius: '12px' } }} />
 
-      <header className="flex flex-col xl:flex-row xl:justify-between xl:items-center gap-4 mb-8 bg-white dark:bg-slate-900 p-6 rounded-lg shadow-card border border-line/50 dark:border-slate-800/50 transition-colors">
+      <header className="mb-5 flex flex-col gap-3 rounded-lg border border-line/50 bg-white p-4 shadow-card transition-colors dark:border-slate-800/50 dark:bg-slate-900 xl:flex-row xl:items-center xl:justify-between">
         <div>
           <h1 className="text-3xl font-extrabold text-slate-950 dark:text-white tracking-tighter flex items-center gap-3">
             Dashboard de Resultados
@@ -1134,7 +1134,7 @@ export default function DashboardPage() {
 
         {tab === 'resumo' ? (
           /* RESUMO: só os 2 gráficos mais importantes */
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
             <Section
               title="Produtividade Diária"
               subtitle="Tarefas concluídas no período"
@@ -1159,7 +1159,7 @@ export default function DashboardPage() {
           </div>
         ) : (
           /* DETALHES: tudo */
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
           <Section 
             title="Produtividade Diária" 
             subtitle="Tarefas concluídas no período" 
