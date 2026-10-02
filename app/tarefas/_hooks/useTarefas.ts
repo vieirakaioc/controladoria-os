@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'react-hot-toast'
 import { supabase } from '@/lib/supabase'
+import { comCache } from '@/lib/cacheConsulta'
 import { getResponsaveis } from '@/lib/responsaveis'
 import { ehDoProjeto, podeVerAtividade, soDoProjeto, type Perfil } from '@/lib/acessoProjeto'
 import { apenasSubtarefas } from '../_lib/types'
@@ -55,12 +56,15 @@ export function useTarefas({ plannerSel, mesAlvo, anoAlvo, userEmail, userRole, 
       // Sem a varredura de `atividades` que existia aqui só para listar os
       // planners: ela lia a tabela inteira, custava 800 ms e a mesma informação
       // já vem junto das atividades carregadas em `carregar`.
+      // Em cache: cinco listas que quase não mudam no expediente, rebuscadas
+      // toda vez que a tela montava. Cada ida custa 220 a 250 ms de latência,
+      // mesmo devolvendo 900 bytes.
       const [{ data: s }, { data: r }, { data: c }, { data: p }, { data: perfis }] = await Promise.all([
-        supabase.from('setores').select('id,nome').order('nome', { ascending: true }),
-        supabase.from('responsaveis').select('id,nome,email').order('nome', { ascending: true }),
-        supabase.from('classificacoes').select('id,nome').order('nome', { ascending: true }),
-        supabase.from('projetos').select('id,nome').eq('status', 'Em Andamento').order('nome', { ascending: true }),
-        supabase.from('profiles').select('id, full_name, email').order('full_name', { ascending: true }),
+        comCache('setores', () => supabase.from('setores').select('id,nome').order('nome', { ascending: true })),
+        comCache('responsaveis', () => supabase.from('responsaveis').select('id,nome,email').order('nome', { ascending: true })),
+        comCache('classificacoes', () => supabase.from('classificacoes').select('id,nome').order('nome', { ascending: true })),
+        comCache('projetos', () => supabase.from('projetos').select('id,nome').eq('status', 'Em Andamento').order('nome', { ascending: true })),
+        comCache('profiles', () => supabase.from('profiles').select('id, full_name, email').order('full_name', { ascending: true })),
       ])
       if (cancelled) return
       setSetoresDb((s || []) as Lookup[])
@@ -168,19 +172,28 @@ export function useTarefas({ plannerSel, mesAlvo, anoAlvo, userEmail, userRole, 
 
       // A primeira página e as atividades saem juntas: uma não depende da outra,
       // e esperar em fila dobrava o tempo de abertura da tela.
-      const [primeiraPagina, { data: atividadesData, error: erroAtividades }] = await Promise.all([
+      // As duas primeiras páginas saem juntas, e não em fila.
+      //
+      // O mês tem passado de 1.400 tarefas, então a segunda página quase sempre
+      // existe — esperar a primeira para só então pedi-la custava 424 ms toda
+      // vez. Quando o mês é pequeno, a segunda volta vazia e não custa nada
+      // além de uma requisição.
+      const [pagina1, pagina2, { data: atividadesData, error: erroAtividades }] = await Promise.all([
         buscarPagina(0),
-        supabase
-          .from('atividades')
-          .select(`
-            task_id, nome_atividade, planner_name, frequencia, prioridade_descricao, responsavel_id, classificacao, responsaveis_lista, projeto_id,
-            setores!atividades_setor_id_fkey (nome), responsaveis!atividades_responsavel_id_fkey (nome, email)
-          `),
+        buscarPagina(pageSize),
+        comCache('atividades', () =>
+          supabase
+            .from('atividades')
+            .select(`
+              task_id, nome_atividade, planner_name, frequencia, prioridade_descricao, responsavel_id, classificacao, responsaveis_lista, projeto_id,
+              setores!atividades_setor_id_fkey (nome), responsaveis!atividades_responsavel_id_fkey (nome, email)
+            `),
+        ),
       ])
       if (erroAtividades) throw erroAtividades
 
-      const planas = [...primeiraPagina]
-      for (let from = pageSize; planas.length === from; from += pageSize) {
+      const planas = [...pagina1, ...pagina2]
+      for (let from = pageSize * 2; planas.length === from; from += pageSize) {
         planas.push(...(await buscarPagina(from)))
       }
 

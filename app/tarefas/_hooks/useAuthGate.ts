@@ -24,13 +24,33 @@ export function useAuthGate() {
   useEffect(() => {
     let cancelled = false
     ;(async () => {
-      const { data, error } = await supabase.auth.getUser()
+      /*
+       * A sessão local primeiro; a conferência com o servidor em segundo plano.
+       *
+       * `getUser()` faz uma ida à rede SEGURANDO a trava da sessão do
+       * supabase-js, e toda consulta ao banco precisa dessa trava para pegar o
+       * token. Enquanto ele ia e voltava, a tela inteira esperava — era o
+       * "Acquiring an exclusive Navigator LockManager lock ... immediately
+       * failed" que aparecia no console.
+       *
+       * A conferência continua acontecendo: se o servidor recusar o login, a
+       * pessoa vai para a tela de entrada do mesmo jeito. O que muda é que ela
+       * deixa de bloquear o carregamento, e os dados protegidos continuam
+       * protegidos pelas políticas do banco, que validam o token a cada
+       * consulta.
+       */
+      const { data: sessao } = await supabase.auth.getSession()
       if (cancelled) return
-      if (error || !data?.user) {
+
+      const u = sessao?.session?.user
+      if (!u) {
         router.push('/login')
         return
       }
-      const u = data.user
+
+      supabase.auth.getUser().then(({ data: conferido, error: falha }) => {
+        if (!cancelled && (falha || !conferido?.user)) router.push('/login')
+      })
       setUserId(u.id)
       setUserEmail(u.email || '')
       const { data: prof } = await supabase
