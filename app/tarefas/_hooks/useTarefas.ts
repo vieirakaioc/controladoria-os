@@ -52,12 +52,14 @@ export function useTarefas({ plannerSel, mesAlvo, anoAlvo, userEmail, userRole, 
   useEffect(() => {
     let cancelled = false
     ;(async () => {
-      const [{ data: s }, { data: r }, { data: c }, { data: p }, { data: pl }, { data: perfis }] = await Promise.all([
+      // Sem a varredura de `atividades` que existia aqui só para listar os
+      // planners: ela lia a tabela inteira, custava 800 ms e a mesma informação
+      // já vem junto das atividades carregadas em `carregar`.
+      const [{ data: s }, { data: r }, { data: c }, { data: p }, { data: perfis }] = await Promise.all([
         supabase.from('setores').select('id,nome').order('nome', { ascending: true }),
         supabase.from('responsaveis').select('id,nome,email').order('nome', { ascending: true }),
         supabase.from('classificacoes').select('id,nome').order('nome', { ascending: true }),
         supabase.from('projetos').select('id,nome').eq('status', 'Em Andamento').order('nome', { ascending: true }),
-        supabase.from('atividades').select('planner_name'),
         supabase.from('profiles').select('id, full_name, email').order('full_name', { ascending: true }),
       ])
       if (cancelled) return
@@ -88,10 +90,7 @@ export function useTarefas({ plannerSel, mesAlvo, anoAlvo, userEmail, userRole, 
       setDonosDb(donos)
       setClassificacoesDb((c || []) as Lookup[])
       setProjetosDb((p || []) as { id: string; nome: string }[])
-      const uniq = Array.from(
-        new Set(((pl as PlannerRow[]) || []).map(x => x.planner_name))
-      ).filter(Boolean).sort() as string[]
-      setPlanners(uniq)
+      // A lista de planners é preenchida por `carregar`, junto das atividades.
     })()
     return () => { cancelled = true }
   }, [])
@@ -132,20 +131,24 @@ export function useTarefas({ plannerSel, mesAlvo, anoAlvo, userEmail, userRole, 
       const inicio = new Date(anoAlvo, mesAlvo, 1)
       const fim = new Date(anoAlvo, mesAlvo + 1, 1)
       const pageSize = 1000
-      let from = 0
-      let acc: any[] = []
 
-      // Paginação manual: Supabase devolve no máximo 1000 por request
-      while (true) {
+      /*
+       * Duas consultas rasas em vez de uma aninhada.
+       *
+       * Antes, cada tarefa do mês vinha com a atividade dentro — nome, planner,
+       * setor e responsável repetidos linha a linha. Com 1.434 tarefas isso
+       * eram 900 kB para montar e transmitir, e o servidor levava 1,7 s só
+       * nisso, enquanto a consulta no banco custava 1,4 ms. O peso não era o
+       * dado: era a repetição.
+       *
+       * Agora as tarefas vêm planas e as ~550 atividades vêm uma vez só, em
+       * paralelo. A junção acontece aqui, e o formato entregue à tela é o mesmo
+       * de antes — nenhuma outra parte do app precisa saber disso.
+       */
+      const buscarPagina = async (inicioPagina: number) => {
         let consulta = supabase
           .from('tarefas_diarias')
-          .select(`
-            id, data_vencimento, status, data_conclusao, observacoes, anexo_url, checklists,
-            atividades!tarefas_diarias_atividade_id_fkey (
-              task_id, nome_atividade, planner_name, frequencia, prioridade_descricao, responsavel_id, classificacao, responsaveis_lista, projeto_id,
-              setores!atividades_setor_id_fkey (nome), responsaveis!atividades_responsavel_id_fkey (nome, email)
-            )
-          `)
+          .select('id, data_vencimento, status, data_conclusao, observacoes, anexo_url, checklists, atividade_id')
 
         // "Todo o período" não aplica filtro de data nenhum, em vez de uma
         // janela enorme: comparação com nulo é sempre falsa, e a janela ainda
@@ -157,13 +160,47 @@ export function useTarefas({ plannerSel, mesAlvo, anoAlvo, userEmail, userRole, 
         const { data, error } = await consulta
           .order('data_vencimento', { ascending: true, nullsFirst: false })
           .order('id', { ascending: true })
-          .range(from, from + pageSize - 1)
+          .range(inicioPagina, inicioPagina + pageSize - 1)
+
         if (error) throw error
-        const lote = data || []
-        acc = acc.concat(lote)
-        if (lote.length < pageSize) break
-        from += pageSize
+        return data || []
       }
+
+      // A primeira página e as atividades saem juntas: uma não depende da outra,
+      // e esperar em fila dobrava o tempo de abertura da tela.
+      const [primeiraPagina, { data: atividadesData, error: erroAtividades }] = await Promise.all([
+        buscarPagina(0),
+        supabase
+          .from('atividades')
+          .select(`
+            task_id, nome_atividade, planner_name, frequencia, prioridade_descricao, responsavel_id, classificacao, responsaveis_lista, projeto_id,
+            setores!atividades_setor_id_fkey (nome), responsaveis!atividades_responsavel_id_fkey (nome, email)
+          `),
+      ])
+      if (erroAtividades) throw erroAtividades
+
+      const planas = [...primeiraPagina]
+      for (let from = pageSize; planas.length === from; from += pageSize) {
+        planas.push(...(await buscarPagina(from)))
+      }
+
+      type AtividadeJoin = { task_id: string; planner_name: string | null }
+      const atividades = (atividadesData || []) as AtividadeJoin[]
+
+      const porTaskId = new Map<string, AtividadeJoin>()
+      for (const atv of atividades) porTaskId.set(String(atv.task_id), atv)
+
+      const acc = planas.map((linha) => ({
+        ...linha,
+        atividades: porTaskId.get(String(linha.atividade_id)) ?? null,
+      }))
+
+      // Os planners saem das atividades que já estão em mãos. A consulta que
+      // existia para isso varria a tabela inteira e custava 800 ms sozinha.
+      const plannersDaBase = Array.from(
+        new Set(atividades.map((a) => a.planner_name)),
+      ).filter(Boolean).sort() as string[]
+      if (plannersDaBase.length > 0) setPlanners(plannersDaBase)
 
       /*
        * O mês existe no calendário, mas pode não existir no banco.

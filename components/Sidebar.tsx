@@ -160,7 +160,22 @@ export default function Sidebar() {
     })
 
     return () => subscription.unsubscribe()
-  }, [pathname])
+    /*
+     * Uma vez por carregamento, e não a cada troca de tela.
+     *
+     * Dependendo de `pathname`, este efeito refazia três consultas (empresa,
+     * perfil e notificações) em todo clique do menu — dados que não mudam
+     * entre uma tela e outra. Com uns 200 ms de latência cada, era esse o
+     * atraso antes de a tela começar a montar.
+     *
+     * O que precisa continuar vivo já está coberto: a troca de usuário vem do
+     * onAuthStateChange abaixo, e o contador de notificações tem assinatura de
+     * tempo real no efeito seguinte.
+     *
+     * O preço: nome e foto trocados na tela de perfil só aparecem aqui no
+     * próximo recarregamento. É pouco perto de três idas ao servidor por clique.
+     */
+  }, [])
 
   // ─── Realtime: substitui o polling de 30s por uma subscription ─────────
   // Quando uma notificação nova chega (INSERT) ou é marcada como lida em outra
