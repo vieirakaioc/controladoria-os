@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Toaster, toast } from 'react-hot-toast'
@@ -24,6 +24,40 @@ export default function AcessosPage() {
   const [profiles, setProfiles] = useState<Profile[]>([])
   const [updating, setUpdating] = useState<string | null>(null)
   const [currentUserId, setCurrentUserId] = useState<string>('')
+  const [novoUsuario, setNovoUsuario] = useState(false)
+  const [criando, setCriando] = useState(false)
+  const criandoRef = useRef(false)
+  const [cadastro, setCadastro] = useState({ full_name: '', email: '', role: 'membro', escopo: 'controladoria' })
+  const [resultadoCadastro, setResultadoCadastro] = useState('')
+
+  const criarUsuario = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (criandoRef.current) return
+    criandoRef.current = true
+    setCriando(true)
+    setResultadoCadastro('')
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) throw new Error('Entre novamente para continuar.')
+      const response = await fetch('/api/acessos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify(cadastro),
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || 'Não foi possível criar o usuário.')
+      setProfiles(prev => [...prev.filter(p => p.id !== result.profile.id), result.profile]
+        .sort((a, b) => (a.full_name || '').localeCompare(b.full_name || '', 'pt-BR')))
+      setResultadoCadastro(result.emailSent ? 'Usuário criado! O e-mail com login e senha foi enviado.' : result.warning)
+      setCadastro({ full_name: '', email: '', role: 'membro', escopo: 'controladoria' })
+      setNovoUsuario(false)
+    } catch (error) {
+      setResultadoCadastro(error instanceof Error ? error.message : 'Falha de conexão. Confira a lista de usuários antes de tentar novamente.')
+    } finally {
+      criandoRef.current = false
+      setCriando(false)
+    }
+  }
 
   // Edicao do perfil: nome e foto. O nivel de acesso continua no seletor ao
   // lado — sao decisoes diferentes, e juntar as duas num formulario so faria
@@ -184,11 +218,45 @@ export default function AcessosPage() {
         </div>
       </header>
 
+      {resultadoCadastro && <p role="status" className="mb-4 rounded-lg border border-line bg-white p-4 text-sm text-navy-700 dark:border-slate-700 dark:bg-slate-900 dark:text-white">{resultadoCadastro}</p>}
+
+      {novoUsuario && (
+        <form onSubmit={criarUsuario} className="mb-6 rounded-lg border border-line bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
+          <h2 className="text-lg font-bold text-navy-700 dark:text-white">Criar usuário</h2>
+          <p className="mt-1 text-sm text-ink-500 dark:text-slate-400">A senha será gerada automaticamente e enviada por e-mail junto com o login e o link do portal.</p>
+          <fieldset disabled={criando} className="mt-4 grid gap-4 sm:grid-cols-2 disabled:opacity-60">
+            <label className="text-sm text-navy-700 dark:text-slate-200">Nome completo
+              <input required maxLength={150} autoComplete="name" value={cadastro.full_name} onChange={e => setCadastro(c => ({ ...c, full_name: e.target.value }))} className="mt-1 w-full rounded-md border border-line-strong bg-transparent px-3 py-2 dark:border-slate-700" />
+            </label>
+            <label className="text-sm text-navy-700 dark:text-slate-200">E-mail
+              <input required type="email" maxLength={254} autoComplete="email" value={cadastro.email} onChange={e => setCadastro(c => ({ ...c, email: e.target.value }))} className="mt-1 w-full rounded-md border border-line-strong bg-transparent px-3 py-2 dark:border-slate-700" />
+            </label>
+            <label className="text-sm text-navy-700 dark:text-slate-200">Nível de acesso
+              <select value={cadastro.role} onChange={e => setCadastro(c => ({ ...c, role: e.target.value }))} className="mt-1 w-full rounded-md border border-line-strong bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
+                <option value="membro">Membro (Padrão)</option>
+                <option value="admin_projeto">Admin do projeto (Sankhya)</option>
+                <option value="admin">Administrador do portal</option>
+              </select>
+            </label>
+            <label className="text-sm text-navy-700 dark:text-slate-200">Escopo
+              <select value={cadastro.escopo} onChange={e => setCadastro(c => ({ ...c, escopo: e.target.value }))} className="mt-1 w-full rounded-md border border-line-strong bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
+                {(['controladoria', 'projeto', 'ambos'] as const).map(value => <option key={value} value={value}>{ROTULO_ESCOPO[value]}</option>)}
+              </select>
+            </label>
+            <div className="flex gap-3 sm:col-span-2">
+              <button type="submit" className="inline-flex items-center gap-2 rounded-md bg-teal-600 px-4 py-2 text-sm font-semibold text-white">{criando && <Loader2 size={16} className="animate-spin" />}{criando ? 'Criando e enviando...' : 'Criar e enviar acesso'}</button>
+              <button type="button" onClick={() => setNovoUsuario(false)} className="rounded-md border border-line-strong px-4 py-2 text-sm text-ink-500 dark:text-slate-300">Cancelar</button>
+            </div>
+          </fieldset>
+        </form>
+      )}
+
       <main className="bg-white dark:bg-slate-900 rounded-lg shadow-card border border-line dark:border-slate-800 overflow-hidden transition-colors">
         <div className="p-5 border-b border-line dark:border-slate-800 bg-navy-50 dark:bg-slate-950 flex justify-between items-center transition-colors">
           <span className="text-sm font-semibold text-navy-700 dark:text-white flex items-center gap-2">
             <Users size={16} className="text-teal-600 dark:text-[#38bdf8]" /> Utilizadores Registados ({profiles.length})
           </span>
+          <button type="button" disabled={criando || novoUsuario} onClick={() => { setNovoUsuario(true); setResultadoCadastro('') }} className="rounded-md bg-teal-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">Novo usuário</button>
         </div>
         
         <div className="overflow-x-auto">

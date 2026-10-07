@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Toaster, toast } from 'react-hot-toast'
 import { Briefcase, Plus, Calendar, CheckCircle2, Clock, ChevronDown, ChevronUp, UserCircle, Pencil, Trash2 } from 'lucide-react'
+import AnexosProjeto from './_components/AnexosProjeto'
+import { removerAnexosDoProjeto } from './_lib/anexos'
 
 type Projeto = {
   id: string
@@ -43,6 +45,8 @@ export default function ProjetosPage() {
   const [projetos, setProjetos] = useState<Projeto[]>([])
   const [loading, setLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [projetosOcupados, setProjetosOcupados] = useState<Set<string>>(new Set())
+  const [apagandoId, setApagandoId] = useState<string | null>(null)
   
   // 💡 NOVO ESTADO: Controla qual projeto está com o Drill-down aberto
   const [expandedProjId, setExpandedProjId] = useState<string | null>(null)
@@ -157,14 +161,17 @@ export default function ProjetosPage() {
   }
 
   const apagarProjeto = async (p: Projeto) => {
+    if (apagandoId || projetosOcupados.has(p.id)) return
     const total = p.estatisticas?.total_tarefas || 0
     const msg = total > 0
       ? `Apagar "${p.nome}"?\n\n${total} tarefa(s) estão vinculadas — elas NÃO serão apagadas, só serão desassociadas do projeto (projeto_id vira null).\n\nContinuar?`
       : `Apagar "${p.nome}"?\n\nNão pode ser desfeito.`
-    if (!window.confirm(msg)) return
+    if (!window.confirm(`${msg}\n\nOs anexos deste projeto também serão excluídos permanentemente.`)) return
 
+    setApagandoId(p.id)
     const toastId = toast.loading('A apagar...')
     try {
+      await removerAnexosDoProjeto(p.id)
       // Desassocia tarefas primeiro (atividades.projeto_id → null)
       if (total > 0) {
         await supabase.from('atividades').update({ projeto_id: null }).eq('projeto_id', p.id)
@@ -175,6 +182,8 @@ export default function ProjetosPage() {
       carregarProjetos()
     } catch (error: any) {
       toast.error(`Erro: ${error?.message || 'falha'}`, { id: toastId })
+    } finally {
+      setApagandoId(null)
     }
   }
 
@@ -234,6 +243,7 @@ export default function ProjetosPage() {
                         </button>
                         <button
                           onClick={() => apagarProjeto(proj)}
+                          disabled={!!apagandoId || projetosOcupados.has(proj.id)}
                           className="text-ink-400 hover:text-[#b43a3d] dark:hover:text-[#f87171] hover:bg-navy-100 dark:hover:bg-slate-800 p-1.5 rounded-md transition-colors"
                           title="Apagar projeto"
                         >
@@ -277,6 +287,14 @@ export default function ProjetosPage() {
                   </div>
 
                   {/* 💡 SESSÃO DRILL-DOWN (LISTA DE TAREFAS) */}
+                  <AnexosProjeto projetoId={proj.id} isAdmin={isAdmin} disabled={apagandoId === proj.id} onBusyChange={busy => {
+                    setProjetosOcupados(prev => {
+                      const next = new Set(prev)
+                      if (busy) next.add(proj.id)
+                      else next.delete(proj.id)
+                      return next
+                    })
+                  }} />
                   {isExpanded && (
                     <div className="pt-5 mt-4 border-t border-line dark:border-slate-800 animate-in fade-in slide-in-from-top-4 duration-300">
                       <h4 className="text-[10px] font-bold text-ink-400 dark:text-slate-500 uppercase tracking-widest mb-3">Detalhamento das Atividades</h4>
