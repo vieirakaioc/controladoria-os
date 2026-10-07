@@ -3,10 +3,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getResponsaveis } from '@/lib/responsaveis'
 import { getBucket } from '../_lib/helpers'
-import type { Row, TimeBucket } from '../_lib/types'
+import type { Lookup, Row, TimeBucket } from '../_lib/types'
 
 type Args = {
   rows: Row[]
+  responsaveis: Lookup[]
   statuses: string[]
   mesAlvo: number
   anoAlvo: number
@@ -18,7 +19,7 @@ type Args = {
  * Estado dos filtros + derivações (filtradas, dashboard, board por status,
  * timeboard por data, calendarData). Tudo memoizado.
  */
-export function useTarefaFilters({ rows, statuses, mesAlvo, anoAlvo, projetoInicial }: Args) {
+export function useTarefaFilters({ rows, responsaveis, statuses, mesAlvo, anoAlvo, projetoInicial }: Args) {
   const [filtroTexto, setFiltroTexto] = useState('')
   const [filtroStatus, setFiltroStatus] = useState<string>('Todos')
   const [filtroSetor, setFiltroSetor] = useState<string>('Todos')
@@ -38,11 +39,8 @@ export function useTarefaFilters({ rows, statuses, mesAlvo, anoAlvo, projetoInic
     [rows],
   )
 
-  const respOptions = useMemo(() => {
-    const all = new Set<string>()
-    rows.forEach(r => getResponsaveis(r.atividades).forEach(res => { if (res.nome) all.add(res.nome) }))
-    return Array.from(all).sort()
-  }, [rows])
+  // A lista vem da Gestão de Acessos, nunca dos nomes históricos das tarefas.
+  const respOptions = responsaveis
 
   const classifOptions = useMemo(
     () => Array.from(new Set(rows.map(r => r.atividades?.classificacao).filter(Boolean))).sort() as string[],
@@ -60,14 +58,18 @@ export function useTarefaFilters({ rows, statuses, mesAlvo, anoAlvo, projetoInic
       const okTexto = !q || nome.includes(q) || (atv.setores?.nome || '').toLowerCase().includes(q) || matchesResp
       const okStatus = filtroStatus === 'Todos' || st === filtroStatus
       const okSetor = filtroSetor === 'Todos' || atv.setores?.nome === filtroSetor
-      const okResp = filtroResp === 'Todos' || resps.some(res => res.nome === filtroResp)
+      const pessoa = responsaveis.find(p => String(p.id) === filtroResp)
+      const okResp = filtroResp === 'Todos' || !!pessoa && resps.some(res =>
+        (res.id != null && String(res.id) === String(pessoa.id)) ||
+        (!!pessoa.email && res.email?.trim().toLowerCase() === pessoa.email.trim().toLowerCase()),
+      )
       const okClass = filtroClassificacao === 'Todos' || atv.classificacao === filtroClassificacao
       // Como texto dos dois lados: o id chega do banco e da URL em tipos que
       // não precisam coincidir, e === entre número e texto nunca bate.
       const okProj = filtroProjeto === 'Todos' || String(atv.projeto_id ?? '') === String(filtroProjeto)
       return okTexto && okStatus && okSetor && okResp && okClass && okProj
     })
-  }, [rows, filtroTexto, filtroStatus, filtroSetor, filtroResp, filtroClassificacao, filtroProjeto, statuses])
+  }, [rows, responsaveis, filtroTexto, filtroStatus, filtroSetor, filtroResp, filtroClassificacao, filtroProjeto, statuses])
 
   const dashboard = useMemo(() => {
     const done = filtradas.filter(r => (r.status || '').toLowerCase().includes('concl')).length

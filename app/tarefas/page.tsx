@@ -58,6 +58,7 @@ export default function TarefasPage() {
 
   const filters = useTarefaFilters({
     rows: tarefas.rows,
+    responsaveis: tarefas.respsDb,
     statuses: tarefas.statuses,
     mesAlvo, anoAlvo,
     projetoInicial: projetoUrl,

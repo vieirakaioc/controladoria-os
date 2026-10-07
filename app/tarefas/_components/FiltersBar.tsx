@@ -16,7 +16,7 @@ type Props = {
 
   statuses: string[]
   setorOptions: string[]
-  respOptions: string[]
+  respOptions: { id: string; nome: string; email?: string }[]
   classifOptions: string[]
   projetosDb: { id: string; nome: string }[]
 
@@ -62,7 +62,7 @@ export function FiltersBar({
 
       <select value={filtroResp} onChange={(e) => setFiltroResp(e.target.value)} className={baseSelect}>
         <option value="Todos">Resp: Todos</option>
-        {respOptions.map(r => <option key={r} value={r}>{r}</option>)}
+        {respOptions.map(r => <option key={r.id} value={r.id}>{r.nome}{r.email ? ` (${r.email})` : ''}</option>)}
       </select>
 
       <select value={filtroStatus} onChange={(e) => setFiltroStatus(e.target.value)} className={baseSelect}>
