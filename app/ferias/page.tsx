@@ -1,5 +1,7 @@
 'use client'
 
+import { consultarUsuariosResponsaveis } from '@/lib/usuariosResponsaveis'
+
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Toaster, toast } from 'react-hot-toast'
@@ -71,7 +73,7 @@ export default function FeriasPage() {
         supabase.from('ausencias')
           .select('id, responsavel_id, data_inicio, data_fim, motivo, observacao, substituto_id, aprovacao_status, created_at')
           .order('data_inicio', { ascending: true }),
-        supabase.from('responsaveis').select('id, nome, email').order('nome'),
+        consultarUsuariosResponsaveis(),
       ])
       if (errAus) {
         console.error('[ferias] erro ao ler ausencias:', errAus)
@@ -84,7 +86,7 @@ export default function FeriasPage() {
       resps.forEach(r => respsById.set(String(r.id), r))
       const aus: Ausencia[] = (ausData || []).map((a: any) => {
         const r = respsById.get(String(a.responsavel_id))
-        return { ...a, responsaveis: r ? { nome: r.nome, email: r.email } : null }
+        return { ...a, responsavel_id: String(a.responsavel_id), substituto_id: a.substituto_id == null ? null : String(a.substituto_id), responsaveis: r ? { nome: r.nome, email: r.email } : null }
       })
       setAusencias(aus)
       setResponsaveis(resps)

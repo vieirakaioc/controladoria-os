@@ -1,5 +1,7 @@
 'use client'
 
+import { consultarUsuariosResponsaveis } from '@/lib/usuariosResponsaveis'
+
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'react-hot-toast'
 import { supabase } from '@/lib/supabase'
@@ -51,6 +53,7 @@ export function useTarefas({ plannerSel, mesAlvo, anoAlvo, userEmail, userRole, 
 
   // Lookups + planners: carrega uma vez na montagem
   useEffect(() => {
+    if (!authLoaded) return
     let cancelled = false
     ;(async () => {
       // Sem a varredura de `atividades` que existia aqui só para listar os
@@ -59,45 +62,24 @@ export function useTarefas({ plannerSel, mesAlvo, anoAlvo, userEmail, userRole, 
       // Em cache: cinco listas que quase não mudam no expediente, rebuscadas
       // toda vez que a tela montava. Cada ida custa 220 a 250 ms de latência,
       // mesmo devolvendo 900 bytes.
-      const [{ data: s }, { data: r }, { data: c }, { data: p }, { data: perfis }] = await Promise.all([
+      const [{ data: s }, { data: r }, { data: c }, { data: p }] = await Promise.all([
         comCache('setores', () => supabase.from('setores').select('id,nome').order('nome', { ascending: true })),
-        comCache('responsaveis', () => supabase.from('responsaveis').select('id,nome,email').order('nome', { ascending: true })),
+        consultarUsuariosResponsaveis(),
         comCache('classificacoes', () => supabase.from('classificacoes').select('id,nome').order('nome', { ascending: true })),
         comCache('projetos', () => supabase.from('projetos').select('id,nome').eq('status', 'Em Andamento').order('nome', { ascending: true })),
-        comCache('profiles', () => supabase.from('profiles').select('id, full_name, email').order('full_name', { ascending: true })),
       ])
       if (cancelled) return
       setSetoresDb((s || []) as Lookup[])
       setRespsDb((r || []) as Lookup[])
 
-      // Donos de subtarefa: quem tem login primeiro, depois quem só está na
-      // planilha — sem repetir, pelo e-mail. Só `responsaveis` deixava de fora
-      // todo usuário criado depois da última sincronização da planilha; só
-      // `profiles` sumiria com quem nunca teve login. O e-mail é a chave
-      // porque é por ele que o Controle de Tarefas decide quem enxerga a
-      // subtarefa.
-      const vistos = new Set<string>()
-      const donos: Lookup[] = []
-      for (const perfil of (perfis || []) as { id: string; full_name: string | null; email: string | null }[]) {
-        const email = (perfil.email || '').trim().toLowerCase()
-        if (!email || vistos.has(email)) continue
-        vistos.add(email)
-        donos.push({ id: email, nome: perfil.full_name?.trim() || email, email })
-      }
-      for (const resp of (r || []) as Lookup[]) {
-        const email = (resp.email || '').trim().toLowerCase()
-        if (email && vistos.has(email)) continue
-        if (email) vistos.add(email)
-        donos.push({ id: email || `r:${resp.id}`, nome: resp.nome, email: email || undefined })
-      }
-      donos.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
-      setDonosDb(donos)
+      // Tarefas e subtarefas usam os mesmos usuários da Gestão de Acessos.
+      setDonosDb((r || []).map(p => ({ id: p.email, nome: p.nome, email: p.email })))
       setClassificacoesDb((c || []) as Lookup[])
       setProjetosDb((p || []) as { id: string; nome: string }[])
       // A lista de planners é preenchida por `carregar`, junto das atividades.
-    })()
+    })().catch(error => { if (!cancelled) toast.error(error instanceof Error ? error.message : 'Erro ao carregar usuários da Gestão de Acessos.') })
     return () => { cancelled = true }
-  }, [])
+  }, [authLoaded])
 
   const carregarPlanners = useCallback(async () => {
     const { data, error } = await supabase.from('atividades').select('planner_name')

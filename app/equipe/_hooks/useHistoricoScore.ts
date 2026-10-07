@@ -1,5 +1,7 @@
 'use client'
 
+import { consultarUsuariosResponsaveis } from '@/lib/usuariosResponsaveis'
+
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { getResponsaveis } from '@/lib/responsaveis'
@@ -86,7 +88,7 @@ export function useHistoricoScore({
           { data: activityData },
           { data: cfgData },
         ] = await Promise.all([
-          supabase.from('responsaveis').select('id, nome, email').order('nome'),
+          consultarUsuariosResponsaveis(),
           supabase.from('tarefas_diarias').select(`
             id, data_vencimento, data_conclusao, status,
             atividades!tarefas_diarias_atividade_id_fkey (

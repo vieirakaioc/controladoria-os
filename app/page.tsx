@@ -1,5 +1,7 @@
 'use client'
 
+import { consultarUsuariosResponsaveis } from '@/lib/usuariosResponsaveis'
+
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import * as XLSX from 'xlsx'
@@ -121,10 +123,7 @@ export default function Home() {
       setAtividades(dbAtividades || [])
 
       // Lista de responsáveis pra UI de exclusão por pessoa
-      const { data: dbResps } = await supabase
-        .from('responsaveis')
-        .select('id, nome, email')
-        .order('nome', { ascending: true })
+      const { data: dbResps } = await consultarUsuariosResponsaveis()
       setRespsLista((dbResps || []) as any)
     } catch (error: any) {
       toast.error('Erro ao buscar dados da base.')
@@ -655,7 +654,7 @@ Confirma apagar agora?`,
         { data: feriadosData },
       ] = await Promise.all([
         supabase.from('setores').select('nome').order('nome'),
-        supabase.from('responsaveis').select('nome, email').order('nome'),
+        consultarUsuariosResponsaveis(),
         supabase.from('prioridades').select('nivel, descricao').order('nivel'),
         supabase.from('frequencias').select('nome').order('nome'),
         supabase.from('classificacoes').select('nome').order('nome'),
@@ -769,12 +768,6 @@ Confirma apagar agora?`,
         const unique = (arr: any[]) => Array.from(new Set(arr.filter((x) => x !== null && `${x}`.trim() !== '').map((x) => `${x}`.trim())))
 
         const setores = unique(rowsParams.map((r) => r['Setor'])).map(nome => ({ nome }))
-        const responsaveis = rowsParams.map((r) => {
-          const nome = r['Responsável']; const email = r['e-mail']
-          if (!nome || !email) return null
-          return { nome: `${nome}`.trim(), email: `${email}`.trim() }
-        }).filter(Boolean)
-        
         const prioridades = rowsParams.map((r) => {
           const nivel = r['Prioridade']; const desc = r['Prioridade_Descrição']
           if (nivel === null || desc === null) return null
@@ -785,7 +778,6 @@ Confirma apagar agora?`,
         const classificacoes = unique(rowsParams.map((r) => r['Classificação'])).map((nome) => ({ nome }))
 
         if (setores.length) await supabase.from('setores').upsert(setores, { onConflict: 'nome' })
-        if (responsaveis.length) await supabase.from('responsaveis').upsert(responsaveis, { onConflict: 'email' })
         if (prioridades.length) await supabase.from('prioridades').upsert(prioridades, { onConflict: 'nivel' })
         if (frequencias.length) await supabase.from('frequencias').upsert(frequencias, { onConflict: 'nome' })
         if (classificacoes.length) await supabase.from('classificacoes').upsert(classificacoes, { onConflict: 'nome' })
@@ -803,7 +795,7 @@ Confirma apagar agora?`,
         if (feriadosUpsert.length) await supabase.from('feriados').upsert(feriadosUpsert, { onConflict: 'data' })
 
         const { data: dbSetores } = await supabase.from('setores').select('id, nome')
-        const { data: dbResponsaveis } = await supabase.from('responsaveis').select('id, nome, email')
+        const { data: dbResponsaveis } = await consultarUsuariosResponsaveis()
 
         toast.loading('A atualizar Atividades Principais...', { id: toastId })
         const nomeAbaAtividades = workbook.SheetNames.find((n) => n.toLowerCase() === 'lista') || workbook.SheetNames.find((n) => !n.toLowerCase().includes('listbox'))
@@ -870,7 +862,11 @@ Confirma apagar agora?`,
 
         const atividadesParaSalvar = rowsAtv.map((linha) => {
           const s = dbSetores?.find((x: any) => x.nome && x.nome.trim() === (linha['Setor'] ? `${linha['Setor']}`.trim() : null))
-          const r = dbResponsaveis?.find((x: any) => x.nome && x.nome.trim() === (linha['Responsável'] ? `${linha['Responsável']}`.trim() : null))
+          const nomeInformado = String(linha['Responsável'] || '').trim().toLowerCase()
+          const parametro = rowsParams.find(p => String(p['Responsável'] || '').trim().toLowerCase() === nomeInformado)
+          const emailInformado = String(linha['e-mail'] || parametro?.['e-mail'] || '').trim().toLowerCase()
+          const candidatos = dbResponsaveis.filter(x => emailInformado ? x.email === emailInformado : x.nome.trim().toLowerCase() === nomeInformado)
+          const r = candidatos.length === 1 ? candidatos[0] : undefined
 
           const nome = linha['Atividade'] ? `${linha['Atividade']}`.trim() : 'Sem Nome'
           const planner = linha['Planner Name'] ? `${linha['Planner Name']}`.trim() : null
@@ -904,6 +900,10 @@ Confirma apagar agora?`,
             status: linha['Status'] ? `${linha['Status']}`.trim() : null,
           }
         })
+
+        if (responsaveisNaoEncontrados.size) {
+          throw new Error(`Cadastre ou confira estes usuários na Gestão de Acessos antes de importar: ${Array.from(responsaveisNaoEncontrados).join(', ')}`)
+        }
 
         // ─── Detecta atividades NOVAS antes do upsert ─────────────────────
         // (são as task_ids do arquivo que ainda não existem no banco)

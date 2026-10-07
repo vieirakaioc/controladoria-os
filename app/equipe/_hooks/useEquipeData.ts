@@ -1,5 +1,7 @@
 'use client'
 
+import { consultarUsuariosResponsaveis } from '@/lib/usuariosResponsaveis'
+
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { getResponsaveis } from '@/lib/responsaveis'
@@ -72,7 +74,7 @@ export function useEquipeData({ mesAlvo, anoAlvo, enabled, filtroPlanner = 'Todo
           { data: scoreCfgData },
           { data: ausenciasData },
         ] = await Promise.all([
-          supabase.from('responsaveis').select('id, nome, email').order('nome'),
+          consultarUsuariosResponsaveis(),
           supabase.from('profiles').select('id, full_name, role'),
           supabase.from('tarefas_diarias').select(`
             id, data_vencimento, data_conclusao, status,

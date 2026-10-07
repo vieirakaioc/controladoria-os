@@ -1,3 +1,4 @@
+import { consultarUsuariosResponsaveis } from '@/lib/usuariosResponsaveis'
 import { supabase } from '@/lib/supabase'
 
 import {
@@ -151,10 +152,7 @@ export async function listarLotes(limite = 20): Promise<LoteImportacao[]> {
 }
 
 export async function listarResponsaveis(): Promise<Responsavel[]> {
-  const { data, error } = await supabase
-    .from('responsaveis')
-    .select('id, nome, email')
-    .order('nome')
+  const { data, error } = await consultarUsuariosResponsaveis()
 
   if (error) throw error
 
@@ -184,14 +182,8 @@ export type ResultadoImportacao = {
  * planilha importada sem dono é melhor do que uma importação recusada.
  */
 export async function buscarResponsavelPorEmail(email: string): Promise<Responsavel | null> {
-  const { data, error } = await supabase
-    .from('responsaveis')
-    .select('id, nome, email')
-    .ilike('email', email)
-    .maybeSingle()
-
-  if (error || !data) return null
-  return { id: String(data.id), nome: data.nome, email: data.email }
+  const { data } = await consultarUsuariosResponsaveis()
+  return data.find(p => p.email === email.trim().toLowerCase()) || null
 }
 
 /**

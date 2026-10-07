@@ -20,8 +20,9 @@ export type AusenciasByResp = Map<string, Ausencia[]>
 export function indexAusencias(ausencias: Ausencia[]): AusenciasByResp {
   const map: AusenciasByResp = new Map()
   for (const a of ausencias) {
-    if (!map.has(a.responsavel_id)) map.set(a.responsavel_id, [])
-    map.get(a.responsavel_id)!.push(a)
+    const id = String(a.responsavel_id)
+    if (!map.has(id)) map.set(id, [])
+    map.get(id)!.push({ ...a, responsavel_id: id, substituto_id: a.substituto_id == null ? null : String(a.substituto_id) })
   }
   return map
 }
